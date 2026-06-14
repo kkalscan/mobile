@@ -1,0 +1,18 @@
+url: http://localhost:8080
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 60000
+- tapOn:
+    id: "maestro-open-scan"
+- extendedWaitUntil:
+    visible: "scan-screen"
+    timeout: 15000
+- assertVisible: "scan-screen"
+- tapOn:
+    id: "maestro-scan-back"
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 15000
+- assertVisible: "diary-screen"

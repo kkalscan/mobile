@@ -1,0 +1,11 @@
+url: http://localhost:8080
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "maestro-hook"
+    timeout: 60000
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 60000
+- assertVisible: "diary-screen"
