@@ -15,7 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -77,7 +76,7 @@ fun ResultScreen(
             Spacer(Modifier.height(12.dp))
         }
         Spacer(Modifier.height(8.dp))
-        Text("Добавить как", style = MaterialTheme.typography.titleMedium)
+        Text("Добавить как ${state.selectedMealType.label().lowercase()}", style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             MealType.entries.forEach { meal ->
@@ -106,20 +105,6 @@ fun ResultScreen(
             containerColor = KkalScanColors.SurfaceVariant,
             contentColor = KkalScanColors.OnBackground,
         )
-        result.disclaimer?.let {
-            Spacer(Modifier.height(16.dp))
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = KkalScanColors.SurfaceVariant,
-            ) {
-                Text(
-                    it,
-                    modifier = Modifier.padding(12.dp),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = KkalScanColors.OnSurfaceVariant,
-                )
-            }
-        }
         Spacer(Modifier.height(100.dp))
     }
 }

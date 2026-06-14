@@ -29,6 +29,7 @@ class ScanViewModel(
                         isLoading = false,
                         result = result,
                         scansLeft = result.scansLeft,
+                        selectedMealType = defaultMealType(),
                     )
                 }
             }

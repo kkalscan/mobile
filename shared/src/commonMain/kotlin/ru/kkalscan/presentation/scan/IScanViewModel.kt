@@ -2,6 +2,9 @@ package ru.kkalscan.presentation.scan
 
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ScanResult
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 data class ScanUiState(
     val isLoading: Boolean = false,
@@ -22,12 +25,7 @@ interface IScanViewModel {
 }
 
 fun defaultMealType(): MealType {
-    val hour = kotlinx.datetime.Clock.System.now()
-        .toEpochMilliseconds()
-        .let { ms ->
-            // fallback lunch; platform tests override via selectMealType
-            ((ms / 3_600_000) % 24).toInt()
-        }
+    val hour = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
     return when (hour) {
         in 5..10 -> MealType.breakfast
         in 11..15 -> MealType.lunch
