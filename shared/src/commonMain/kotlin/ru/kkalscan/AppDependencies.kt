@@ -5,7 +5,9 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.data.api.KkalScanApi
 import ru.kkalscan.data.createHttpClient
+import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
+import ru.kkalscan.data.repository.IBugReportRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.IInsightRepository
 import ru.kkalscan.data.repository.InsightRepository
@@ -32,6 +34,7 @@ class AppDependencies(
     val scanRepository: IScanRepository = ScanRepository(api, deviceIdStorage),
     val subscriptionRepository: ISubscriptionRepository = SubscriptionRepository(api, deviceIdStorage),
     val insightRepository: IInsightRepository = InsightRepository(deviceIdStorage),
+    val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
         DiaryViewModel(diaryRepository, scope)
@@ -43,5 +46,5 @@ class AppDependencies(
         ScanViewModel(scanRepository, diaryRepository, scope)
 
     fun profileViewModel(scope: kotlinx.coroutines.CoroutineScope): IProfileViewModel =
-        ProfileViewModel(subscriptionRepository, diaryRepository, scope)
+        ProfileViewModel(subscriptionRepository, diaryRepository, bugReportRepository, scope)
 }

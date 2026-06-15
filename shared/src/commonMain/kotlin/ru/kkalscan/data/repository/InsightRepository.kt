@@ -24,8 +24,6 @@ class InsightRepository(
     }
 
     private fun stubInsight(weekStart: String, week: WeekStats): DietitianInsight {
-        val macroSum = week.avgProtein + week.avgFat + week.avgCarbs
-        val proteinPct = if (macroSum > 0) (week.avgProtein / macroSum * 100).toInt() else 0
         return DietitianInsight(
             weekStart = weekStart,
             generatedAt = weekStart,
@@ -41,14 +39,8 @@ class InsightRepository(
                         "Сумма за неделю: ${week.totalKcal} ккал.",
                 ),
                 InsightSection(
-                    "БЖУ",
-                    "Белки ~${week.avgProtein.toInt()} г, жиры ~${week.avgFat.toInt()} г, " +
-                        "углеводы ~${week.avgCarbs.toInt()} г в день. Доля белка ~$proteinPct%.",
-                ),
-                InsightSection(
                     "Рекомендации",
                     buildString {
-                        if (week.avgProtein < 70) append("Добавьте белковые продукты (мясо, рыба, творог). ")
                         if (week.daysWithData < 5) append("Старайтесь логировать еду чаще — так точнее картина. ")
                         append("Продолжайте сканировать тарелки для точного учёта.")
                     },

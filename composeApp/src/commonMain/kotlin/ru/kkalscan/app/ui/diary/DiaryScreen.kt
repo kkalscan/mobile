@@ -52,7 +52,6 @@ fun DiaryScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         KkalPageHeader(
-            brand = "KkalScan",
             title = "Сегодня · $dateLabel",
             modifier = Modifier.testTag("diary-title"),
         )

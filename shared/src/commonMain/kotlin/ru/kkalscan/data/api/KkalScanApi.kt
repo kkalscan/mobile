@@ -21,6 +21,7 @@ import kotlinx.serialization.json.Json
 import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ApiErrorBody
+import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
@@ -83,6 +84,36 @@ class KkalScanApi(
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         get("/subscription/status", deviceId)
 
+    override suspend fun submitBugReport(
+        deviceId: String,
+        email: String,
+        description: String,
+        screenshots: List<ByteArray>,
+    ): BugReportResult =
+        try {
+            val response = httpClient.submitFormWithBinaryData(
+                url = "${config.apiBaseUrl}/feedback/bug",
+                formData = formData {
+                    append("email", email)
+                    append("description", description)
+                    screenshots.forEachIndexed { index, bytes ->
+                        append("screenshot", bytes, Headers.build {
+                            append(HttpHeaders.ContentType, "image/jpeg")
+                            append(HttpHeaders.ContentDisposition, "filename=screenshot$index.jpg")
+                        })
+                    }
+                },
+            ) {
+                header("X-Device-Id", deviceId)
+            }
+            if (!response.status.isSuccess()) throw mapError(response.status.value, response.bodyAsText())
+            response.body()
+        } catch (e: KkalScanException) {
+            throw e
+        } catch (e: Exception) {
+            throw KkalScanException.Network(e.message ?: "Network error")
+        }
+
     private suspend inline fun <reified T> get(path: String, deviceId: String): T =
         try {
             val response = httpClient.get("${config.apiBaseUrl}$path") {
@@ -113,6 +144,9 @@ class KkalScanApi(
     private fun mapError(status: Int, body: String): KkalScanException {
         val parsed = runCatching { json.decodeFromString<ApiErrorBody>(body) }.getOrNull()
         if (parsed?.error == "limit_hit") return KkalScanException.LimitHit(parsed.scansLeft ?: 0)
+        if (parsed?.error == "bug_report_already_used") {
+            return KkalScanException.Api(parsed.message)
+        }
         return KkalScanException.Api(parsed?.message ?: "HTTP $status")
     }
 

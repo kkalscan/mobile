@@ -51,7 +51,7 @@ fun ResultScreen(
             .padding(horizontal = KkalScanDimens.screenHorizontal),
     ) {
         Spacer(Modifier.height(16.dp))
-        KkalPageHeader(brand = "KkalScan", title = "Результат скана")
+        KkalPageHeader(title = "Результат скана")
         Spacer(Modifier.height(16.dp))
         KkalHeroCard(
             title = "ИТОГО",

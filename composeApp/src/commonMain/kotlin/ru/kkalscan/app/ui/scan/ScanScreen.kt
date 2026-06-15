@@ -41,10 +41,7 @@ fun ScanScreen(
             .padding(horizontal = KkalScanDimens.screenHorizontal),
     ) {
         Spacer(Modifier.height(20.dp))
-        KkalPageHeader(
-            brand = "KkalScan",
-            title = "Скан еды",
-        )
+        KkalPageHeader(title = "Скан еды")
         Text(
             "AI распознаёт блюда и считает калории",
             style = MaterialTheme.typography.bodyLarge,

@@ -1,6 +1,7 @@
 package ru.kkalscan
 
 import ru.kkalscan.data.api.IKkalScanApi
+import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.DiaryEntry
@@ -91,4 +92,17 @@ class StatefulDiaryApi(
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         SubscriptionStatus(isPro = false, accountLinked = false)
+
+    override suspend fun submitBugReport(
+        deviceId: String,
+        email: String,
+        description: String,
+        screenshots: List<ByteArray>,
+    ): BugReportResult =
+        BugReportResult(
+            reportId = UUID.randomUUID().toString(),
+            isPro = true,
+            proUntil = "${diaryDate}T12:00:00Z",
+            message = "Спасибо! Pro на месяц активирован.",
+        )
 }

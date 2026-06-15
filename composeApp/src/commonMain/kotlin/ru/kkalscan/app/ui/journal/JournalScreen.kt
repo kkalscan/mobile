@@ -28,12 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.charts.ChartCard
 import ru.kkalscan.app.charts.KkalCaloriesBarChart
-import ru.kkalscan.app.charts.KkalMacroDonutChart
-import ru.kkalscan.app.charts.KkalStackedMacroChart
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPageHeader
-import ru.kkalscan.app.components.ScanBadge
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.presentation.journal.IJournalViewModel
@@ -49,13 +46,6 @@ fun JournalScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val week = state.week
-    val isPreview = week != null && week.daysWithData < 3
-    val displayWeek = when {
-        week == null -> null
-        isPreview -> JournalPreviewData.sampleWeekStats(state.weekStart)
-        else -> week
-    }
-    val heroWeek = week
 
     Column(
         modifier = Modifier
@@ -65,7 +55,7 @@ fun JournalScreen(
             .testTag("journal-screen"),
     ) {
         Spacer(Modifier.height(20.dp))
-        KkalPageHeader(brand = "KkalScan", title = "Дневник")
+        KkalPageHeader(title = "Дневник")
         Spacer(Modifier.height(16.dp))
 
         JournalWeekHeader(
@@ -90,27 +80,20 @@ fun JournalScreen(
                 KkalErrorBanner(message = state.errorMessage!!, onRetry = onRefresh)
             }
 
-            displayWeek != null && heroWeek != null -> {
-                if (isPreview) {
-                    ScanBadge("Пример — добавьте записи за 3+ дня")
-                    Spacer(Modifier.height(12.dp))
-                }
+            week != null -> {
                 KkalHeroCard(
                     title = "СРЕДНЕЕ ЗА НЕДЕЛЮ",
-                    kcal = heroWeek.avgKcal,
-                    subtitle = "${heroWeek.daysWithData} дней с данными · всего ${heroWeek.totalKcal} ккал",
+                    kcal = week.avgKcal,
+                    subtitle = "${week.daysWithData} дней с данными · всего ${week.totalKcal} ккал",
                     badge = null,
-                    protein = heroWeek.avgProtein,
-                    fat = heroWeek.avgFat,
-                    carbs = heroWeek.avgCarbs,
                     watermark = "07",
                 )
                 Spacer(Modifier.height(16.dp))
                 DietitianInsightButton(
-                    isPro = heroWeek.isPro,
+                    isPro = week.isPro,
                     loading = state.insightLoading,
                     onClick = {
-                        if (week?.isPro == true) onRequestInsight() else onNeedPro()
+                        if (week.isPro) onRequestInsight() else onNeedPro()
                     },
                 )
                 state.insightError?.let { msg ->
@@ -120,38 +103,16 @@ fun JournalScreen(
                 Spacer(Modifier.height(20.dp))
                 ChartCard(
                     title = "Калории по дням",
-                    subtitle = if (isPreview) "Пример недели" else "Среднее ${displayWeek.avgKcal} ккал/день",
+                    subtitle = if (week.daysWithData > 0) {
+                        "Среднее ${week.avgKcal} ккал/день"
+                    } else {
+                        "Нет записей — сфотографируйте еду"
+                    },
                 ) {
                     KkalCaloriesBarChart(
-                        days = displayWeek.days,
+                        days = week.days,
                         weekStart = state.weekStart,
                     )
-                }
-                Spacer(Modifier.height(16.dp))
-                ChartCard(
-                    title = "БЖУ по дням",
-                    subtitle = "Граммы белков, жиров и углеводов",
-                ) {
-                    KkalStackedMacroChart(
-                        days = displayWeek.days,
-                        weekStart = state.weekStart,
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
-                ChartCard(
-                    title = "Баланс макросов",
-                    subtitle = "Среднее за неделю",
-                ) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                    ) {
-                        KkalMacroDonutChart(
-                            protein = displayWeek.avgProtein,
-                            fat = displayWeek.avgFat,
-                            carbs = displayWeek.avgCarbs,
-                        )
-                    }
                 }
                 Spacer(Modifier.height(120.dp))
             }

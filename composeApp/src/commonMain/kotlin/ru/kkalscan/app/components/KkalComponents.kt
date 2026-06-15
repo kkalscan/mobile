@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,6 +37,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -90,20 +92,10 @@ private fun KkalPageGradient() {
 
 @Composable
 fun KkalPageHeader(
-    brand: String,
     title: String,
     modifier: Modifier = Modifier,
 ) {
-    Column(modifier) {
-        Text(
-            brand,
-            style = MaterialTheme.typography.labelLarge,
-            color = KkalScanColors.Primary,
-            fontWeight = FontWeight.Bold,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(title, style = MaterialTheme.typography.headlineLarge)
-    }
+    Text(title, modifier = modifier, style = MaterialTheme.typography.headlineLarge)
 }
 
 @Composable
@@ -122,26 +114,26 @@ fun KkalBottomBar(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 20.dp),
+                .padding(start = 8.dp, end = 8.dp, top = 12.dp, bottom = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BottomTab(
                     label = "Сегодня",
                     icon = KkalNavIconType.Today,
                     selected = selectedTab == AppTab.Today,
                     onClick = { onTabSelected(AppTab.Today) },
                 )
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BottomTab(
                     label = "Дневник",
                     icon = KkalNavIconType.Journal,
                     selected = selectedTab == AppTab.Journal,
                     onClick = { onTabSelected(AppTab.Journal) },
                 )
+            }
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BottomTab(
                     label = "Профиль",
                     icon = KkalNavIconType.Profile,
@@ -149,7 +141,6 @@ fun KkalBottomBar(
                     onClick = { onTabSelected(AppTab.Profile) },
                 )
             }
-            Spacer(Modifier.width(KkalScanDimens.fabSize))
         }
         }
         Surface(
@@ -157,7 +148,7 @@ fun KkalBottomBar(
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .padding(end = 16.dp)
-                .offset(y = (-20).dp)
+                .offset(y = -KkalScanDimens.fabFloatOffset)
                 .size(KkalScanDimens.fabSize)
                 .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
             shape = CircleShape,
@@ -336,25 +327,46 @@ fun KkalTipCard(
     number: String,
     title: String,
     body: String,
+    onClick: (() -> Unit)? = null,
+    badgeIcon: ImageVector? = null,
 ) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
+            .then(
+                if (onClick != null) {
+                    Modifier.clickable(onClick = onClick)
+                } else {
+                    Modifier
+                },
+            )
             .shadow(8.dp, RoundedCornerShape(KkalScanDimens.cardRadius)),
         shape = RoundedCornerShape(KkalScanDimens.cardRadius),
         color = KkalScanColors.Surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, KkalScanColors.Outline.copy(alpha = 0.5f)),
     ) {
         Box {
-            Text(
-                number,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 12.dp, end = 16.dp),
-                style = MaterialTheme.typography.displaySmall,
-                color = KkalScanColors.Outline.copy(alpha = 0.7f),
-                fontWeight = FontWeight.Bold,
-            )
+            if (badgeIcon != null) {
+                Icon(
+                    imageVector = badgeIcon,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 12.dp, end = 16.dp)
+                        .size(40.dp),
+                    tint = KkalScanColors.Outline.copy(alpha = 0.55f),
+                )
+            } else {
+                Text(
+                    number,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 12.dp, end = 16.dp),
+                    style = MaterialTheme.typography.displaySmall,
+                    color = KkalScanColors.Outline.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Bold,
+                )
+            }
             Column(Modifier.padding(20.dp)) {
                 Text(title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.height(8.dp))

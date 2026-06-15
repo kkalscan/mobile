@@ -1,5 +1,6 @@
 package ru.kkalscan.data.api
 
+import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
@@ -14,4 +15,10 @@ interface IKkalScanApi {
     suspend fun addDiaryEntry(deviceId: String, mealType: MealType, scanId: String? = null): CreateDiaryEntryResponse
     suspend fun deleteDiaryEntry(deviceId: String, entryId: String)
     suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus
+    suspend fun submitBugReport(
+        deviceId: String,
+        email: String,
+        description: String,
+        screenshots: List<ByteArray>,
+    ): BugReportResult
 }

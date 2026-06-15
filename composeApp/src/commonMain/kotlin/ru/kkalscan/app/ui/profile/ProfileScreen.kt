@@ -9,12 +9,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -25,6 +30,7 @@ import ru.kkalscan.app.components.KkalPageHeader
 import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.KkalTipCard
 import ru.kkalscan.app.components.ScanBadge
+import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.presentation.profile.IProfileViewModel
@@ -34,10 +40,19 @@ fun ProfileScreen(
     viewModel: IProfileViewModel,
     onRefresh: () -> Unit,
     onBuyPro: () -> Unit,
+    onSubmitBugReport: (email: String, description: String, screenshots: List<ByteArray>) -> Unit,
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
+    var showBugReportDialog by remember { mutableStateOf(false) }
+    var pendingScreenshots by remember { mutableStateOf(listOf<ByteArray>()) }
+
+    val pickScreenshot = rememberPhotoPicker { bytes ->
+        if (bytes != null && pendingScreenshots.size < 3) {
+            pendingScreenshots = pendingScreenshots + bytes
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -47,7 +62,6 @@ fun ProfileScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         KkalPageHeader(
-            brand = "KkalScan",
             title = "Профиль",
             modifier = Modifier.testTag("profile-title"),
         )
@@ -120,12 +134,39 @@ fun ProfileScreen(
                     Spacer(Modifier.height(12.dp))
                 }
                 KkalTipCard(
-                    number = "01",
-                    title = "Скан через +",
-                    body = "Нажмите оранжевую кнопку внизу — выберите фото еды и добавьте результат в дневник",
+                    number = "",
+                    badgeIcon = Icons.Outlined.BugReport,
+                    title = "Нашли баг?",
+                    body = "Сообщите об ошибке — подарим Pro на месяц бесплатно",
+                    onClick = {
+                        pendingScreenshots = emptyList()
+                        viewModel.clearBugReportFeedback()
+                        showBugReportDialog = true
+                    },
                 )
             }
         }
         Spacer(Modifier.height(120.dp))
+    }
+
+    if (showBugReportDialog) {
+        BugReportDialog(
+            submitting = state.bugReportSubmitting,
+            success = state.bugReportSuccess,
+            errorMessage = state.bugReportError,
+            screenshots = pendingScreenshots,
+            onDismiss = {
+                showBugReportDialog = false
+                pendingScreenshots = emptyList()
+            },
+            onClearFeedback = { viewModel.clearBugReportFeedback() },
+            onPickScreenshot = pickScreenshot,
+            onRemoveScreenshot = { index ->
+                pendingScreenshots = pendingScreenshots.filterIndexed { i, _ -> i != index }
+            },
+            onSubmit = { email, description, screenshots ->
+                onSubmitBugReport(email, description, screenshots)
+            },
+        )
     }
 }

@@ -144,6 +144,11 @@ fun AppRootContent(
                     viewModel = profileViewModel,
                     onRefresh = { scope.launch { profileViewModel.refresh() } },
                     onBuyPro = { },
+                    onSubmitBugReport = { email, description, screenshots ->
+                        scope.launch {
+                            profileViewModel.submitBugReport(email, description, screenshots)
+                        }
+                    },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = pickPhoto,
                 )

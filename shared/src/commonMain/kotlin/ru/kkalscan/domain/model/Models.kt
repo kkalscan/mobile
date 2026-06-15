@@ -81,3 +81,11 @@ data class ApiErrorBody(
     val message: String,
     @SerialName("scans_left") val scansLeft: Int? = null,
 )
+
+@Serializable
+data class BugReportResult(
+    @SerialName("report_id") val reportId: String,
+    @SerialName("is_pro") val isPro: Boolean,
+    @SerialName("pro_until") val proUntil: String? = null,
+    val message: String,
+)

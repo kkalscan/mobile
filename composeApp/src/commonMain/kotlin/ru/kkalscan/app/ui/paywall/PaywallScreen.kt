@@ -33,10 +33,7 @@ fun PaywallScreen(
             .padding(horizontal = KkalScanDimens.screenHorizontal),
     ) {
         Spacer(Modifier.height(24.dp))
-        KkalPageHeader(
-            brand = "KkalScan Pro",
-            title = "Сканы закончились",
-        )
+        KkalPageHeader(title = "Сканы закончились")
         Text(
             "Посмотрите короткую рекламу или оформите Pro",
             style = MaterialTheme.typography.bodyLarge,

@@ -80,6 +80,18 @@ object TestApiFixtures {
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
+            path.endsWith("/feedback/bug") && request.method.value == "POST" -> respond(
+                content = """
+                    {
+                      "report_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                      "is_pro": true,
+                      "pro_until": "2026-07-14T12:00:00Z",
+                      "message": "Спасибо! Pro на месяц активирован."
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
             request.method.value == "DELETE" -> respond("", HttpStatusCode.NoContent)
             else -> respond("{}", HttpStatusCode.NotFound)
         }
