@@ -40,6 +40,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation("androidx.browser:browser:1.8.0")
         }
     }
 }

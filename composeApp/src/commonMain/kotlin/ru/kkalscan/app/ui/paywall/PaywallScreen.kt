@@ -64,7 +64,7 @@ fun PaywallScreen(
         )
         Spacer(Modifier.height(12.dp))
         KkalPrimaryButton(
-            text = "KkalScan Pro — 199 ₽/мес",
+            text = "KkalScan Pro — 15 ₽ (тест)",
             onClick = onBuyPro,
             containerColor = KkalScanColors.Pro,
         )

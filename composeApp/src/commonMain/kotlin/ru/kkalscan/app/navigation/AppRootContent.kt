@@ -8,14 +8,20 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ru.kkalscan.app.platform.buildProPayUrl
+import ru.kkalscan.app.platform.rememberProPaymentOpener
+import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.app.components.AppTab
 import ru.kkalscan.app.components.KkalBottomBar
 import ru.kkalscan.app.components.KkalScreenScaffold
 import ru.kkalscan.app.platform.MaestroDevBridge
 import ru.kkalscan.app.platform.MaestroNavigationBridge
 import ru.kkalscan.app.platform.MaestroScreenHook
+import ru.kkalscan.app.platform.devStubScanPhotoBytes
 import ru.kkalscan.app.platform.rememberPhotoPicker
+import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.diary.DiaryScreen
 import ru.kkalscan.app.ui.journal.JournalScreen
 import ru.kkalscan.app.ui.paywall.PaywallScreen
@@ -36,10 +42,30 @@ fun AppRootContent(
     scanViewModel: IScanViewModel,
     profileViewModel: IProfileViewModel,
     scope: CoroutineScope,
+    apiConfig: IApiConfig,
+    deviceId: String,
 ) {
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
     val scanState by scanViewModel.state.collectAsState()
+    val openProPayment = rememberProPaymentOpener()
+
+    val startProPayment: () -> Unit = {
+        openProPayment(buildProPayUrl(apiConfig.webBaseUrl, deviceId))
+        scope.launch {
+            repeat(20) {
+                delay(3_000)
+                profileViewModel.refresh()
+                diaryViewModel.refresh()
+                if (profileViewModel.state.value.status?.isPro == true) {
+                    scanViewModel.onProActivated()
+                    screen = AppScreen.Diary
+                    selectedTab = AppTab.Today
+                    return@launch
+                }
+            }
+        }
+    }
 
     val runScan: (ByteArray) -> Unit = { bytes ->
         scope.launch {
@@ -73,7 +99,12 @@ fun AppRootContent(
     )
 
     MaestroDevBridge(
-        onStubScan = { if (!scanState.isLoading) runScan(byteArrayOf(1, 2, 3)) },
+        onStubScan = {
+            if (!scanState.isLoading) {
+                val bytes = devStubScanPhotoBytes() ?: byteArrayOf(1, 2, 3)
+                runScan(bytes)
+            }
+        },
         onConfirmAdd = {
             if (scanState.result != null && !scanState.isSaving) {
                 scope.launch {
@@ -85,6 +116,10 @@ fun AppRootContent(
                 }
             }
         },
+        onGramsPlus = { scanViewModel.adjustDishGrams(0, DishPortion.STEP_GRAMS) },
+        onGramsMinus = { scanViewModel.adjustDishGrams(0, -DishPortion.STEP_GRAMS) },
+        onPortionHalf = { scanViewModel.scaleDishFromBaseline(0, 0.5) },
+        onPortionDouble = { scanViewModel.scaleDishFromBaseline(0, 2.0) },
     )
 
     val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Journal || screen == AppScreen.Profile
@@ -143,7 +178,7 @@ fun AppRootContent(
                 ProfileScreen(
                     viewModel = profileViewModel,
                     onRefresh = { scope.launch { profileViewModel.refresh() } },
-                    onBuyPro = { },
+                    onBuyPro = startProPayment,
                     onSubmitBugReport = { email, description, screenshots ->
                         scope.launch {
                             profileViewModel.submitBugReport(email, description, screenshots)
@@ -184,7 +219,7 @@ fun AppRootContent(
                             }
                         }
                     },
-                    onBuyPro = { },
+                    onBuyPro = startProPayment,
                     onBack = {
                         selectedTab = AppTab.Today
                         screen = AppScreen.Diary

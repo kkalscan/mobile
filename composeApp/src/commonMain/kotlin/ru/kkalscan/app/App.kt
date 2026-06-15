@@ -20,6 +20,7 @@ fun App(componentContext: ComponentContext = remember {
 }) {
     val scope = rememberCoroutineScope()
     val deps = remember { AppDependencies(apiConfig = appApiConfig()) }
+    val deviceId = remember { deps.deviceIdStorage.getDeviceId() }
     val diaryViewModel = remember(deps, scope) { deps.diaryViewModel(scope) }
     val journalViewModel = remember(deps, scope) { deps.journalViewModel(scope) }
     val scanViewModel = remember(deps, scope) { deps.scanViewModel(scope) }
@@ -38,6 +39,8 @@ fun App(componentContext: ComponentContext = remember {
                 scanViewModel = scanViewModel,
                 profileViewModel = profileViewModel,
                 scope = scope,
+                apiConfig = deps.apiConfig,
+                deviceId = deviceId,
             )
         }
     }

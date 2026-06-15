@@ -1,5 +1,6 @@
 package ru.kkalscan.presentation.scan
 
+import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ScanResult
 import kotlinx.datetime.Clock
@@ -10,6 +11,9 @@ data class ScanUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val result: ScanResult? = null,
+    /** AI baseline portions — used for ½ / 2× chips. */
+    val baselineDishes: List<Dish> = emptyList(),
+    val photoBytes: ByteArray? = null,
     val selectedMealType: MealType = defaultMealType(),
     val errorMessage: String? = null,
     val limitHit: Boolean = false,
@@ -22,7 +26,11 @@ interface IScanViewModel {
     suspend fun grantAdBonus()
     suspend fun addToDiary(): Result<Unit>
     fun selectMealType(mealType: MealType)
+    fun adjustDishGrams(index: Int, deltaGrams: Int)
+    fun scaleDishFromBaseline(index: Int, factor: Double)
+    fun removeDish(index: Int)
     fun reset()
+    fun onProActivated()
 }
 
 fun defaultMealType(): MealType {

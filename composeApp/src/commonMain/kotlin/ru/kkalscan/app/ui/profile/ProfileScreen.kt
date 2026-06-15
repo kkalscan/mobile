@@ -122,7 +122,7 @@ fun ProfileScreen(
                 if (status?.isPro != true) {
                     KkalTipCard(
                         number = "Pro",
-                        title = "KkalScan Pro — 199 ₽/мес",
+                        title = "KkalScan Pro — 15 ₽ (тест)",
                         body = "Безлимитные сканы каждый день и сохранение истории в облаке",
                     )
                     Spacer(Modifier.height(12.dp))
