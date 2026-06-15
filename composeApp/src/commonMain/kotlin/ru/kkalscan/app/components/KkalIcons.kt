@@ -6,8 +6,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarToday
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
@@ -24,7 +26,8 @@ import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.theme.KkalScanColors
 
 enum class KkalNavIconType {
-    Diary,
+    Today,
+    Journal,
     Profile,
 }
 
@@ -61,7 +64,8 @@ fun KkalNavIcon(type: KkalNavIconType, selected: Boolean) {
         Icon(
             imageVector = icon,
             contentDescription = when (type) {
-                KkalNavIconType.Diary -> "Дневник"
+                KkalNavIconType.Today -> "Сегодня"
+                KkalNavIconType.Journal -> "Дневник"
                 KkalNavIconType.Profile -> "Профиль"
             },
             tint = tint,
@@ -71,7 +75,8 @@ fun KkalNavIcon(type: KkalNavIconType, selected: Boolean) {
 }
 
 private fun navIconVector(type: KkalNavIconType, selected: Boolean): ImageVector = when (type) {
-    KkalNavIconType.Diary -> if (selected) Icons.Filled.CalendarToday else Icons.Outlined.CalendarToday
+    KkalNavIconType.Today -> if (selected) Icons.Filled.CalendarToday else Icons.Outlined.CalendarToday
+    KkalNavIconType.Journal -> if (selected) Icons.Filled.BarChart else Icons.Outlined.BarChart
     KkalNavIconType.Profile -> if (selected) Icons.Filled.Person else Icons.Outlined.Person
 }
 

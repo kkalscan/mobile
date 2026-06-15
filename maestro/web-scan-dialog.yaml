@@ -1,0 +1,18 @@
+url: http://localhost:8080
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 60000
+- tapOn:
+    id: "maestro-stub-scan"
+- extendedWaitUntil:
+    visible: "scan-result-dialog"
+    timeout: 20000
+- assertVisible: "scan-result-dialog"
+- tapOn:
+    id: "maestro-confirm-add"
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 15000
+- assertVisible: "diary-screen"

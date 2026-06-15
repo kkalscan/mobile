@@ -111,6 +111,7 @@ fun KkalBottomBar(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
     onScanClick: () -> Unit,
+    scanLoading: Boolean = false,
 ) {
     Box(Modifier.fillMaxWidth()) {
         Surface(
@@ -123,17 +124,24 @@ fun KkalBottomBar(
                 .fillMaxWidth()
                 .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 20.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                BottomTab(
+                    label = "Сегодня",
+                    icon = KkalNavIconType.Today,
+                    selected = selectedTab == AppTab.Today,
+                    onClick = { onTabSelected(AppTab.Today) },
+                )
                 BottomTab(
                     label = "Дневник",
-                    icon = KkalNavIconType.Diary,
-                    selected = selectedTab == AppTab.Diary,
-                    onClick = { onTabSelected(AppTab.Diary) },
+                    icon = KkalNavIconType.Journal,
+                    selected = selectedTab == AppTab.Journal,
+                    onClick = { onTabSelected(AppTab.Journal) },
                 )
-            }
-            Spacer(Modifier.width(KkalScanDimens.fabSize))
-            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BottomTab(
                     label = "Профиль",
                     icon = KkalNavIconType.Profile,
@@ -141,12 +149,14 @@ fun KkalBottomBar(
                     onClick = { onTabSelected(AppTab.Profile) },
                 )
             }
+            Spacer(Modifier.width(KkalScanDimens.fabSize))
         }
         }
         Surface(
-            onClick = onScanClick,
+            onClick = { if (!scanLoading) onScanClick() },
             modifier = Modifier
-                .align(Alignment.TopCenter)
+                .align(Alignment.TopEnd)
+                .padding(end = 16.dp)
                 .offset(y = (-20).dp)
                 .size(KkalScanDimens.fabSize)
                 .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
@@ -154,18 +164,26 @@ fun KkalBottomBar(
             color = KkalScanColors.Primary,
         ) {
             Box(contentAlignment = Alignment.Center) {
-                Text(
-                    "+",
-                    style = MaterialTheme.typography.headlineMedium,
-                    color = KkalScanColors.OnPrimary,
-                    fontWeight = FontWeight.Bold,
-                )
+                if (scanLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        color = KkalScanColors.OnPrimary,
+                        strokeWidth = 3.dp,
+                    )
+                } else {
+                    Text(
+                        "+",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = KkalScanColors.OnPrimary,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
             }
         }
     }
 }
 
-enum class AppTab { Diary, Profile }
+enum class AppTab { Today, Journal, Profile }
 
 @Composable
 private fun BottomTab(
@@ -350,7 +368,8 @@ fun KkalTipCard(
 fun KkalFoodCard(
     title: String,
     kcal: Int,
-    subtitle: String,
+    subtitle: String? = null,
+    tipBadge: String? = null,
     macros: Triple<Double, Double, Double>? = null,
     iconLabel: String = "K",
 ) {
@@ -376,7 +395,13 @@ fun KkalFoodCard(
                     style = MaterialTheme.typography.headlineMedium,
                     color = KkalScanColors.Primary,
                 )
-                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = KkalScanColors.OnSurfaceVariant)
+                tipBadge?.let {
+                    Spacer(Modifier.height(8.dp))
+                    ScanBadge(text = it)
+                } ?: subtitle?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = KkalScanColors.OnSurfaceVariant)
+                }
                 macros?.let { (p, f, c) ->
                     Spacer(Modifier.height(8.dp))
                     MacroChipsRow(protein = p, fat = f, carbs = c)
@@ -392,11 +417,15 @@ fun DiaryEntryCard(entry: DiaryEntry) {
     KkalFoodCard(
         title = dish?.name ?: entry.mealType.label(),
         kcal = entry.totalKcal,
-        subtitle = entry.mealType.label(),
+        subtitle = dish?.let { "${it.grams} г" },
+        tipBadge = entry.mealType.label(),
         macros = dish?.let { Triple(it.protein, it.fat, it.carbs) },
-        iconLabel = entry.mealType.iconLabel(),
+        iconLabel = dishIconLabel(dish?.name),
     )
 }
+
+private fun dishIconLabel(name: String?): String =
+    name?.firstOrNull()?.uppercaseChar()?.toString() ?: "K"
 
 @Composable
 fun KkalPrimaryButton(
@@ -562,11 +591,4 @@ private fun ru.kkalscan.domain.model.MealType.label(): String = when (this) {
     ru.kkalscan.domain.model.MealType.lunch -> "Обед"
     ru.kkalscan.domain.model.MealType.dinner -> "Ужин"
     ru.kkalscan.domain.model.MealType.snack -> "Перекус"
-}
-
-private fun ru.kkalscan.domain.model.MealType.iconLabel(): String = when (this) {
-    ru.kkalscan.domain.model.MealType.breakfast -> "Z"
-    ru.kkalscan.domain.model.MealType.lunch -> "O"
-    ru.kkalscan.domain.model.MealType.dinner -> "U"
-    ru.kkalscan.domain.model.MealType.snack -> "P"
 }

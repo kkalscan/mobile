@@ -6,7 +6,7 @@ import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 
 interface IScanRepository {
-    suspend fun scanPhoto(photoBytes: ByteArray, timezoneOffsetMinutes: Int = 180): ScanResult
+    suspend fun scanPhoto(photoBytes: ByteArray, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): ScanResult
     suspend fun grantAdBonus(): ScanBonusResult
 }
 

@@ -6,5 +6,6 @@ import androidx.compose.runtime.Composable
 actual fun MaestroNavigationBridge(
     onOpenScan: () -> Unit,
     onOpenProfile: () -> Unit,
+    onOpenJournal: () -> Unit,
     onScanBack: () -> Unit,
 ) = Unit

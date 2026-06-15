@@ -28,20 +28,26 @@
             opacity: 0.01;
             z-index: 10;
         }
-        #maestro-open-scan, #maestro-open-profile, #maestro-scan-back {
+        #maestro-open-scan, #maestro-open-profile, #maestro-open-journal, #maestro-scan-back, #maestro-stub-scan, #maestro-confirm-add {
             position: fixed;
             opacity: 0.01;
             z-index: 10;
         }
         #maestro-open-scan { right: 20px; bottom: 90px; width: 56px; height: 56px; }
-        #maestro-open-profile { left: 20px; bottom: 24px; width: 120px; height: 48px; }
+        #maestro-stub-scan { right: 20px; bottom: 150px; width: 56px; height: 56px; }
+        #maestro-confirm-add { left: 50%; bottom: 160px; width: 200px; height: 48px; transform: translateX(-50%); }
+        #maestro-open-profile { left: 20px; bottom: 24px; width: 80px; height: 48px; }
+        #maestro-open-journal { left: 110px; bottom: 24px; width: 80px; height: 48px; }
         #maestro-scan-back { left: 50%; bottom: 90px; width: 120px; height: 40px; transform: translateX(-50%); }
     </style>
 </head>
 <body>
 <div id="maestro-hook" role="status" aria-live="polite">app-loading</div>
 <button id="maestro-open-scan" type="button" aria-label="open-scan-picker">scan</button>
+<button id="maestro-stub-scan" type="button" aria-label="stub-scan">stub-scan</button>
+<button id="maestro-confirm-add" type="button" aria-label="confirm-add-to-diary">confirm-add</button>
 <button id="maestro-open-profile" type="button" aria-label="open-profile-screen">profile</button>
+<button id="maestro-open-journal" type="button" aria-label="open-journal-screen">journal</button>
 <button id="maestro-scan-back" type="button" aria-label="scan-back">back</button>
 <canvas id="ComposeTarget"></canvas>
 <script src="kkalscan.js"></script>

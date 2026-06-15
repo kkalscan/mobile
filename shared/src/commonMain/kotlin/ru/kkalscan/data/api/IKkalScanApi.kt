@@ -8,9 +8,9 @@ import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
 
 interface IKkalScanApi {
-    suspend fun scanPhoto(deviceId: String, photoBytes: ByteArray, timezoneOffsetMinutes: Int = 180): ScanResult
+    suspend fun scanPhoto(deviceId: String, photoBytes: ByteArray, timezoneOffsetMinutes: Int): ScanResult
     suspend fun grantScanBonus(deviceId: String): ScanBonusResult
-    suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int = 180): DiaryDay
+    suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay
     suspend fun addDiaryEntry(deviceId: String, mealType: MealType, scanId: String? = null): CreateDiaryEntryResponse
     suspend fun deleteDiaryEntry(deviceId: String, entryId: String)
     suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus

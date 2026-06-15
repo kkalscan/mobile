@@ -8,6 +8,7 @@ import kotlinx.datetime.toLocalDateTime
 
 data class ScanUiState(
     val isLoading: Boolean = false,
+    val isSaving: Boolean = false,
     val result: ScanResult? = null,
     val selectedMealType: MealType = defaultMealType(),
     val errorMessage: String? = null,

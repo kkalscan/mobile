@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.IScanRepository
 import ru.kkalscan.domain.error.KkalScanException
+import ru.kkalscan.util.kkalLog
 import ru.kkalscan.domain.model.MealType
 
 class ScanViewModel(
@@ -22,8 +23,13 @@ class ScanViewModel(
 
     override suspend fun scanPhoto(photoBytes: ByteArray) {
         _state.update { it.copy(isLoading = true, errorMessage = null, limitHit = false) }
+        kkalLog("Scan", "start photoBytes=${photoBytes.size}")
         runCatching { scanRepository.scanPhoto(photoBytes) }
             .onSuccess { result ->
+                kkalLog(
+                    "Scan",
+                    "ok scanId=${result.scanId.take(8)}… dishes=${result.dishes.size} kcal=${result.totalKcal} left=${result.scansLeft}",
+                )
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -34,6 +40,7 @@ class ScanViewModel(
                 }
             }
             .onFailure { e ->
+                kkalLog("Scan", "fail ${e::class.simpleName}: ${e.message}")
                 _state.update {
                     it.copy(
                         isLoading = false,
@@ -66,7 +73,18 @@ class ScanViewModel(
     override suspend fun addToDiary(): Result<Unit> {
         val scanId = _state.value.result?.scanId ?: return Result.failure(IllegalStateException("No scan"))
         val mealType = _state.value.selectedMealType
-        return runCatching { diaryRepository.addFromScan(scanId, mealType) }.map { }
+        _state.update { it.copy(isSaving = true, errorMessage = null) }
+        kkalLog("Diary", "add scanId=${scanId.take(8)}… meal=$mealType")
+        return runCatching { diaryRepository.addFromScan(scanId, mealType) }
+            .onSuccess { day ->
+                kkalLog("Diary", "added entries=${day.entries.size} totalKcal=${day.totalKcal}")
+            }
+            .map { }
+            .onFailure { e ->
+                kkalLog("Diary", "add fail ${e.message}")
+                _state.update { it.copy(errorMessage = e.userMessage()) }
+            }
+            .also { _state.update { it.copy(isSaving = false) } }
     }
 
     private fun Throwable.userMessage(): String = when (this) {

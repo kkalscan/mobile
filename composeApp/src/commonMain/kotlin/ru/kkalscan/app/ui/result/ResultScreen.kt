@@ -96,6 +96,7 @@ fun ResultScreen(
         KkalPrimaryButton(
             text = "Добавить в дневник",
             onClick = onAddToDiary,
+            loading = state.isSaving,
             containerColor = KkalScanColors.Secondary,
         )
         Spacer(Modifier.height(12.dp))

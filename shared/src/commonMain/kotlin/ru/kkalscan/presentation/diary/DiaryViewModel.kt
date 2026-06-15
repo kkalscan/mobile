@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.domain.error.KkalScanException
+import ru.kkalscan.util.kkalLog
 
 class DiaryViewModel(
     private val diaryRepository: IDiaryRepository,
@@ -26,6 +27,7 @@ class DiaryViewModel(
         runCatching { diaryRepository.getToday() }
             .onSuccess { day -> _state.update { DiaryUiState(isLoading = false, day = day) } }
             .onFailure { e ->
+                kkalLog("Diary", "refresh fail ${e::class.simpleName}: ${e.message}")
                 _state.update {
                     it.copy(isLoading = false, errorMessage = e.userMessage())
                 }
@@ -36,6 +38,7 @@ class DiaryViewModel(
         runCatching { diaryRepository.deleteEntry(entryId) }
             .onSuccess { refresh() }
             .onFailure { e ->
+                kkalLog("Diary", "delete fail entryId=${entryId.take(8)}… ${e.message}")
                 _state.update { it.copy(errorMessage = e.userMessage()) }
             }
     }

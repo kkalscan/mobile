@@ -13,6 +13,31 @@
 - [ ] Список приёмов пищи с блюдами
 - [ ] Pull/кнопка обновления при ошибке сети
 
+#### Персистентность дневника (гость, device_id)
+
+**Автотесты** (`shared/src/commonTest/.../DiaryPersistenceFlowTest.kt`):
+
+```bash
+./gradlew :shared:jvmTest --tests "ru.kkalscan.data.repository.DiaryPersistenceFlowTest"
+```
+
+| Шаг | Ожидание |
+|-----|----------|
+| Добавить блюдо → refresh | 1 запись в «Сегодня» |
+| Добавить второе → refresh | 2 записи, сумма ккал обновилась |
+| Reload с сохранённым `device_id` | записи на месте |
+| Reload без `device_id` (регрессия) | дневник пуст — баг InMemory storage |
+
+**Ручной прогон (web):**
+
+1. Открыть `http://localhost:8080` (после `wasmJsBrowserDevelopmentWebpack` + dev server).
+2. DevTools → Application → Local Storage: ключ `kkalscan_device_id` должен появиться.
+3. FAB «+» → фото → «Добавить в дневник» → блюдо в списке.
+4. **F5** (refresh страницы) → то же блюдо видно, `kkalscan_device_id` не изменился.
+5. Второй скан → добавить → F5 → **оба** блюда на месте.
+
+**Где хранится:** записи на сервере (`diary_entries` по `device_id`); id гостя — `localStorage` (web) / `SharedPreferences` (Android).
+
 ### E6 — Профиль
 - [ ] Вкладка «Профиль» в нижней панели
 - [ ] Статус: гость / Pro, `account_linked`, провайдеры
