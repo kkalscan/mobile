@@ -15,6 +15,8 @@ import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.presentation.diary.DiaryViewModel
 import ru.kkalscan.presentation.diary.IDiaryViewModel
+import ru.kkalscan.presentation.profile.IProfileViewModel
+import ru.kkalscan.presentation.profile.ProfileViewModel
 import ru.kkalscan.presentation.scan.IScanViewModel
 import ru.kkalscan.presentation.scan.ScanViewModel
 
@@ -31,4 +33,7 @@ class AppDependencies(
 
     fun scanViewModel(scope: kotlinx.coroutines.CoroutineScope): IScanViewModel =
         ScanViewModel(scanRepository, diaryRepository, scope)
+
+    fun profileViewModel(scope: kotlinx.coroutines.CoroutineScope): IProfileViewModel =
+        ProfileViewModel(subscriptionRepository, diaryRepository, scope)
 }

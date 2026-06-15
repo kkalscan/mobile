@@ -5,11 +5,11 @@ url: http://localhost:8080
     visible: "diary-screen"
     timeout: 60000
 - tapOn:
-    id: "maestro-open-scan"
+    id: "maestro-open-profile"
 - extendedWaitUntil:
-    visible: "scan-screen"
+    visible: "profile-screen"
     timeout: 15000
-- assertVisible: "scan-screen"
+- assertVisible: "profile-screen"
 - tapOn:
     id: "maestro-scan-back"
 - extendedWaitUntil:

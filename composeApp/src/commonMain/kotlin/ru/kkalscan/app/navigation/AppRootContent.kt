@@ -1,6 +1,7 @@
 package ru.kkalscan.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,9 +17,11 @@ import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.app.ui.diary.DiaryScreen
 import ru.kkalscan.app.ui.paywall.PaywallScreen
+import ru.kkalscan.app.ui.profile.ProfileScreen
 import ru.kkalscan.app.ui.result.ResultScreen
 import ru.kkalscan.app.ui.scan.ScanScreen
 import ru.kkalscan.presentation.diary.IDiaryViewModel
+import ru.kkalscan.presentation.profile.IProfileViewModel
 import ru.kkalscan.presentation.scan.IScanViewModel
 
 @Composable
@@ -26,21 +29,12 @@ fun AppRootContent(
     componentContext: ComponentContext,
     diaryViewModel: IDiaryViewModel,
     scanViewModel: IScanViewModel,
+    profileViewModel: IProfileViewModel,
     scope: CoroutineScope,
 ) {
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Diary) }
-
-    MaestroNavigationBridge(
-        onOpenScan = {
-            selectedTab = AppTab.Scan
-            screen = AppScreen.Scan
-        },
-        onScanBack = {
-            selectedTab = AppTab.Diary
-            screen = AppScreen.Diary
-        },
-    )
+    val scanState by scanViewModel.state.collectAsState()
 
     val pickPhoto = rememberPhotoPicker { bytes ->
         if (bytes != null) {
@@ -49,13 +43,25 @@ fun AppRootContent(
                 screen = when {
                     scanViewModel.state.value.limitHit -> AppScreen.Paywall
                     scanViewModel.state.value.result != null -> AppScreen.Result
-                    else -> AppScreen.Scan
+                    else -> if (selectedTab == AppTab.Profile) AppScreen.Profile else AppScreen.Diary
                 }
             }
         }
     }
 
-    val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Scan
+    MaestroNavigationBridge(
+        onOpenScan = pickPhoto,
+        onOpenProfile = {
+            selectedTab = AppTab.Profile
+            screen = AppScreen.Profile
+        },
+        onScanBack = {
+            selectedTab = AppTab.Diary
+            screen = AppScreen.Diary
+        },
+    )
+
+    val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Profile
 
     KkalScreenScaffold(
         bottomBar = {
@@ -66,9 +72,10 @@ fun AppRootContent(
                         selectedTab = tab
                         screen = when (tab) {
                             AppTab.Diary -> AppScreen.Diary
-                            AppTab.Scan -> AppScreen.Scan
+                            AppTab.Profile -> AppScreen.Profile
                         }
                     },
+                    onScanClick = pickPhoto,
                 )
             }
         },
@@ -78,11 +85,21 @@ fun AppRootContent(
                 MaestroScreenHook("diary-screen")
                 DiaryScreen(
                     viewModel = diaryViewModel,
-                    onScanClick = {
-                        selectedTab = AppTab.Scan
-                        screen = AppScreen.Scan
-                    },
+                    onScanClick = pickPhoto,
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
+                    scanErrorMessage = scanState.errorMessage,
+                    onRetryScan = pickPhoto,
+                )
+            }
+
+            AppScreen.Profile -> {
+                MaestroScreenHook("profile-screen")
+                ProfileScreen(
+                    viewModel = profileViewModel,
+                    onRefresh = { scope.launch { profileViewModel.refresh() } },
+                    onBuyPro = { },
+                    scanErrorMessage = scanState.errorMessage,
+                    onRetryScan = pickPhoto,
                 )
             }
 
@@ -106,6 +123,7 @@ fun AppRootContent(
                         scope.launch {
                             scanViewModel.addToDiary()
                             diaryViewModel.refresh()
+                            profileViewModel.refresh()
                             scanViewModel.reset()
                             selectedTab = AppTab.Diary
                             screen = AppScreen.Diary
@@ -113,8 +131,7 @@ fun AppRootContent(
                     },
                     onBack = {
                         scanViewModel.reset()
-                        selectedTab = AppTab.Scan
-                        screen = AppScreen.Scan
+                        screen = if (selectedTab == AppTab.Profile) AppScreen.Profile else AppScreen.Diary
                     },
                 )
             }
@@ -122,13 +139,13 @@ fun AppRootContent(
             AppScreen.Paywall -> {
                 MaestroScreenHook("paywall-screen")
                 PaywallScreen(
-                    scansLeft = scanViewModel.state.value.scansLeft,
+                    scansLeft = scanState.scansLeft,
                     onWatchAd = {
                         scope.launch {
                             scanViewModel.grantAdBonus()
+                            profileViewModel.refresh()
                             if (!scanViewModel.state.value.limitHit) {
-                                selectedTab = AppTab.Scan
-                                screen = AppScreen.Scan
+                                pickPhoto()
                             }
                         }
                     },

@@ -13,7 +13,14 @@
 - [ ] Список приёмов пищи с блюдами
 - [ ] Pull/кнопка обновления при ошибке сети
 
-### E1 — Скан
+### E6 — Профиль
+- [ ] Вкладка «Профиль» в нижней панели
+- [ ] Статус: гость / Pro, `account_linked`, провайдеры
+- [ ] Бейдж «осталось сканов» или «безлимит»
+- [ ] CTA «Оформить Pro» для free
+- [ ] Подсказка: скан через FAB «+»
+
+### E1 — Скан (через FAB «+»)
 - [ ] Градиент hero (#FF7A2F → #FF4D8D)
 - [ ] Выбор фото (web: file input; Android: галерея — TODO)
 - [ ] Индикатор загрузки во время POST /scan
@@ -49,10 +56,10 @@
 maestro test -p web --headless --screen-size 390x844 maestro/
 ```
 
-Flows: `maestro/web-diary-smoke.yaml`, `maestro/web-scan-navigation.yaml`  
-**2026-06-14:** 2/2 passed (diary load + scan navigation).
+Flows: `maestro/web-diary-smoke.yaml`, `maestro/web-scan-navigation.yaml` (навигация Дневник ↔ Профиль)  
+**2026-06-14:** 2/2 passed (diary load + profile navigation).
 
-Compose WASM рисует в canvas — для Maestro добавлены DOM-хуки `#maestro-hook` и кнопки `#maestro-open-scan` / `#maestro-scan-back`.
+Compose WASM рисует в canvas — для Maestro добавлены DOM-хуки `#maestro-hook`, `#maestro-open-profile`, `#maestro-open-scan` (FAB / picker) и `#maestro-scan-back`.
 
 ## Maestro (Android, когда будет APK)
 

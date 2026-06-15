@@ -110,6 +110,7 @@ fun KkalPageHeader(
 fun KkalBottomBar(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
+    onScanClick: () -> Unit,
 ) {
     Box(Modifier.fillMaxWidth()) {
         Surface(
@@ -126,7 +127,7 @@ fun KkalBottomBar(
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BottomTab(
                     label = "Дневник",
-                    icon = "D",
+                    icon = KkalNavIconType.Diary,
                     selected = selectedTab == AppTab.Diary,
                     onClick = { onTabSelected(AppTab.Diary) },
                 )
@@ -134,16 +135,16 @@ fun KkalBottomBar(
             Spacer(Modifier.width(KkalScanDimens.fabSize))
             Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
                 BottomTab(
-                    label = "Скан",
-                    icon = "S",
-                    selected = selectedTab == AppTab.Scan,
-                    onClick = { onTabSelected(AppTab.Scan) },
+                    label = "Профиль",
+                    icon = KkalNavIconType.Profile,
+                    selected = selectedTab == AppTab.Profile,
+                    onClick = { onTabSelected(AppTab.Profile) },
                 )
             }
         }
         }
         Surface(
-            onClick = { onTabSelected(AppTab.Scan) },
+            onClick = onScanClick,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .offset(y = (-20).dp)
@@ -164,12 +165,12 @@ fun KkalBottomBar(
     }
 }
 
-enum class AppTab { Diary, Scan }
+enum class AppTab { Diary, Profile }
 
 @Composable
 private fun BottomTab(
     label: String,
-    icon: String,
+    icon: KkalNavIconType,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -181,7 +182,7 @@ private fun BottomTab(
             .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        KkalNavIcon(label = icon, selected = selected)
+        KkalNavIcon(type = icon, selected = selected)
         Spacer(Modifier.height(4.dp))
         Text(
             label,

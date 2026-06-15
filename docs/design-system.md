@@ -175,7 +175,7 @@ fabShadow:   0 12 32 rgba(255, 122, 47, 0.28)
 | Набор | Material Symbols Rounded |
 | FAB | `photo_camera` в круге `primary`, размер 28 dp |
 | Скан-рамка | Viewfinder с углами `secondary` (как «сканер», не просто камера) |
-| Tab / nav | Максимум 2 иконки в MVP: «Дневник», «Скан» |
+| Tab / nav | Две вкладки: «Дневник», «Профиль»; скан — центральный FAB «+» |
 
 **Иконка приложения 512×512:**
 
@@ -185,7 +185,7 @@ fabShadow:   0 12 32 rgba(255, 122, 47, 0.28)
 
 ---
 
-## 6. Компоненты (5 экранов, без онбординга)
+## 6. Компоненты (6 экранов, без онбординга)
 
 После установки — сразу **E3 «Сегодня»** (см. FR-40). Отдельного welcome-экрана нет.
 
@@ -195,7 +195,7 @@ fabShadow:   0 12 32 rgba(255, 122, 47, 0.28)
 |-----|-------|
 | **Primary CTA** | Fill `primary`, текст белый, `radiusFull`, высота **56 dp**, Unbounded не нужен — Manrope 600 |
 | **Secondary** | Outline `primary`, фон прозрачный |
-| **Scan FAB** | 64×64, `primary`, иконка камеры, `fabShadow`, фиксированно над bottom bar |
+| **Scan FAB** | 64×64, `primary`, символ «+», `fabShadow`, фиксированно над bottom bar |
 | **Pro** | Fill `pro` или outline `pro` на E4 |
 | **Rewarded ad** | Fill `tertiary`, текст `onBackground` — визуально «бесплатно» |
 

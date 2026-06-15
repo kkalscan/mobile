@@ -21,6 +21,7 @@ fun App(componentContext: ComponentContext = remember {
     val deps = remember { AppDependencies(apiConfig = appApiConfig()) }
     val diaryViewModel = remember(deps, scope) { deps.diaryViewModel(scope) }
     val scanViewModel = remember(deps, scope) { deps.scanViewModel(scope) }
+    val profileViewModel = remember(deps, scope) { deps.profileViewModel(scope) }
 
     KkalScanTheme {
         Surface(modifier = Modifier.fillMaxSize()) {
@@ -28,6 +29,7 @@ fun App(componentContext: ComponentContext = remember {
                 componentContext = componentContext,
                 diaryViewModel = diaryViewModel,
                 scanViewModel = scanViewModel,
+                profileViewModel = profileViewModel,
                 scope = scope,
             )
         }
