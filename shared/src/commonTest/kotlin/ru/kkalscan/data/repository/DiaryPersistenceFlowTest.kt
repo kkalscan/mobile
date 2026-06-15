@@ -39,7 +39,7 @@ class DiaryPersistenceFlowTest {
         repo.getToday(tz).entries shouldHaveSize 0
 
         val scan = api.scanPhoto(storage.getDeviceId(), byteArrayOf(1), tz)
-        repo.addFromScan(scan.scanId, MealType.lunch)
+        repo.addFromScan(scan.scanId, MealType.lunch, scan.dishes)
 
         val afterRefresh = repo.getToday(tz)
         afterRefresh.entries shouldHaveSize 1
@@ -54,11 +54,11 @@ class DiaryPersistenceFlowTest {
         val repo = repository(api, storage)
 
         val scan1 = api.scanPhoto(storage.getDeviceId(), byteArrayOf(1), tz)
-        repo.addFromScan(scan1.scanId, MealType.breakfast)
+        repo.addFromScan(scan1.scanId, MealType.breakfast, scan1.dishes)
         repo.getToday(tz).entries shouldHaveSize 1
 
         val scan2 = api.scanPhoto(storage.getDeviceId(), byteArrayOf(2), tz)
-        repo.addFromScan(scan2.scanId, MealType.lunch)
+        repo.addFromScan(scan2.scanId, MealType.lunch, scan2.dishes)
         val afterSecondRefresh = repo.getToday(tz)
         afterSecondRefresh.entries shouldHaveSize 2
         afterSecondRefresh.totalKcal shouldBe 300
@@ -76,7 +76,7 @@ class DiaryPersistenceFlowTest {
         val repoBefore = repository(api, storageBeforeReload)
 
         val scan = api.scanPhoto(storageBeforeReload.getDeviceId(), byteArrayOf(1), tz)
-        repoBefore.addFromScan(scan.scanId, MealType.lunch)
+        repoBefore.addFromScan(scan.scanId, MealType.lunch, scan.dishes)
 
         val storageAfterReload = PersistentDeviceIdStorage(
             readStored = { stored },
@@ -95,7 +95,7 @@ class DiaryPersistenceFlowTest {
         val repoFirst = repository(api, firstSession)
 
         val scan = api.scanPhoto(firstSession.getDeviceId(), byteArrayOf(1), tz)
-        repoFirst.addFromScan(scan.scanId, MealType.lunch)
+        repoFirst.addFromScan(scan.scanId, MealType.lunch, scan.dishes)
         repoFirst.getToday(tz).entries shouldHaveSize 1
 
         val secondSession = InMemoryDeviceIdStorage()

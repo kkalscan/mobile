@@ -14,7 +14,7 @@ interface IDiaryRepository {
     suspend fun getToday(timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): DiaryDay
     suspend fun getDay(date: String, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): DiaryDay
     suspend fun getWeek(weekStartIso: String, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): List<DiaryDay>
-    suspend fun addFromScan(scanId: String, mealType: MealType): DiaryDay
+    suspend fun addFromScan(scanId: String, mealType: MealType, dishes: List<ru.kkalscan.domain.model.Dish>): DiaryDay
     suspend fun deleteEntry(entryId: String)
 }
 
@@ -44,9 +44,9 @@ class DiaryRepository(
             }.map { it.await() }
         }
 
-    override suspend fun addFromScan(scanId: String, mealType: MealType): DiaryDay {
+    override suspend fun addFromScan(scanId: String, mealType: MealType, dishes: List<ru.kkalscan.domain.model.Dish>): DiaryDay {
         val deviceId = deviceIdStorage.getDeviceId()
-        api.addDiaryEntry(deviceId, mealType, scanId)
+        api.addDiaryEntry(deviceId, mealType, scanId, dishes)
         return api.getDiary(deviceId, todayProvider(), currentTimezoneOffsetMinutes())
     }
 

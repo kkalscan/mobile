@@ -4,16 +4,26 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Remove
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,17 +31,23 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import ru.kkalscan.app.components.KkalFoodCard
+import ru.kkalscan.app.components.FoodPhotoThumbnail
 import ru.kkalscan.app.components.KkalPrimaryButton
+import ru.kkalscan.app.components.MacroChipsRow
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
+import ru.kkalscan.domain.model.Dish
+import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.app.platform.updateMaestroDebugState
 import ru.kkalscan.presentation.scan.IScanViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -43,6 +59,20 @@ fun AddToDiaryDialog(
 ) {
     val state by viewModel.state.collectAsState()
     val result = state.result ?: return
+    val baseline = state.baselineDishes
+    val dish = result.dishes.firstOrNull()
+
+    SideEffect {
+        updateMaestroDebugState(
+            buildString {
+                append("scan-result kcal=${result.totalKcal}")
+                append(" grams=${dish?.grams ?: 0}")
+                append(" p=${dish?.protein ?: 0}")
+                append(" f=${dish?.fat ?: 0}")
+                append(" c=${dish?.carbs ?: 0}")
+            },
+        )
+    }
 
     Dialog(
         onDismissRequest = { if (!state.isSaving) onDismiss() },
@@ -63,7 +93,7 @@ fun AddToDiaryDialog(
                     .verticalScroll(rememberScrollState()),
             ) {
                 Text(
-                    "Распознано",
+                    "Проверьте порции",
                     style = MaterialTheme.typography.labelLarge,
                     color = KkalScanColors.Primary,
                     fontWeight = FontWeight.Bold,
@@ -73,16 +103,25 @@ fun AddToDiaryDialog(
                     "${result.totalKcal} ккал · ${result.dishes.size} блюд",
                     style = MaterialTheme.typography.headlineSmall,
                 )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "AI оценил порцию — поправьте граммы, если знаете точнее",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = KkalScanColors.OnSurfaceVariant,
+                )
                 Spacer(Modifier.height(16.dp))
-                Text("Блюда", style = MaterialTheme.typography.titleLarge)
-                Spacer(Modifier.height(12.dp))
-                result.dishes.forEach { dish ->
-                    KkalFoodCard(
-                        title = dish.name,
-                        kcal = dish.kcal,
-                        subtitle = "${dish.grams} г",
-                        macros = Triple(dish.protein, dish.fat, dish.carbs),
-                        iconLabel = dish.name.firstOrNull()?.uppercaseChar()?.toString() ?: "K",
+                result.dishes.forEachIndexed { index, dish ->
+                    val aiGrams = baseline.getOrNull(index)?.grams ?: dish.grams
+                    EditableDishCard(
+                        dish = dish,
+                        photoBytes = state.photoBytes,
+                        aiGrams = aiGrams,
+                        canRemove = result.dishes.size > 1,
+                        enabled = !state.isSaving,
+                        onDecrease = { viewModel.adjustDishGrams(index, -DishPortion.STEP_GRAMS) },
+                        onIncrease = { viewModel.adjustDishGrams(index, DishPortion.STEP_GRAMS) },
+                        onScale = { factor -> viewModel.scaleDishFromBaseline(index, factor) },
+                        onRemove = { viewModel.removeDish(index) },
                     )
                     Spacer(Modifier.height(12.dp))
                 }
@@ -111,6 +150,7 @@ fun AddToDiaryDialog(
                     text = "Добавить в дневник",
                     onClick = onConfirm,
                     loading = state.isSaving,
+                    enabled = result.dishes.isNotEmpty(),
                     containerColor = KkalScanColors.Secondary,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -128,6 +168,142 @@ fun AddToDiaryDialog(
             }
         }
     }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EditableDishCard(
+    dish: Dish,
+    photoBytes: ByteArray?,
+    aiGrams: Int,
+    canRemove: Boolean,
+    enabled: Boolean,
+    onDecrease: () -> Unit,
+    onIncrease: () -> Unit,
+    onScale: (Double) -> Unit,
+    onRemove: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(KkalScanDimens.cardRadius),
+        color = KkalScanColors.Surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, KkalScanColors.Outline.copy(alpha = 0.4f)),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.Top) {
+                FoodPhotoThumbnail(
+                    photoBytes = photoBytes,
+                    fallbackLabel = dish.name.firstOrNull()?.uppercaseChar()?.toString() ?: "K",
+                    modifier = Modifier.size(KkalScanDimens.thumbSize),
+                    contentDescription = dish.name,
+                )
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        dish.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        maxLines = 2,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${dish.kcal} ккал",
+                        style = MaterialTheme.typography.headlineMedium,
+                        color = KkalScanColors.Primary,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    MacroChipsRow(protein = dish.protein, fat = dish.fat, carbs = dish.carbs)
+                }
+                if (canRemove) {
+                    IconButton(
+                        onClick = onRemove,
+                        enabled = enabled,
+                        modifier = Modifier.testTag("dish-remove"),
+                        colors = IconButtonDefaults.iconButtonColors(contentColor = KkalScanColors.OnSurfaceVariant),
+                    ) {
+                        Icon(Icons.Outlined.DeleteOutline, contentDescription = "Удалить блюдо")
+                    }
+                }
+            }
+            Spacer(Modifier.height(14.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center,
+            ) {
+                IconButton(
+                    onClick = onDecrease,
+                    enabled = enabled && dish.grams > DishPortion.MIN_GRAMS,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("dish-grams-minus"),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = KkalScanColors.PrimaryContainer,
+                        contentColor = KkalScanColors.Primary,
+                    ),
+                ) {
+                    Icon(Icons.Outlined.Remove, contentDescription = "Меньше на ${DishPortion.STEP_GRAMS} г")
+                }
+                Column(
+                    modifier = Modifier.padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        "${dish.grams} г",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.testTag("dish-grams-value"),
+                    )
+                    Text(
+                        "порция",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = KkalScanColors.OnSurfaceVariant,
+                    )
+                }
+                IconButton(
+                    onClick = onIncrease,
+                    enabled = enabled && dish.grams < DishPortion.MAX_GRAMS,
+                    modifier = Modifier
+                        .size(48.dp)
+                        .testTag("dish-grams-plus"),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = KkalScanColors.PrimaryContainer,
+                        contentColor = KkalScanColors.Primary,
+                    ),
+                ) {
+                    Icon(Icons.Outlined.Add, contentDescription = "Больше на ${DishPortion.STEP_GRAMS} г")
+                }
+            }
+            if (aiGrams > 0) {
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    "Быстрая порция от AI ($aiGrams г)",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = KkalScanColors.OnSurfaceVariant,
+                )
+                Spacer(Modifier.height(8.dp))
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    PortionChip("½", enabled) { onScale(0.5) }
+                    PortionChip("2×", enabled) { onScale(2.0) }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun PortionChip(label: String, enabled: Boolean, onClick: () -> Unit) {
+    FilterChip(
+        selected = false,
+        onClick = onClick,
+        enabled = enabled,
+        label = { Text(label) },
+        colors = FilterChipDefaults.filterChipColors(
+            containerColor = KkalScanColors.Background,
+            labelColor = KkalScanColors.OnBackground,
+        ),
+        shape = RoundedCornerShape(999.dp),
+        modifier = Modifier.testTag("dish-portion-$label"),
+    )
 }
 
 private fun MealType.label(): String = when (this) {

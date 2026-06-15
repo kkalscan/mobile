@@ -4,6 +4,7 @@ import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.test.runTest
 import ru.kkalscan.TestApiFixtures
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
+import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
 import kotlin.test.Test
 
@@ -26,7 +27,8 @@ class DiaryRepositoryTest {
 
     @Test
     fun addFromScan_refreshesDiary() = runTest {
-        val day = repository.addFromScan("scan-id", MealType.lunch)
+        val dishes = listOf(Dish("Тест", 200, 350, 15.0, 10.0, 40.0))
+        val day = repository.addFromScan("scan-id", MealType.lunch, dishes)
         day.entries.isNotEmpty() shouldBe true
     }
 

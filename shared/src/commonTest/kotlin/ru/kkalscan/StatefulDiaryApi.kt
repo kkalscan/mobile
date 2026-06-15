@@ -71,15 +71,15 @@ class StatefulDiaryApi(
         deviceId: String,
         mealType: MealType,
         scanId: String?,
+        dishes: List<Dish>?,
     ): CreateDiaryEntryResponse {
-        val scan = scanId?.let { scansById[it] }
-            ?: error("scan_id не найден")
+        val savedDishes = dishes ?: scanId?.let { scansById[it]?.dishes } ?: error("scan_id не найден")
         val entry = DiaryEntry(
             id = UUID.randomUUID().toString(),
             createdAt = "${diaryDate}T12:00:00Z",
             mealType = mealType,
-            totalKcal = scan.totalKcal,
-            dishes = scan.dishes,
+            totalKcal = savedDishes.sumOf { it.kcal },
+            dishes = savedDishes,
         )
         entriesByDevice.computeIfAbsent(deviceId) { mutableListOf() }.add(entry)
         val left = (3 - entriesByDevice[deviceId]!!.size).coerceAtLeast(0)

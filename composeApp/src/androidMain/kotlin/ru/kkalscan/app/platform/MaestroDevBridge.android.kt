@@ -6,4 +6,8 @@ import androidx.compose.runtime.Composable
 actual fun MaestroDevBridge(
     onStubScan: () -> Unit,
     onConfirmAdd: () -> Unit,
+    onGramsPlus: () -> Unit,
+    onGramsMinus: () -> Unit,
+    onPortionHalf: () -> Unit,
+    onPortionDouble: () -> Unit,
 ) = Unit

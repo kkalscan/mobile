@@ -24,6 +24,7 @@ import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
+import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
@@ -62,13 +63,19 @@ class KkalScanApi(
     override suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay =
         get("/diary?date=$date&timezone_offset_minutes=$timezoneOffsetMinutes", deviceId)
 
-    override suspend fun addDiaryEntry(deviceId: String, mealType: MealType, scanId: String?): CreateDiaryEntryResponse =
+    override suspend fun addDiaryEntry(
+        deviceId: String,
+        mealType: MealType,
+        scanId: String?,
+        dishes: List<Dish>?,
+    ): CreateDiaryEntryResponse =
         postJson(
             "/diary/entries",
             DiaryEntryRequest(
                 device_id = deviceId,
                 meal_type = mealType,
                 scan_id = scanId,
+                dishes = dishes,
             ),
         )
 
@@ -158,5 +165,6 @@ class KkalScanApi(
         val device_id: String,
         val meal_type: MealType,
         val scan_id: String? = null,
+        val dishes: List<Dish>? = null,
     )
 }
