@@ -14,9 +14,11 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
@@ -48,6 +50,7 @@ import ru.kkalscan.domain.model.DiaryEntry
 
 @Composable
 fun KkalScreenScaffold(
+    hasBottomBar: Boolean = true,
     bottomBar: @Composable () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -67,10 +70,20 @@ fun KkalScreenScaffold(
         ) {
             KkalPageGradient()
             Column(Modifier.fillMaxSize()) {
-                Box(Modifier.weight(1f).fillMaxWidth()) {
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .statusBarsPadding()
+                        .then(if (!hasBottomBar) Modifier.navigationBarsPadding() else Modifier),
+                ) {
                     content()
                 }
-                bottomBar()
+                if (hasBottomBar) {
+                    Box(Modifier.navigationBarsPadding()) {
+                        bottomBar()
+                    }
+                }
             }
         }
     }
@@ -274,8 +287,9 @@ fun KkalHeroCard(
 }
 
 @Composable
-fun ScanBadge(text: String) {
+fun ScanBadge(text: String, modifier: Modifier = Modifier) {
     Surface(
+        modifier = modifier.widthIn(min = 72.dp),
         shape = RoundedCornerShape(999.dp),
         color = KkalScanColors.TertiaryContainer,
     ) {
@@ -290,7 +304,13 @@ fun ScanBadge(text: String) {
                     .clip(CircleShape)
                     .background(KkalScanColors.Primary),
             )
-            Text(text, style = MaterialTheme.typography.labelLarge, color = KkalScanColors.OnBackground)
+            Text(
+                text,
+                style = MaterialTheme.typography.labelLarge,
+                color = KkalScanColors.OnBackground,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }
@@ -345,7 +365,7 @@ fun KkalTipCard(
         color = KkalScanColors.Surface,
         border = androidx.compose.foundation.BorderStroke(1.dp, KkalScanColors.Outline.copy(alpha = 0.5f)),
     ) {
-        Box {
+        Box(Modifier.clip(RoundedCornerShape(KkalScanDimens.cardRadius))) {
             if (badgeIcon != null) {
                 Icon(
                     imageVector = badgeIcon,
@@ -361,9 +381,13 @@ fun KkalTipCard(
                     number,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
-                        .padding(top = 12.dp, end = 16.dp),
-                    style = MaterialTheme.typography.displaySmall,
-                    color = KkalScanColors.Outline.copy(alpha = 0.7f),
+                        .padding(top = 16.dp, end = 20.dp),
+                    style = if (number.length <= 2) {
+                        MaterialTheme.typography.displaySmall
+                    } else {
+                        MaterialTheme.typography.headlineMedium
+                    },
+                    color = KkalScanColors.Outline.copy(alpha = 0.45f),
                     fontWeight = FontWeight.Bold,
                 )
             }
@@ -481,8 +505,8 @@ fun KkalEmptyState(
     iconLabel: String,
     title: String,
     message: String,
-    actionLabel: String,
-    onAction: () -> Unit,
+    actionLabel: String? = null,
+    onAction: (() -> Unit)? = null,
 ) {
     Column(
         modifier = Modifier
@@ -501,8 +525,10 @@ fun KkalEmptyState(
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 16.dp),
         )
-        Spacer(Modifier.height(24.dp))
-        KkalPrimaryButton(text = actionLabel, onClick = onAction, modifier = Modifier.padding(horizontal = 24.dp))
+        if (actionLabel != null && onAction != null) {
+            Spacer(Modifier.height(24.dp))
+            KkalPrimaryButton(text = actionLabel, onClick = onAction, modifier = Modifier.padding(horizontal = 24.dp))
+        }
     }
 }
 

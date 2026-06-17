@@ -7,3 +7,11 @@ local.properties
 .DS_Store
 *.log
 maestro/results
+*.keystore
+*.jks
+.secrets/
+kkalscan-upload-cert.pem
+.env.rustore
+store/rustore/.venv/
+store/rustore/.venv-screenshots/
+store/rustore/__pycache__/

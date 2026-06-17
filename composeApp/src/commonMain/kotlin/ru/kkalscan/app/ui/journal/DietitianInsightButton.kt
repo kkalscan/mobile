@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.ScanBadge
@@ -58,6 +59,7 @@ fun DietitianInsightButton(
         }
         Spacer(Modifier.height(8.dp))
         Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -66,6 +68,9 @@ fun DietitianInsightButton(
                 if (isPro) "AI-разбор питания за неделю" else "Доступно в Pro · AI-разбор питания",
                 style = MaterialTheme.typography.bodyMedium,
                 color = KkalScanColors.OnSurfaceVariant,
+                modifier = Modifier.weight(1f),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
             if (!isPro) ScanBadge("Pro")
         }

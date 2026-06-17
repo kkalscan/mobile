@@ -4,5 +4,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 
 @Composable
-actual fun rememberPhotoPicker(onPhotoPicked: (ByteArray?) -> Unit): () -> Unit =
+actual fun rememberPhotoPicker(
+    source: PhotoPickSource,
+    onPhotoPicked: (ByteArray?) -> Unit,
+): () -> Unit =
     remember(onPhotoPicked) { createWasmPhotoPicker(onPhotoPicked) }

@@ -6,7 +6,15 @@ plugins {
 
 kotlin {
     jvm()
-    androidTarget()
+    androidTarget {
+        compilations.all {
+            compileTaskProvider.configure {
+                compilerOptions {
+                    jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+                }
+            }
+        }
+    }
     wasmJs {
         browser()
     }

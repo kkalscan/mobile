@@ -125,9 +125,9 @@ fun AppRootContent(
     val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Journal || screen == AppScreen.Profile
 
     KkalScreenScaffold(
+        hasBottomBar = showBottomBar,
         bottomBar = {
-            if (showBottomBar) {
-                KkalBottomBar(
+            KkalBottomBar(
                     selectedTab = selectedTab,
                     onTabSelected = { tab ->
                         selectedTab = tab
@@ -138,9 +138,8 @@ fun AppRootContent(
                         }
                     },
                     onScanClick = { if (!scanState.isLoading) pickPhoto() },
-                    scanLoading = scanState.isLoading,
-                )
-            }
+                scanLoading = scanState.isLoading,
+            )
         },
     ) {
         when (screen) {

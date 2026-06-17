@@ -41,6 +41,7 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation("androidx.browser:browser:1.8.0")
+            implementation("androidx.exifinterface:exifinterface:1.3.7")
         }
     }
 }
@@ -52,8 +53,28 @@ android {
         applicationId = "ru.kkalscan.app"
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = (findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
+        versionName = findProperty("VERSION_NAME") as String? ?: "0.1.0"
+    }
+    signingConfigs {
+        create("release") {
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (!keystorePath.isNullOrBlank()) {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD").orEmpty()
+                keyAlias = System.getenv("ANDROID_KEY_ALIAS").orEmpty()
+                keyPassword = System.getenv("ANDROID_KEY_PASSWORD").orEmpty()
+            }
+        }
+    }
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
+            if (!keystorePath.isNullOrBlank()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

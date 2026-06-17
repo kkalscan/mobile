@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,7 +53,8 @@ fun PaywallScreen(
         )
         Spacer(Modifier.height(12.dp))
         KkalTipCard(
-            number = "Pro",
+            number = "",
+            badgeIcon = Icons.Outlined.Star,
             title = "Без лимитов каждый день",
             body = "Pro снимает ограничение на сканы и сохраняет историю в облаке",
         )

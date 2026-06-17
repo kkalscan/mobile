@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.BugReport
+import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -30,6 +31,7 @@ import ru.kkalscan.app.components.KkalPageHeader
 import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.KkalTipCard
 import ru.kkalscan.app.components.ScanBadge
+import ru.kkalscan.app.platform.PhotoPickSource
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
@@ -48,7 +50,7 @@ fun ProfileScreen(
     var showBugReportDialog by remember { mutableStateOf(false) }
     var pendingScreenshots by remember { mutableStateOf(listOf<ByteArray>()) }
 
-    val pickScreenshot = rememberPhotoPicker { bytes ->
+    val pickScreenshot = rememberPhotoPicker(PhotoPickSource.Gallery) { bytes ->
         if (bytes != null && pendingScreenshots.size < 3) {
             pendingScreenshots = pendingScreenshots + bytes
         }
@@ -121,7 +123,8 @@ fun ProfileScreen(
                 Spacer(Modifier.height(20.dp))
                 if (status?.isPro != true) {
                     KkalTipCard(
-                        number = "Pro",
+                        number = "",
+                        badgeIcon = Icons.Outlined.Star,
                         title = "KkalScan Pro — 15 ₽ (тест)",
                         body = "Безлимитные сканы каждый день и сохранение истории в облаке",
                     )

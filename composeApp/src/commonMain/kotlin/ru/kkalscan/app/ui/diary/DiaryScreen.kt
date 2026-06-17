@@ -2,14 +2,13 @@ package ru.kkalscan.app.ui.diary
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -48,6 +47,7 @@ fun DiaryScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(horizontal = KkalScanDimens.screenHorizontal),
     ) {
         Spacer(Modifier.height(20.dp))
@@ -65,7 +65,7 @@ fun DiaryScreen(
         when {
             state.isLoading && state.day == null -> {
                 Column(
-                    Modifier.fillMaxWidth().weight(1f),
+                    Modifier.fillMaxWidth().height(200.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
@@ -103,20 +103,15 @@ fun DiaryScreen(
                         iconLabel = "AI",
                         title = "Дневник пуст",
                         message = "Сфоткайте тарелку — за пару секунд увидите калории и добавите в день",
-                        actionLabel = "Сфотографировать еду",
-                        onAction = onScanClick,
                     )
                 } else {
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(bottom = 120.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        items(day!!.entries, key = { it.id }) { entry ->
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        day!!.entries.forEach { entry ->
                             DiaryEntryCard(entry)
                         }
                     }
                 }
+                Spacer(Modifier.height(120.dp))
             }
         }
     }

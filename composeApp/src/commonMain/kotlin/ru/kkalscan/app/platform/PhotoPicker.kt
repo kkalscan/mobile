@@ -3,4 +3,7 @@ package ru.kkalscan.app.platform
 import androidx.compose.runtime.Composable
 
 @Composable
-expect fun rememberPhotoPicker(onPhotoPicked: (ByteArray?) -> Unit): () -> Unit
+expect fun rememberPhotoPicker(
+    source: PhotoPickSource = PhotoPickSource.Camera,
+    onPhotoPicked: (ByteArray?) -> Unit,
+): () -> Unit

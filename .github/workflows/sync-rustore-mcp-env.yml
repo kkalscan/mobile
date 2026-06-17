@@ -26,5 +26,6 @@ jobs:
             RUSTORE_API_BASE=https://public-api.rustore.ru
             EOF
             chmod 600 /opt/rustore-mcp/.env
-            cd /opt/rustore-mcp && docker compose restart
+            cd /opt/rustore-mcp && docker compose up -d --force-recreate
+            sleep 3
             curl -sf http://127.0.0.1:3013/health
