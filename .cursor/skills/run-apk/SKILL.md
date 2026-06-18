@@ -1,12 +1,12 @@
 ---
-name: run
+name: run-apk
 description: >-
   After push to main in kkalscan/mobile, waits for GitHub Actions workflow Run,
   downloads artifact via GitHub MCP, installs and launches on Android via mobile-mcp.
-  Use when user says run, after pushing mobile to main, or asks to install on device.
+  Use when user says run-apk, after pushing mobile to main, or asks to install debug APK on device.
 ---
 
-# Run
+# Run APK
 
 Push to `main` → wait for workflow **Run** → download APK → install and launch on Android.
 
@@ -37,7 +37,7 @@ Push to `main` → wait for workflow **Run** → download APK → install and la
 - [ ] 4. Download artifact via GitHub MCP
 - [ ] 5. Unzip → dist/composeApp-debug.apk
 - [ ] 6. mobile_list_available_devices → pick Android
-- [ ] 7. mobile_install_app
+- [ ] 7. mobile_install_app (uninstall release first if INSTALL_FAILED_UPDATE_INCOMPATIBLE)
 - [ ] 8. mobile_launch_app (ru.kkalscan.app)
 - [ ] 9. Report result (+ optional screenshot)
 ```
@@ -70,6 +70,8 @@ GitHub MCP `actions_get` → `get_workflow_run` every ~30s:
 - `conclusion: failure` → `get_job_logs`, report error, **stop**
 - Timeout 25 min → report and **stop**
 
+If GitHub MCP is unavailable, use `gh run watch` and `gh run download -n run` as fallback.
+
 ### 4. Download artifact
 
 GitHub MCP `actions_list` → `list_workflow_run_artifacts`:
@@ -88,8 +90,9 @@ Use absolute path for install step.
 mobile-mcp:
 1. `mobile_list_available_devices` — prefer physical Android; ask user if multiple
 2. `mobile_install_app` — `device`, `path`: absolute path to APK
-3. `mobile_launch_app` — `packageName`: `ru.kkalscan.app`
-4. Optional: `mobile_take_screenshot` to verify
+3. If `INSTALL_FAILED_UPDATE_INCOMPATIBLE`: `mobile_uninstall_app` (`bundle_id`: `ru.kkalscan.app`), then retry install
+4. `mobile_launch_app` — `packageName`: `ru.kkalscan.app`
+5. Optional: `mobile_take_screenshot` to verify
 
 ## Errors
 
