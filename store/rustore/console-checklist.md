@@ -1,7 +1,9 @@
 # RuStore Console — финальный чеклист
 
 Тексты: [`copy.md`](copy.md)  
-Ассеты: `icon-512.png`, `screenshot-01..05.png`
+Ассеты: `icon-512.png`, `upload/screenshot-01..05.png` (полный UI 9:16, **загружать в RuStore**)
+
+**Не загружайте** маркетинговые `screenshot-*.png` с обрезанным меню и файлы из `raw/` (1080×2400).
 
 ## Автоматически (API)
 

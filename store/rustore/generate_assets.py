@@ -67,22 +67,163 @@ def draw_viewfinder(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], c
 
 
 def generate_icon() -> Path:
-    size = 512
-    img = gradient(size)
-    draw = ImageDraw.Draw(img)
-    draw_viewfinder(draw, (96, 96, 416, 416), WHITE, 14)
-    font = load_font(72, bold=True)
-    text = "ккал"
-    bbox = draw.textbbox((0, 0), text, font=font)
-    tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    draw.text(((size - tw) // 2, (size - th) // 2 - 8), text, fill=WHITE, font=font)
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location(
+        "generate_icons",
+        ROOT.parent.parent / "scripts" / "generate-icons.py",
+    )
+    if spec is None or spec.loader is None:
+        raise RuntimeError("Cannot load generate-icons.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
     path = OUT / "icon-512.png"
-    img.save(path, "PNG", optimize=True)
+    module.draw_icon(512).save(path, "PNG", optimize=True)
     return path
 
 
 def rounded_rect(draw: ImageDraw.ImageDraw, box: tuple[int, int, int, int], radius: int, fill: tuple[int, int, int]) -> None:
     draw.rounded_rectangle(box, radius=radius, fill=fill)
+
+
+def draw_text_centered(
+    draw: ImageDraw.ImageDraw,
+    text: str,
+    y: int,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    fill: tuple[int, int, int],
+    canvas_w: int,
+) -> None:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    tw = bbox[2] - bbox[0]
+    draw.text(((canvas_w - tw) // 2, y), text, fill=fill, font=font)
+
+
+def draw_arc_ring(
+    draw: ImageDraw.ImageDraw,
+    cx: int,
+    cy: int,
+    radius: int,
+    thickness: int,
+    fraction: float,
+    color: tuple[int, int, int],
+    track: tuple[int, int, int],
+) -> None:
+    bbox = (cx - radius, cy - radius, cx + radius, cy + radius)
+    draw.arc(bbox, start=90, end=450, fill=track, width=thickness)
+    if fraction > 0:
+        sweep = max(8, int(360 * min(fraction, 1.0)))
+        draw.arc(bbox, start=90, end=90 - sweep, fill=color, width=thickness)
+
+
+def draw_floating_card(
+    draw: ImageDraw.ImageDraw,
+    box: tuple[int, int, int, int],
+) -> None:
+    x0, y0, x1, y1 = box
+    rounded_rect(draw, (x0 + 3, y0 + 5, x1 + 3, y1 + 5), 22, OUTLINE)
+    rounded_rect(draw, box, 22, WHITE)
+
+
+def overlay_calorie_ring_card(img: Image.Image, eaten: int, goal: int, x: int | None = None, y: int | None = None) -> None:
+    draw = ImageDraw.Draw(img)
+    x = 48 if x is None else x
+    y = 1580 if y is None else y
+    w, h = 220, 230
+    draw_floating_card(draw, (x, y, x + w, y + h))
+    cx, cy = x + w // 2, y + 92
+    draw_arc_ring(draw, cx, cy, 58, 14, eaten / max(goal, 1), MANGO, OUTLINE)
+    val_font = load_font(38, bold=True)
+    small = load_font(20)
+    label = str(eaten)
+    bbox = draw.textbbox((0, 0), label, font=val_font)
+    tw = bbox[2] - bbox[0]
+    draw.text((cx - tw // 2, cy - 22), label, fill=MANGO, font=val_font)
+    draw.text((cx - 20, cy + 14), "ккал", fill=INK_MUTED, font=small)
+    draw.text((x + 36, y + 178), f"цель {goal}", fill=INK_MUTED, font=small)
+
+
+def overlay_macro_donut_card(
+    img: Image.Image,
+    protein: float,
+    fat: float,
+    carbs: float,
+    x: int | None = None,
+    y: int | None = None,
+) -> None:
+    draw = ImageDraw.Draw(img)
+    x = 300 if x is None else x
+    y = 1580 if y is None else y
+    w, h = 250, 230
+    draw_floating_card(draw, (x, y, x + w, y + h))
+    total = max(protein + fat + carbs, 1.0)
+    cx, cy, r = x + w // 2, y + 98, 64
+    thickness = 15
+    segments = [(protein, PROTEIN), (fat, FAT), (carbs, CARBS)]
+    bbox = (cx - r, cy - r, cx + r, cy + r)
+    draw.arc(bbox, start=0, end=360, fill=OUTLINE, width=thickness)
+    start = 90
+    for value, color in segments:
+        sweep = max(6, int(360 * value / total))
+        draw.arc(bbox, start=start, end=start - sweep, fill=color, width=thickness)
+        start -= sweep
+
+    title = load_font(22, bold=True)
+    small = load_font(18)
+    draw.text((x + 24, y + 18), "БЖУ", fill=INK, font=title)
+    labels = [("Б", protein, PROTEIN), ("Ж", fat, FAT), ("У", carbs, CARBS)]
+    lx = x + 20
+    for letter, grams, color in labels:
+        rounded_rect(draw, (lx, y + 178, lx + 68, y + 214), 12, SURFACE)
+        draw.text((lx + 8, y + 184), f"{letter} {int(grams)}г", fill=color, font=small)
+        lx += 74
+
+
+def overlay_weekly_bars_card(
+    img: Image.Image,
+    values: list[int],
+    labels: list[str],
+    x: int | None = None,
+    y: int | None = None,
+) -> None:
+    draw = ImageDraw.Draw(img)
+    x = 580 if x is None else x
+    y = 1580 if y is None else y
+    w, h = 450, 230
+    draw_floating_card(draw, (x, y, x + w, y + h))
+    draw.text((x + 20, y + 16), "Калории за неделю", fill=INK, font=load_font(22, bold=True))
+    chart_top, chart_bottom = y + 52, y + h - 44
+    chart_left, chart_right = x + 24, x + w - 20
+    max_val = max(max(values, default=0), 300)
+    bar_w = (chart_right - chart_left) // max(len(values), 1) - 8
+    for idx, value in enumerate(values):
+        bx = chart_left + idx * (bar_w + 8)
+        bh = int((chart_bottom - chart_top) * value / max_val)
+        by = chart_bottom - bh
+        color = MANGO if value > 0 else OUTLINE
+        rounded_rect(draw, (bx, by, bx + bar_w, chart_bottom), 8, color)
+        if value > 0:
+            draw.text((bx + 4, by - 24), str(value), fill=MANGO, font=load_font(16, bold=True))
+        label = labels[idx] if idx < len(labels) else ""
+        bbox = draw.textbbox((0, 0), label, font=load_font(16))
+        tw = bbox[2] - bbox[0]
+        draw.text((bx + (bar_w - tw) // 2, chart_bottom + 8), label, fill=INK_MUTED, font=load_font(16))
+
+
+def draw_daily_chart_strip(canvas: Image.Image) -> None:
+    overlay_calorie_ring_card(canvas, eaten=110, goal=2000, x=48, y=1660)
+    overlay_macro_donut_card(canvas, protein=1, fat=0, carbs=28, x=310, y=1660)
+    overlay_weekly_bars_card(
+        canvas,
+        values=[0, 0, 110, 0, 0, 0, 0],
+        labels=["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"],
+        x=590, y=1660,
+    )
+
+
+def draw_macro_chart_strip(canvas: Image.Image) -> None:
+    overlay_macro_donut_card(canvas, protein=12, fat=8, carbs=52, x=120, y=1660)
+    overlay_calorie_ring_card(canvas, eaten=420, goal=2000, x=430, y=1660)
 
 
 def draw_phone_canvas(title: str) -> Image.Image:

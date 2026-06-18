@@ -189,7 +189,10 @@ def main() -> None:
         sys.exit(1)
     upload_icon(token, version_id, icon)
 
-    shots = sorted(STORE_DIR.glob("screenshot-*.png"))
+    upload_dir = STORE_DIR / "upload"
+    shots = sorted(upload_dir.glob("screenshot-*.png")) if upload_dir.is_dir() else []
+    if not shots:
+        shots = sorted(STORE_DIR.glob("screenshot-*.png"))
     if not shots:
         print("No screenshots found", file=sys.stderr)
         sys.exit(1)

@@ -4,8 +4,9 @@
 
 | Файл | Назначение |
 |------|------------|
-| `icon-512.png` | Иконка 512×512 для витрины |
-| `screenshot-01-diary.png` … `05-limit.png` | Скриншоты 1080×1920 (9:16) |
+| `icon-512.png` | Иконка 512×512 для витрины (= `ic_launcher` в APK) |
+| `upload/screenshot-*.png` | Скриншоты 1080×1920 с нижним меню — **загружать в RuStore** |
+| `screenshot-01-diary.png` … `05-limit.png` | Копии upload (для превью локально) |
 | `copy.md` | Тексты для RuStore Console |
 | `console-checklist.md` | Чеклист публикации |
 
