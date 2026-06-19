@@ -25,3 +25,10 @@ MVP: калории по фото + дневник на сервере. Market t
 | [docs/niche-calories-by-photo-ru.md](docs/niche-calories-by-photo-ru.md) | Ниша и конкуренты |
 | [docs/competitor-reviews-traffic-analysis.md](docs/competitor-reviews-traffic-analysis.md) | Отзывы и боли рынка |
 | [docs/niche-calorie-photo-ru.md](docs/niche-calorie-photo-ru.md) | Ранняя версия анализа ниши |
+
+## AppMetrica
+
+Для продуктовой аналитики Android/RuStore используется Yandex AppMetrica.
+
+API key захардкожен в `composeApp/build.gradle.kts` только для `release` build type.
+Debug-сборки используют пустой ключ, поэтому аналитика отправляется только из release.

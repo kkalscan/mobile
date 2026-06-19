@@ -1,6 +1,7 @@
 package ru.kkalscan.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,6 +11,7 @@ import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.platform.buildProPayUrl
 import ru.kkalscan.app.platform.rememberProPaymentOpener
 import ru.kkalscan.data.IApiConfig
@@ -50,7 +52,16 @@ fun AppRootContent(
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
 
+    LaunchedEffect(screen) {
+        KkalAnalytics.reportFeatureOpen(screen.analyticsFeatureName())
+        if (screen == AppScreen.Paywall) {
+            KkalAnalytics.reportAction("paywall_shown")
+            KkalAnalytics.reportAction("ad_offer_shown")
+        }
+    }
+
     val startProPayment: () -> Unit = {
+        KkalAnalytics.reportAction("pro_click")
         openProPayment(buildProPayUrl(apiConfig.webBaseUrl, deviceId))
         scope.launch {
             repeat(20) {
@@ -68,16 +79,21 @@ fun AppRootContent(
     }
 
     val runScan: (ByteArray) -> Unit = { bytes ->
+        KkalAnalytics.reportAction("photo_scan")
         scope.launch {
             scanViewModel.scanPhoto(bytes)
             if (scanViewModel.state.value.limitHit) {
+                KkalAnalytics.reportAction("limit_hit")
                 screen = AppScreen.Paywall
+            } else if (scanViewModel.state.value.result != null) {
+                reportScanSuccess(scanViewModel.state.value.scansLeft)
             }
         }
     }
 
     val pickPhoto = rememberPhotoPicker { bytes ->
         if (bytes != null && !scanState.isLoading) {
+            KkalAnalytics.reportAction("photo_selected")
             runScan(bytes)
         }
     }
@@ -101,12 +117,14 @@ fun AppRootContent(
     MaestroDevBridge(
         onStubScan = {
             if (!scanState.isLoading) {
+                KkalAnalytics.reportAction("dev_stub_scan")
                 val bytes = devStubScanPhotoBytes() ?: byteArrayOf(1, 2, 3)
                 runScan(bytes)
             }
         },
         onConfirmAdd = {
             if (scanState.result != null && !scanState.isSaving) {
+                KkalAnalytics.reportAction("add_to_diary")
                 scope.launch {
                     if (scanViewModel.addToDiary().isFailure) return@launch
                     diaryViewModel.refresh()
@@ -137,7 +155,12 @@ fun AppRootContent(
                             AppTab.Profile -> AppScreen.Profile
                         }
                     },
-                    onScanClick = { if (!scanState.isLoading) pickPhoto() },
+                    onScanClick = {
+                        if (!scanState.isLoading) {
+                            KkalAnalytics.reportAction("scan_open")
+                            pickPhoto()
+                        }
+                    },
                 scanLoading = scanState.isLoading,
             )
         },
@@ -147,10 +170,16 @@ fun AppRootContent(
                 MaestroScreenHook("diary-screen")
                 DiaryScreen(
                     viewModel = diaryViewModel,
-                    onScanClick = pickPhoto,
+                    onScanClick = {
+                        KkalAnalytics.reportAction("scan_open")
+                        pickPhoto()
+                    },
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
-                    onRetryScan = pickPhoto,
+                    onRetryScan = {
+                        KkalAnalytics.reportAction("scan_retry")
+                        pickPhoto()
+                    },
                 )
             }
 
@@ -160,6 +189,7 @@ fun AppRootContent(
                     viewModel = journalViewModel,
                     onRefresh = { scope.launch { journalViewModel.refresh() } },
                     onRequestInsight = {
+                        KkalAnalytics.reportAction("dietitian_insight_click")
                         scope.launch {
                             when (journalViewModel.requestDietitianInsight()) {
                                 InsightRequestResult.NeedPro -> screen = AppScreen.Paywall
@@ -184,7 +214,10 @@ fun AppRootContent(
                         }
                     },
                     scanErrorMessage = scanState.errorMessage,
-                    onRetryScan = pickPhoto,
+                    onRetryScan = {
+                        KkalAnalytics.reportAction("scan_retry")
+                        pickPhoto()
+                    },
                 )
             }
 
@@ -192,7 +225,10 @@ fun AppRootContent(
                 MaestroScreenHook("scan-screen")
                 ScanScreen(
                     viewModel = scanViewModel,
-                    onPickPhoto = pickPhoto,
+                    onPickPhoto = {
+                        KkalAnalytics.reportAction("scan_open")
+                        pickPhoto()
+                    },
                     onBack = {
                         selectedTab = AppTab.Today
                         screen = AppScreen.Diary
@@ -210,8 +246,10 @@ fun AppRootContent(
                 PaywallScreen(
                     scansLeft = scanState.scansLeft,
                     onWatchAd = {
+                        KkalAnalytics.reportAction("ad_bonus_click")
                         scope.launch {
                             scanViewModel.grantAdBonus()
+                            KkalAnalytics.reportAction("ad_watch_complete")
                             profileViewModel.refresh()
                             if (!scanViewModel.state.value.limitHit) {
                                 pickPhoto()
@@ -233,6 +271,7 @@ fun AppRootContent(
                 viewModel = scanViewModel,
                 onDismiss = { scanViewModel.reset() },
                 onConfirm = {
+                    KkalAnalytics.reportAction("add_to_diary")
                     scope.launch {
                         if (scanViewModel.addToDiary().isFailure) return@launch
                         diaryViewModel.refresh()
@@ -243,5 +282,23 @@ fun AppRootContent(
                 },
             )
         }
+    }
+}
+
+private fun AppScreen.analyticsFeatureName(): String = when (this) {
+    AppScreen.Diary -> "diary"
+    AppScreen.Journal -> "journal"
+    AppScreen.Profile -> "profile"
+    AppScreen.Scan -> "scan"
+    AppScreen.Result -> "result"
+    AppScreen.Paywall -> "paywall"
+}
+
+private fun reportScanSuccess(scansLeft: Int?) {
+    KkalAnalytics.reportAction("scan_success")
+    when (scansLeft) {
+        3 -> KkalAnalytics.reportAction("first_scan_success")
+        2 -> KkalAnalytics.reportAction("second_scan_success")
+        1 -> KkalAnalytics.reportAction("third_scan_success")
     }
 }

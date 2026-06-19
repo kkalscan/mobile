@@ -40,6 +40,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
+            implementation(libs.appmetrica.analytics)
             implementation("androidx.browser:browser:1.8.0")
             implementation("androidx.exifinterface:exifinterface:1.3.7")
         }
@@ -68,8 +69,12 @@ android {
         }
     }
     buildTypes {
+        debug {
+            buildConfigField("String", "APPMETRICA_API_KEY", "\"\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "APPMETRICA_API_KEY", "\"102bc19a-c1d7-4aa6-a8a6-da5c8c3a1fc0\"")
             val keystorePath = System.getenv("ANDROID_KEYSTORE_PATH")
             if (!keystorePath.isNullOrBlank()) {
                 signingConfig = signingConfigs.getByName("release")
@@ -79,5 +84,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+    buildFeatures {
+        buildConfig = true
     }
 }

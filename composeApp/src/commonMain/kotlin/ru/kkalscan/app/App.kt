@@ -11,6 +11,7 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import ru.kkalscan.AppDependencies
+import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.navigation.AppRootContent
 import ru.kkalscan.app.theme.KkalScanTheme
 
@@ -27,7 +28,8 @@ fun App(componentContext: ComponentContext = remember {
     val profileViewModel = remember(deps, scope) { deps.profileViewModel(scope) }
 
     LaunchedEffect(deps) {
-        deps.deviceIdStorage.getDeviceId()
+        KkalAnalytics.setDeviceId(deviceId)
+        KkalAnalytics.reportAppLaunch()
     }
 
     KkalScanTheme {

@@ -25,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalIconBadge
 import ru.kkalscan.app.components.KkalPageHeader
@@ -142,6 +143,7 @@ fun ProfileScreen(
                     title = "Нашли баг?",
                     body = "Сообщите об ошибке — подарим Pro на месяц бесплатно",
                     onClick = {
+                        KkalAnalytics.reportAction("bug_report_open")
                         pendingScreenshots = emptyList()
                         viewModel.clearBugReportFeedback()
                         showBugReportDialog = true
@@ -168,6 +170,7 @@ fun ProfileScreen(
                 pendingScreenshots = pendingScreenshots.filterIndexed { i, _ -> i != index }
             },
             onSubmit = { email, description, screenshots ->
+                KkalAnalytics.reportAction("bug_report_submit")
                 onSubmitBugReport(email, description, screenshots)
             },
         )
