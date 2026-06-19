@@ -16,3 +16,5 @@ kkalscan-upload-cert.pem
 store/rustore/.venv/
 store/rustore/.venv-screenshots/
 store/rustore/__pycache__/
+store/rustore/upload/*.png
+scripts/__pycache__/
