@@ -15,6 +15,10 @@ on:
         description: "Release notes for RuStore"
         required: false
         type: string
+      version_code:
+        description: "Android versionCode. Empty = derived from version name"
+        required: false
+        type: string
 
 concurrency:
   group: rustore-release
@@ -32,6 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           INPUT_NAME="${{ github.event.inputs.version_name }}"
+          INPUT_CODE="${{ github.event.inputs.version_code }}"
           if [ -n "$INPUT_NAME" ]; then
             NAME="$INPUT_NAME"
           elif [ "${{ github.ref_type }}" = "tag" ]; then
@@ -43,7 +48,17 @@ jobs:
           else
             NAME="0.1.${{ github.run_number }}"
           fi
-          CODE="${{ github.run_number }}"
+          if [ -n "$INPUT_CODE" ]; then
+            if ! [[ "$INPUT_CODE" =~ ^[0-9]+$ ]]; then
+              echo "version_code must be a positive integer"
+              exit 1
+            fi
+            CODE="$INPUT_CODE"
+          elif [[ "$NAME" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            CODE=$((10#${BASH_REMATCH[1]} * 10000 + 10#${BASH_REMATCH[2]} * 100 + 10#${BASH_REMATCH[3]}))
+          else
+            CODE=$((100000 + ${{ github.run_number }}))
+          fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
           echo "Version: $NAME ($CODE)"
