@@ -82,11 +82,20 @@ fun AppRootContent(
         KkalAnalytics.reportAction("photo_scan")
         scope.launch {
             scanViewModel.scanPhoto(bytes)
-            if (scanViewModel.state.value.limitHit) {
-                KkalAnalytics.reportAction("limit_hit")
+            val stateAfterScan = scanViewModel.state.value
+            if (stateAfterScan.limitHit) {
+                KkalAnalytics.reportAction(
+                    "limit_hit",
+                    mapOf("scans_left" to stateAfterScan.scansLeft.orEmptyAnalyticsValue()),
+                )
                 screen = AppScreen.Paywall
-            } else if (scanViewModel.state.value.result != null) {
-                reportScanSuccess(scanViewModel.state.value.scansLeft)
+            } else if (stateAfterScan.result != null) {
+                reportScanSuccess(stateAfterScan.scansLeft)
+            } else if (stateAfterScan.errorMessage != null) {
+                KkalAnalytics.reportAction(
+                    "scan_error",
+                    mapOf("reason" to stateAfterScan.errorMessage.analyticsReason()),
+                )
             }
         }
     }
@@ -95,6 +104,8 @@ fun AppRootContent(
         if (bytes != null && !scanState.isLoading) {
             KkalAnalytics.reportAction("photo_selected")
             runScan(bytes)
+        } else if (bytes == null) {
+            KkalAnalytics.reportAction("photo_picker_cancel")
         }
     }
 
@@ -126,7 +137,13 @@ fun AppRootContent(
             if (scanState.result != null && !scanState.isSaving) {
                 KkalAnalytics.reportAction("add_to_diary")
                 scope.launch {
-                    if (scanViewModel.addToDiary().isFailure) return@launch
+                    if (scanViewModel.addToDiary().isFailure) {
+                        KkalAnalytics.reportAction(
+                            "add_to_diary_failed",
+                            mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
+                        )
+                        return@launch
+                    }
                     diaryViewModel.refresh()
                     journalViewModel.refresh()
                     profileViewModel.refresh()
@@ -249,15 +266,27 @@ fun AppRootContent(
                         KkalAnalytics.reportAction("ad_bonus_click")
                         scope.launch {
                             scanViewModel.grantAdBonus()
-                            KkalAnalytics.reportAction("ad_watch_complete")
+                            val stateAfterBonus = scanViewModel.state.value
+                            if (stateAfterBonus.limitHit || stateAfterBonus.errorMessage != null) {
+                                KkalAnalytics.reportAction(
+                                    "ad_bonus_failed",
+                                    mapOf("reason" to stateAfterBonus.errorMessage.analyticsReason()),
+                                )
+                                return@launch
+                            }
+                            KkalAnalytics.reportAction(
+                                "ad_watch_complete",
+                                mapOf("scans_left" to stateAfterBonus.scansLeft.orEmptyAnalyticsValue()),
+                            )
                             profileViewModel.refresh()
-                            if (!scanViewModel.state.value.limitHit) {
+                            if (!stateAfterBonus.limitHit) {
                                 pickPhoto()
                             }
                         }
                     },
                     onBuyPro = startProPayment,
                     onBack = {
+                        KkalAnalytics.reportAction("paywall_back")
                         selectedTab = AppTab.Today
                         screen = AppScreen.Diary
                     },
@@ -273,7 +302,13 @@ fun AppRootContent(
                 onConfirm = {
                     KkalAnalytics.reportAction("add_to_diary")
                     scope.launch {
-                        if (scanViewModel.addToDiary().isFailure) return@launch
+                        if (scanViewModel.addToDiary().isFailure) {
+                            KkalAnalytics.reportAction(
+                                "add_to_diary_failed",
+                                mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
+                            )
+                            return@launch
+                        }
                         diaryViewModel.refresh()
                         journalViewModel.refresh()
                         profileViewModel.refresh()
@@ -284,6 +319,10 @@ fun AppRootContent(
         }
     }
 }
+
+private fun Int?.orEmptyAnalyticsValue(): String = this?.toString() ?: "unknown"
+
+private fun String?.analyticsReason(): String = this?.takeIf { it.isNotBlank() } ?: "unknown"
 
 private fun AppScreen.analyticsFeatureName(): String = when (this) {
     AppScreen.Diary -> "diary"

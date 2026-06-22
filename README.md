@@ -21,6 +21,7 @@ MVP: калории по фото + дневник на сервере. Market t
 | [docs/brand-dns.md](docs/brand-dns.md) | Бренд, API `91.207.75.72:8080`, ASO |
 | [docs/mvp-functional-requirements.md](docs/mvp-functional-requirements.md) | Функциональные требования v0.1 |
 | [docs/auth-after-pro.md](docs/auth-after-pro.md) | Авторизация после покупки Pro (VK/Yandex) |
+| [docs/appmetrica-events.md](docs/appmetrica-events.md) | Карта AppMetrica событий, воронки и диагностика провалов |
 | [docs/test-plan-rustore-calories-photo.md](docs/test-plan-rustore-calories-photo.md) | План market test |
 | [docs/niche-calories-by-photo-ru.md](docs/niche-calories-by-photo-ru.md) | Ниша и конкуренты |
 | [docs/competitor-reviews-traffic-analysis.md](docs/competitor-reviews-traffic-analysis.md) | Отзывы и боли рынка |
@@ -32,3 +33,5 @@ MVP: калории по фото + дневник на сервере. Market t
 
 API key захардкожен в `composeApp/build.gradle.kts` только для `release` build type.
 Debug-сборки используют пустой ключ, поэтому аналитика отправляется только из release.
+
+Карта событий, воронки и вопросы для поиска недостающих функций описаны в [docs/appmetrica-events.md](docs/appmetrica-events.md).

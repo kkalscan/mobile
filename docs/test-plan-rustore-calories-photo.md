@@ -258,10 +258,16 @@
 | `second_scan_success` | Второй скан | Повторное использование |
 | `third_scan_success` | Третий скан | До лимита |
 | `limit_hit` | 4-й скан заблокирован | **Ключевое** — дошли до монетизации |
+| `scan_error` | Скан завершился ошибкой | Диагностика качества распознавания / сети / backend |
+| `photo_picker_cancel` | Фото не выбрано | Отмена, отказ camera permission или сбой picker |
+| `add_to_diary_failed` | Не удалось сохранить результат | Диагностика diary/API после успешного скана |
 | `ad_offer_shown` | Показан экран с рекламой | |
+| `ad_bonus_click` | Нажали rewarded video | |
 | `ad_watch_complete` | Досмотрели rewarded video | **Готовность к рекламе** |
-| `ad_watch_failed` | Ошибка / закрыли раньше | |
+| `ad_bonus_failed` | Ошибка выдачи бонуса | |
 | `paywall_shown` | Показана кнопка Pro | |
+| `paywall_back` | Ушли с paywall назад | Качество оффера / цена / доверие |
+| `pro_click` | Нажали кнопку Pro | Намерение купить |
 | `subscription_start` | Успешная покупка | **Готовность платить** |
 | `subscription_cancel` | Отмена (если видна) | Качество удержания |
 | `day_1_return` | Вернулся на следующий день | Retention |
@@ -273,6 +279,8 @@
 Готовность к рекламе = ad_watch_complete / limit_hit
 Готовность платить   = subscription_start / install
 Доходят до paywall   = limit_hit / third_scan_success
+Ошибки скана         = scan_error / photo_scan
+Сохранение дневника  = add_to_diary / scan_success
 ```
 
 ### Минимальная сводка (неделя 6)
