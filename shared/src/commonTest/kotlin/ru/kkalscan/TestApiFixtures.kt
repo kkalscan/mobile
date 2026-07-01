@@ -21,11 +21,12 @@ object TestApiFixtures {
                 content = """
                     {
                       "scan_id": "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee",
-                      "dishes": [{"name":"Тест","grams":200,"kcal":350,"protein":15,"fat":10,"carbs":40}],
+                      "dishes": [{"name":"Тест","grams":200,"kcal":350,"protein":15,"fat":10,"carbs":40,"fiber":6}],
                       "total_kcal": 350,
                       "total_protein": 15,
                       "total_fat": 10,
                       "total_carbs": 40,
+                      "total_fiber": 6,
                       "scans_left": 3,
                       "is_pro": false
                     }
@@ -41,7 +42,7 @@ object TestApiFixtures {
                         "created_at": "2026-06-14T12:00:00Z",
                         "meal_type": "lunch",
                         "total_kcal": 350,
-                        "dishes": [{"name":"Тест","grams":200,"kcal":350,"protein":15,"fat":10,"carbs":40}]
+                        "dishes": [{"name":"Тест","grams":200,"kcal":350,"protein":15,"fat":10,"carbs":40,"fiber":6}]
                       },
                       "scans_left": 2
                     }
@@ -63,7 +64,7 @@ object TestApiFixtures {
                         "created_at": "2026-06-14T12:00:00Z",
                         "meal_type": "lunch",
                         "total_kcal": 350,
-                        "dishes": [{"name":"Тест","grams":200,"kcal":350,"protein":15,"fat":10,"carbs":40}]
+                        "dishes": [{"name":"Тест","grams":200,"kcal":350,"protein":15,"fat":10,"carbs":40,"fiber":6}]
                       }]
                     }
                 """.trimIndent(),

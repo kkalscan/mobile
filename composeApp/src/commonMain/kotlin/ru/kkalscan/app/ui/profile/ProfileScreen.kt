@@ -126,7 +126,7 @@ fun ProfileScreen(
                     KkalTipCard(
                         number = "",
                         badgeIcon = Icons.Outlined.Star,
-                        title = "KkalScan Pro — 15 ₽ (тест)",
+                        title = "KkalScan Pro — 199 ₽/мес",
                         body = "Безлимитные сканы каждый день и сохранение истории в облаке",
                     )
                     Spacer(Modifier.height(12.dp))

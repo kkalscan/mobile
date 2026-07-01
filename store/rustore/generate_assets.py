@@ -26,7 +26,7 @@ MANGO_LIGHT = (255, 228, 209)
 MINT_LIGHT = (212, 250, 238)
 PROTEIN = (91, 141, 239)
 FAT = (255, 159, 67)
-CARBS = MINT
+CARBS = (139, 92, 246)
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:

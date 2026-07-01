@@ -99,18 +99,18 @@ class ScanViewModel(
         }
         val scanId = result.scanId
         val mealType = _state.value.selectedMealType
-        _state.update { it.copy(isSaving = true, errorMessage = null) }
+        _state.update { it.copy(isSaving = true, saveSuccess = false, errorMessage = null) }
         kkalLog("Diary", "add scanId=${scanId.take(8)}… meal=$mealType dishes=${result.dishes.size}")
         return runCatching { diaryRepository.addFromScan(scanId, mealType, result.dishes) }
             .onSuccess { day ->
                 kkalLog("Diary", "added entries=${day.entries.size} totalKcal=${day.totalKcal}")
+                _state.update { it.copy(saveSuccess = true) }
             }
             .map { }
             .onFailure { e ->
                 kkalLog("Diary", "add fail ${e.message}")
-                _state.update { it.copy(errorMessage = e.userMessage()) }
+                _state.update { it.copy(isSaving = false, saveSuccess = false, errorMessage = e.userMessage()) }
             }
-            .also { _state.update { it.copy(isSaving = false) } }
     }
 
     private fun updateDishAt(index: Int, transform: (ru.kkalscan.domain.model.Dish) -> ru.kkalscan.domain.model.Dish) {
@@ -130,6 +130,7 @@ class ScanViewModel(
                     totalProtein = totals.protein,
                     totalFat = totals.fat,
                     totalCarbs = totals.carbs,
+                    totalFiber = totals.fiber,
                 ),
             )
         }

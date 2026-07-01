@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.DiaryEntryCard
 import ru.kkalscan.app.components.KkalEmptyState
+import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPageHeader
@@ -36,6 +37,7 @@ import kotlinx.datetime.toLocalDateTime
 fun DiaryScreen(
     viewModel: IDiaryViewModel,
     onScanClick: () -> Unit,
+    onSearchClick: () -> Unit = {},
     onRefresh: () -> Unit,
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = onScanClick,
@@ -89,10 +91,19 @@ fun DiaryScreen(
                         "Сфотографируйте еду — AI посчитает ккал и БЖУ"
                     },
                     badge = day?.scansLeft?.let { "Осталось $it скана" },
-                    protein = macros?.first ?: 0.0,
-                    fat = macros?.second ?: 0.0,
-                    carbs = macros?.third ?: 0.0,
+                    protein = macros?.protein ?: 0.0,
+                    fat = macros?.fat ?: 0.0,
+                    carbs = macros?.carbs ?: 0.0,
+                    fiber = macros?.fiber ?: 0.0,
                     watermark = "01",
+                )
+                Spacer(Modifier.height(16.dp))
+                KkalPrimaryButton(
+                    text = "Найти продукт",
+                    onClick = onSearchClick,
+                    containerColor = KkalScanColors.PrimaryContainer,
+                    contentColor = KkalScanColors.Primary,
+                    modifier = Modifier.fillMaxWidth().testTag("diary-search-button"),
                 )
                 Spacer(Modifier.height(24.dp))
                 Text("Приёмы пищи", style = MaterialTheme.typography.titleLarge)
@@ -117,11 +128,19 @@ fun DiaryScreen(
     }
 }
 
-private fun DiaryDay.macroTotals(): Triple<Double, Double, Double> {
+private data class MacroSummary(
+    val protein: Double,
+    val fat: Double,
+    val carbs: Double,
+    val fiber: Double,
+)
+
+private fun DiaryDay.macroTotals(): MacroSummary {
     val dishes = entries.flatMap { it.dishes }
-    return Triple(
-        dishes.sumOf { it.protein },
-        dishes.sumOf { it.fat },
-        dishes.sumOf { it.carbs },
+    return MacroSummary(
+        protein = dishes.sumOf { it.protein },
+        fat = dishes.sumOf { it.fat },
+        carbs = dishes.sumOf { it.carbs },
+        fiber = dishes.sumOf { it.fiber },
     )
 }

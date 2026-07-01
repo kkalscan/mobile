@@ -1,12 +1,15 @@
 package ru.kkalscan
 
 import ru.kkalscan.data.api.IKkalScanApi
+import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.DiaryEntry
 import ru.kkalscan.domain.model.Dish
+import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
@@ -33,6 +36,7 @@ class StatefulDiaryApi(
             protein = 10.0,
             fat = 5.0,
             carbs = 20.0,
+            fiber = 4.0,
         )
         val scanId = UUID.randomUUID().toString()
         val result = ScanResult(
@@ -42,6 +46,7 @@ class StatefulDiaryApi(
             totalProtein = dish.protein,
             totalFat = dish.fat,
             totalCarbs = dish.carbs,
+            totalFiber = dish.fiber,
             scansLeft = 3,
             isPro = false,
         )
@@ -92,6 +97,26 @@ class StatefulDiaryApi(
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         SubscriptionStatus(isPro = false, accountLinked = false)
+
+    override suspend fun startProSubscription(deviceId: String, tariff: String): ProSubscriptionStart =
+        ProSubscriptionStart(
+            isPro = true,
+            proUntil = "${diaryDate}T12:00:00Z",
+            tariff = tariff,
+            paymentRequired = false,
+            message = "Pro активирован",
+        )
+
+    override suspend fun searchFood(
+        deviceId: String,
+        query: String,
+        limit: Int,
+        source: String,
+    ): FoodSearchResult {
+        val trimmed = query.trim()
+        val items = LocalFoodCatalog.search(trimmed, limit)
+        return FoodSearchResult(query = trimmed, items = items, total = items.size)
+    }
 
     override suspend fun submitBugReport(
         deviceId: String,

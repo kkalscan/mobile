@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -224,6 +226,7 @@ fun KkalHeroCard(
     protein: Double? = null,
     fat: Double? = null,
     carbs: Double? = null,
+    fiber: Double? = null,
     watermark: String? = null,
     modifier: Modifier = Modifier,
 ) {
@@ -269,9 +272,9 @@ fun KkalHeroCard(
                         modifier = Modifier.padding(bottom = 8.dp),
                     )
                 }
-                if (protein != null || fat != null || carbs != null) {
+                if (protein != null || fat != null || carbs != null || fiber != null) {
                     Spacer(Modifier.height(16.dp))
-                    MacroChipsRow(protein = protein, fat = fat, carbs = carbs)
+                    MacroChipsRow(protein = protein, fat = fat, carbs = carbs, fiber = fiber)
                 }
                 subtitle?.let {
                     Spacer(Modifier.height(12.dp))
@@ -315,17 +318,20 @@ fun ScanBadge(text: String, modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MacroChipsRow(
     protein: Double?,
     fat: Double?,
     carbs: Double?,
+    fiber: Double? = null,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(modifier = modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         protein?.let { MacroChip("Б", it, KkalScanColors.Protein, Color(0xFFE8F0FF)) }
         fat?.let { MacroChip("Ж", it, KkalScanColors.Fat, Color(0xFFFFF0E0)) }
-        carbs?.let { MacroChip("У", it, KkalScanColors.Carbs, Color(0xFFD4FAEE)) }
+        carbs?.let { MacroChip("У", it, KkalScanColors.Carbs, KkalScanColors.CarbsContainer) }
+        fiber?.let { MacroChip("Кл", it, KkalScanColors.Fiber, Color(0xFFE1F7EF)) }
     }
 }
 
@@ -407,6 +413,7 @@ fun KkalFoodCard(
     subtitle: String? = null,
     tipBadge: String? = null,
     macros: Triple<Double, Double, Double>? = null,
+    fiber: Double? = null,
     iconLabel: String = "K",
 ) {
     Surface(
@@ -438,9 +445,10 @@ fun KkalFoodCard(
                     Spacer(Modifier.height(4.dp))
                     Text(it, style = MaterialTheme.typography.bodyMedium, color = KkalScanColors.OnSurfaceVariant)
                 }
-                macros?.let { (p, f, c) ->
+                if (macros != null || fiber != null) {
                     Spacer(Modifier.height(8.dp))
-                    MacroChipsRow(protein = p, fat = f, carbs = c)
+                    val (p, f, c) = macros ?: Triple(null, null, null)
+                    MacroChipsRow(protein = p, fat = f, carbs = c, fiber = fiber)
                 }
             }
         }
@@ -456,6 +464,7 @@ fun DiaryEntryCard(entry: DiaryEntry) {
         subtitle = dish?.let { "${it.grams} г" },
         tipBadge = entry.mealType.label(),
         macros = dish?.let { Triple(it.protein, it.fat, it.carbs) },
+        fiber = dish?.fiber,
         iconLabel = dishIconLabel(dish?.name),
     )
 }

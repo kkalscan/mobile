@@ -61,6 +61,7 @@ fun ResultScreen(
             protein = result.totalProtein,
             fat = result.totalFat,
             carbs = result.totalCarbs,
+            fiber = result.totalFiber,
             watermark = "OK",
         )
         Spacer(Modifier.height(8.dp))
@@ -72,6 +73,7 @@ fun ResultScreen(
                 kcal = dish.kcal,
                 subtitle = "${dish.grams} г",
                 macros = Triple(dish.protein, dish.fat, dish.carbs),
+                fiber = dish.fiber,
             )
             Spacer(Modifier.height(12.dp))
         }

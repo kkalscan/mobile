@@ -28,6 +28,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.charts.ChartCard
 import ru.kkalscan.app.charts.KkalCaloriesBarChart
+import ru.kkalscan.app.charts.KkalFiberBarChart
+import ru.kkalscan.app.charts.KkalGroupedMacroChart
+import ru.kkalscan.app.charts.KkalMacroBalanceDonut
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPageHeader
@@ -86,25 +89,17 @@ fun JournalScreen(
                     kcal = week.avgKcal,
                     subtitle = "${week.daysWithData} дней с данными · всего ${week.totalKcal} ккал",
                     badge = null,
+                    protein = week.avgProtein,
+                    fat = week.avgFat,
+                    carbs = week.avgCarbs,
+                    fiber = week.avgFiber,
                     watermark = "07",
                 )
-                Spacer(Modifier.height(16.dp))
-                DietitianInsightButton(
-                    isPro = week.isPro,
-                    loading = state.insightLoading,
-                    onClick = {
-                        if (week.isPro) onRequestInsight() else onNeedPro()
-                    },
-                )
-                state.insightError?.let { msg ->
-                    Spacer(Modifier.height(8.dp))
-                    Text(msg, color = KkalScanColors.Error, style = MaterialTheme.typography.bodyMedium)
-                }
                 Spacer(Modifier.height(20.dp))
                 ChartCard(
                     title = "Калории по дням",
                     subtitle = if (week.daysWithData > 0) {
-                        "Среднее ${week.avgKcal} ккал/день"
+                        "Среднее ${week.avgKcal} ккал/день · только калории"
                     } else {
                         "Нет записей — сфотографируйте еду"
                     },
@@ -114,6 +109,70 @@ fun JournalScreen(
                         weekStart = state.weekStart,
                     )
                 }
+                Spacer(Modifier.height(16.dp))
+                ChartCard(
+                    title = "БЖУ по дням",
+                    subtitle = if (week.daysWithData > 0) {
+                        "Сгруппированные столбцы — удобно сравнивать белки, жиры и углеводы"
+                    } else {
+                        "Нет записей — график появится после первого приёма пищи"
+                    },
+                ) {
+                    KkalGroupedMacroChart(
+                        days = week.days,
+                        weekStart = state.weekStart,
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                ChartCard(
+                    title = "Клетчатка по дням",
+                    subtitle = if (week.daysWithData > 0) {
+                        "Среднее ${week.avgFiber.toInt()} г/день · рекомендуется 25–35 г"
+                    } else {
+                        "Нет записей — график появится после первого приёма пищи"
+                    },
+                ) {
+                    KkalFiberBarChart(
+                        days = week.days,
+                        weekStart = state.weekStart,
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                ChartCard(
+                    title = "Баланс БЖУ за неделю",
+                    subtitle = if (week.daysWithData > 0) {
+                        "Доля калорий из белков, жиров и углеводов"
+                    } else {
+                        "Появится после записей в дневнике"
+                    },
+                ) {
+                    val withData = week.days.filter { it.hasData }
+                    if (withData.isEmpty()) {
+                        Text(
+                            "Нет данных за неделю",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = KkalScanColors.OnSurfaceVariant,
+                        )
+                    } else {
+                        KkalMacroBalanceDonut(
+                            protein = withData.sumOf { it.protein },
+                            fat = withData.sumOf { it.fat },
+                            carbs = withData.sumOf { it.carbs },
+                        )
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+                state.insightError?.let { msg ->
+                    Text(msg, color = KkalScanColors.Error, style = MaterialTheme.typography.bodyMedium)
+                    Spacer(Modifier.height(8.dp))
+                }
+                DietitianInsightButton(
+                    isPro = week.isPro,
+                    loading = state.insightLoading,
+                    onClick = {
+                        if (week.isPro) onRequestInsight() else onNeedPro()
+                    },
+                )
                 Spacer(Modifier.height(120.dp))
             }
         }

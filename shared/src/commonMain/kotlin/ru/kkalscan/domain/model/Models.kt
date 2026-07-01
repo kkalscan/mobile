@@ -19,6 +19,7 @@ data class Dish(
     val protein: Double,
     val fat: Double,
     val carbs: Double,
+    val fiber: Double = 0.0,
 )
 
 @Serializable
@@ -49,6 +50,7 @@ data class ScanResult(
     @SerialName("total_protein") val totalProtein: Double,
     @SerialName("total_fat") val totalFat: Double,
     @SerialName("total_carbs") val totalCarbs: Double,
+    @SerialName("total_fiber") val totalFiber: Double = 0.0,
     @SerialName("scans_left") val scansLeft: Int? = null,
     @SerialName("is_pro") val isPro: Boolean = false,
     val disclaimer: String? = null,
@@ -88,4 +90,22 @@ data class BugReportResult(
     @SerialName("is_pro") val isPro: Boolean,
     @SerialName("pro_until") val proUntil: String? = null,
     val message: String,
+)
+
+@Serializable
+data class FoodSearchResult(
+    val query: String,
+    val items: List<Dish>,
+    val total: Int,
+)
+
+@Serializable
+data class ProSubscriptionStart(
+    @SerialName("is_pro") val isPro: Boolean,
+    @SerialName("pro_until") val proUntil: String? = null,
+    val tariff: String,
+    @SerialName("payment_required") val paymentRequired: Boolean,
+    @SerialName("payment_url") val paymentUrl: String? = null,
+    @SerialName("payment_id") val paymentId: String? = null,
+    val message: String? = null,
 )

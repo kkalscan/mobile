@@ -1,6 +1,7 @@
 package ru.kkalscan.presentation.profile
 
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.SubscriptionStatus
 
 data class ProfileUiState(
@@ -16,6 +17,7 @@ data class ProfileUiState(
 interface IProfileViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<ProfileUiState>
     suspend fun refresh()
+    suspend fun startProSubscription(): ProSubscriptionStart
     suspend fun submitBugReport(email: String, description: String, screenshots: List<ByteArray>)
     fun clearBugReportFeedback()
 }

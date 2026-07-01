@@ -1,9 +1,11 @@
 package ru.kkalscan.data.api
 
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
@@ -20,10 +22,17 @@ interface IKkalScanApi {
     ): CreateDiaryEntryResponse
     suspend fun deleteDiaryEntry(deviceId: String, entryId: String)
     suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus
+    suspend fun startProSubscription(deviceId: String, tariff: String = "pro_monthly_199"): ProSubscriptionStart
     suspend fun submitBugReport(
         deviceId: String,
         email: String,
         description: String,
         screenshots: List<ByteArray>,
     ): BugReportResult
+    suspend fun searchFood(
+        deviceId: String,
+        query: String,
+        limit: Int = 20,
+        source: String = "diary",
+    ): FoodSearchResult
 }

@@ -1,0 +1,66 @@
+package ru.kkalscan.data.api
+
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import kotlinx.coroutines.test.runTest
+import ru.kkalscan.TestApiFixtures
+import ru.kkalscan.domain.food.LocalFoodCatalog
+import ru.kkalscan.data.repository.DiaryRepository
+import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
+import ru.kkalscan.stats.StatsAggregator
+import ru.kkalscan.stats.WeekDates
+import kotlin.test.Test
+
+class FakeKkalScanApiTest {
+
+    private val deviceId = TestApiFixtures.DEVICE_ID
+    private val today = "2026-06-11"
+    private val weekStart = WeekDates.iso(WeekDates.mondayOf(WeekDates.parse(today)))
+
+    @Test
+    fun scanPhoto_returnsFiberInDishes() = runTest {
+        val api = FakeKkalScanApi(todayProvider = { today })
+        val scan = api.scanPhoto(deviceId, byteArrayOf(1, 2, 3), timezoneOffsetMinutes = 180)
+
+        scan.totalFiber shouldNotBe 0.0
+        scan.dishes.single().fiber shouldNotBe 0.0
+    }
+
+    @Test
+    fun addDiaryEntry_persistsFiber() = runTest {
+        val api = FakeKkalScanApi(todayProvider = { today })
+        val scan = api.scanPhoto(deviceId, byteArrayOf(5), timezoneOffsetMinutes = 180)
+        api.addDiaryEntry(deviceId, ru.kkalscan.domain.model.MealType.lunch, scan.scanId, null)
+
+        val day = api.getDiary(deviceId, today, timezoneOffsetMinutes = 180)
+        day.entries shouldHaveSize 1
+        day.entries.single().dishes.single().fiber shouldBe scan.dishes.single().fiber
+    }
+
+    @Test
+    fun seedSampleWeek_populatesFiberForJournal() = runTest {
+        val api = FakeKkalScanApi(seedSampleWeek = true, todayProvider = { today })
+        val repo = DiaryRepository(
+            api,
+            InMemoryDeviceIdStorage().apply { setDeviceId(deviceId) },
+            todayProvider = { today },
+        )
+        val days = repo.getWeek(weekStart)
+        val stats = StatsAggregator.weekStats(days, weekStart)
+
+        stats.daysWithData shouldBe 5
+        stats.avgFiber shouldNotBe 0.0
+        stats.days.count { it.fiber > 0 } shouldBe 5
+    }
+
+    @Test
+    fun searchFood_findsCatalogItems() = runTest {
+        val api = FakeKkalScanApi(todayProvider = { today })
+        val result = api.searchFood(deviceId, "творог", limit = 10, source = "diary")
+
+        result.items.any { it.name.contains("Творог", ignoreCase = true) } shouldBe true
+        api.searchFood(deviceId, "missing-product-xyz", limit = 10, source = "diary").items shouldHaveSize 0
+        LocalFoodCatalog.search("творог", 10).isNotEmpty() shouldBe true
+    }
+}

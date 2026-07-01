@@ -10,6 +10,7 @@ import kotlinx.datetime.toLocalDateTime
 data class ScanUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
+    val saveSuccess: Boolean = false,
     val result: ScanResult? = null,
     /** AI baseline portions — used for ½ / 2× chips. */
     val baselineDishes: List<Dish> = emptyList(),

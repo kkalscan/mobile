@@ -17,6 +17,7 @@ object DishPortion {
             protein = roundMacro(dish.protein * ratio),
             fat = roundMacro(dish.fat * ratio),
             carbs = roundMacro(dish.carbs * ratio),
+            fiber = roundMacro(dish.fiber * ratio),
         )
     }
 
@@ -30,6 +31,7 @@ object DishPortion {
             protein = roundMacro(baseline.protein * ratio),
             fat = roundMacro(baseline.fat * ratio),
             carbs = roundMacro(baseline.carbs * ratio),
+            fiber = roundMacro(baseline.fiber * ratio),
         )
     }
 
@@ -38,6 +40,7 @@ object DishPortion {
         protein = roundMacro(dishes.sumOf { it.protein }),
         fat = roundMacro(dishes.sumOf { it.fat }),
         carbs = roundMacro(dishes.sumOf { it.carbs }),
+        fiber = roundMacro(dishes.sumOf { it.fiber }),
     )
 
     private fun roundMacro(value: Double): Double = (value * 10).roundToInt() / 10.0
@@ -48,4 +51,5 @@ data class MacroTotals(
     val protein: Double,
     val fat: Double,
     val carbs: Double,
+    val fiber: Double,
 )

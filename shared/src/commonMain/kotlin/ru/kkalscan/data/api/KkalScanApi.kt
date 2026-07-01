@@ -15,6 +15,7 @@ import io.ktor.http.Headers
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.encodeURLParameter
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -22,10 +23,12 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
@@ -61,7 +64,7 @@ class KkalScanApi(
         postJson("/scan/bonus", BonusRequest(deviceId))
 
     override suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay =
-        get("/diary?date=$date&timezone_offset_minutes=$timezoneOffsetMinutes", deviceId)
+        apiGet("/diary?date=$date&timezone_offset_minutes=$timezoneOffsetMinutes", deviceId)
 
     override suspend fun addDiaryEntry(
         deviceId: String,
@@ -89,7 +92,25 @@ class KkalScanApi(
     }
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
-        get("/subscription/status", deviceId)
+        apiGet("/subscription/status", deviceId)
+
+    override suspend fun startProSubscription(deviceId: String, tariff: String): ProSubscriptionStart =
+        postJson("/payments/pro/start", ProSubscriptionStartRequest(deviceId, tariff))
+
+    override suspend fun searchFood(
+        deviceId: String,
+        query: String,
+        limit: Int,
+        source: String,
+    ): FoodSearchResult {
+        val path = buildString {
+            append("/food/search?q=")
+            append(query.encodeURLParameter())
+            append("&limit=$limit&source=")
+            append(source.encodeURLParameter())
+        }
+        return apiGet(path, deviceId)
+    }
 
     override suspend fun submitBugReport(
         deviceId: String,
@@ -121,7 +142,7 @@ class KkalScanApi(
             throw KkalScanException.Network(e.message ?: "Network error")
         }
 
-    private suspend inline fun <reified T> get(path: String, deviceId: String): T =
+    private suspend inline fun <reified T> apiGet(path: String, deviceId: String): T =
         try {
             val response = httpClient.get("${config.apiBaseUrl}$path") {
                 header("X-Device-Id", deviceId)
@@ -159,6 +180,12 @@ class KkalScanApi(
 
     @Serializable
     private data class BonusRequest(val device_id: String)
+
+    @Serializable
+    private data class ProSubscriptionStartRequest(
+        val device_id: String,
+        val tariff: String = "pro_monthly_199",
+    )
 
     @Serializable
     private data class DiaryEntryRequest(

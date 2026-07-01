@@ -9,10 +9,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import ru.kkalscan.app.analytics.KkalAnalytics
-import ru.kkalscan.app.platform.buildProPayUrl
 import ru.kkalscan.app.platform.rememberProPaymentOpener
 import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.app.components.AppTab
@@ -25,11 +25,13 @@ import ru.kkalscan.app.platform.devStubScanPhotoBytes
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.diary.DiaryScreen
+import ru.kkalscan.app.ui.food.FoodSearchSheet
 import ru.kkalscan.app.ui.journal.JournalScreen
 import ru.kkalscan.app.ui.paywall.PaywallScreen
 import ru.kkalscan.app.ui.profile.ProfileScreen
 import ru.kkalscan.app.ui.result.AddToDiaryDialog
 import ru.kkalscan.app.ui.scan.ScanScreen
+import ru.kkalscan.presentation.food.IFoodSearchViewModel
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.journal.IJournalViewModel
 import ru.kkalscan.presentation.journal.InsightRequestResult
@@ -43,12 +45,14 @@ fun AppRootContent(
     journalViewModel: IJournalViewModel,
     scanViewModel: IScanViewModel,
     profileViewModel: IProfileViewModel,
+    foodSearchViewModel: IFoodSearchViewModel,
     scope: CoroutineScope,
     apiConfig: IApiConfig,
     deviceId: String,
 ) {
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
+    var showFoodSearch by rememberSaveable { mutableStateOf(false) }
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
 
@@ -62,17 +66,32 @@ fun AppRootContent(
 
     val startProPayment: () -> Unit = {
         KkalAnalytics.reportAction("pro_click")
-        openProPayment(buildProPayUrl(apiConfig.webBaseUrl, deviceId))
         scope.launch {
-            repeat(20) {
-                delay(3_000)
-                profileViewModel.refresh()
-                diaryViewModel.refresh()
-                if (profileViewModel.state.value.status?.isPro == true) {
+            runCatching {
+                profileViewModel.startProSubscription()
+            }.onSuccess { result ->
+                val paymentUrl = result.paymentUrl
+                if (result.paymentRequired && !paymentUrl.isNullOrBlank()) {
+                    openProPayment(paymentUrl)
+                    repeat(20) {
+                        delay(3_000)
+                        profileViewModel.refresh()
+                        diaryViewModel.refresh()
+                        if (profileViewModel.state.value.status?.isPro == true) {
+                            KkalAnalytics.reportAction("subscription_start")
+                            scanViewModel.onProActivated()
+                            screen = AppScreen.Diary
+                            selectedTab = AppTab.Today
+                            return@launch
+                        }
+                    }
+                } else if (result.isPro) {
+                    KkalAnalytics.reportAction("subscription_start")
+                    profileViewModel.refresh()
+                    diaryViewModel.refresh()
                     scanViewModel.onProActivated()
                     screen = AppScreen.Diary
                     selectedTab = AppTab.Today
-                    return@launch
                 }
             }
         }
@@ -135,20 +154,7 @@ fun AppRootContent(
         },
         onConfirmAdd = {
             if (scanState.result != null && !scanState.isSaving) {
-                KkalAnalytics.reportAction("add_to_diary")
-                scope.launch {
-                    if (scanViewModel.addToDiary().isFailure) {
-                        KkalAnalytics.reportAction(
-                            "add_to_diary_failed",
-                            mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
-                        )
-                        return@launch
-                    }
-                    diaryViewModel.refresh()
-                    journalViewModel.refresh()
-                    profileViewModel.refresh()
-                    scanViewModel.reset()
-                }
+                scope.launch { confirmAddToDiary(scanViewModel, diaryViewModel, journalViewModel, profileViewModel) }
             }
         },
         onGramsPlus = { scanViewModel.adjustDishGrams(0, DishPortion.STEP_GRAMS) },
@@ -190,6 +196,10 @@ fun AppRootContent(
                     onScanClick = {
                         KkalAnalytics.reportAction("scan_open")
                         pickPhoto()
+                    },
+                    onSearchClick = {
+                        KkalAnalytics.reportAction("food_search_open")
+                        showFoodSearch = true
                     },
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
@@ -301,18 +311,37 @@ fun AppRootContent(
                 onDismiss = { scanViewModel.reset() },
                 onConfirm = {
                     KkalAnalytics.reportAction("add_to_diary")
+                    val ok = scanViewModel.addToDiary().isSuccess
+                    if (!ok) {
+                        KkalAnalytics.reportAction(
+                            "add_to_diary_failed",
+                            mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
+                        )
+                    }
+                    ok
+                },
+                onAddFinished = { scanViewModel.reset() },
+                onRefreshAfterAdd = {
                     scope.launch {
-                        if (scanViewModel.addToDiary().isFailure) {
-                            KkalAnalytics.reportAction(
-                                "add_to_diary_failed",
-                                mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
-                            )
-                            return@launch
-                        }
+                        refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
+                    }
+                },
+            )
+        }
+
+        if (showFoodSearch) {
+            MaestroScreenHook("food-search-sheet")
+            FoodSearchSheet(
+                viewModel = foodSearchViewModel,
+                onDismiss = {
+                    showFoodSearch = false
+                    foodSearchViewModel.clear()
+                },
+                onAdded = {
+                    KkalAnalytics.reportAction("food_search_add")
+                    scope.launch {
                         diaryViewModel.refresh()
                         journalViewModel.refresh()
-                        profileViewModel.refresh()
-                        scanViewModel.reset()
                     }
                 },
             )
@@ -339,5 +368,35 @@ private fun reportScanSuccess(scansLeft: Int?) {
         3 -> KkalAnalytics.reportAction("first_scan_success")
         2 -> KkalAnalytics.reportAction("second_scan_success")
         1 -> KkalAnalytics.reportAction("third_scan_success")
+    }
+}
+
+private suspend fun confirmAddToDiary(
+    scanViewModel: IScanViewModel,
+    diaryViewModel: IDiaryViewModel,
+    journalViewModel: IJournalViewModel,
+    profileViewModel: IProfileViewModel,
+) {
+    KkalAnalytics.reportAction("add_to_diary")
+    if (scanViewModel.addToDiary().isFailure) {
+        KkalAnalytics.reportAction(
+            "add_to_diary_failed",
+            mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
+        )
+        return
+    }
+    refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
+    scanViewModel.reset()
+}
+
+private suspend fun refreshAfterDiaryAdd(
+    diaryViewModel: IDiaryViewModel,
+    journalViewModel: IJournalViewModel,
+    profileViewModel: IProfileViewModel,
+) {
+    coroutineScope {
+        launch { diaryViewModel.refresh() }
+        launch { journalViewModel.refresh() }
+        launch { profileViewModel.refresh() }
     }
 }

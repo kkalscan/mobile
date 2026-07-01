@@ -20,12 +20,14 @@ fun App(componentContext: ComponentContext = remember {
     DefaultComponentContext(lifecycle = LifecycleRegistry())
 }) {
     val scope = rememberCoroutineScope()
-    val deps = remember { AppDependencies(apiConfig = appApiConfig()) }
+    val deps = remember { createAppDependencies() }
     val deviceId = remember { deps.deviceIdStorage.getDeviceId() }
     val diaryViewModel = remember(deps, scope) { deps.diaryViewModel(scope) }
     val journalViewModel = remember(deps, scope) { deps.journalViewModel(scope) }
     val scanViewModel = remember(deps, scope) { deps.scanViewModel(scope) }
     val profileViewModel = remember(deps, scope) { deps.profileViewModel(scope) }
+
+    val foodSearchViewModel = remember(deps, scope) { deps.foodSearchViewModel(scope) }
 
     LaunchedEffect(deps) {
         KkalAnalytics.setDeviceId(deviceId)
@@ -40,6 +42,7 @@ fun App(componentContext: ComponentContext = remember {
                 journalViewModel = journalViewModel,
                 scanViewModel = scanViewModel,
                 profileViewModel = profileViewModel,
+                foodSearchViewModel = foodSearchViewModel,
                 scope = scope,
                 apiConfig = deps.apiConfig,
                 deviceId = deviceId,

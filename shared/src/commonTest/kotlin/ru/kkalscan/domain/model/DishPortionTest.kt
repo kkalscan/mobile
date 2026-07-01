@@ -12,6 +12,7 @@ class DishPortionTest {
         protein = 12.0,
         fat = 8.0,
         carbs = 22.0,
+        fiber = 6.0,
     )
 
     @Test
@@ -22,6 +23,7 @@ class DishPortionTest {
         half.protein shouldBe 6.0
         half.fat shouldBe 4.0
         half.carbs shouldBe 11.0
+        half.fiber shouldBe 3.0
     }
 
     @Test
@@ -49,10 +51,11 @@ class DishPortionTest {
         val totals = DishPortion.totals(
             listOf(
                 borscht,
-                borscht.copy(name = "Хлеб", grams = 50, kcal = 120, protein = 4.0, fat = 1.0, carbs = 20.0),
+                borscht.copy(name = "Хлеб", grams = 50, kcal = 120, protein = 4.0, fat = 1.0, carbs = 20.0, fiber = 2.5),
             ),
         )
         totals.kcal shouldBe 370
         totals.protein shouldBe 16.0
+        totals.fiber shouldBe 8.5
     }
 }

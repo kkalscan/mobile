@@ -10,6 +10,7 @@ import ru.kkalscan.data.repository.IBugReportRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.ISubscriptionRepository
 import ru.kkalscan.domain.error.KkalScanException
+import ru.kkalscan.domain.model.ProSubscriptionStart
 
 class ProfileViewModel(
     private val subscriptionRepository: ISubscriptionRepository,
@@ -52,6 +53,9 @@ class ProfileViewModel(
             }
         }
     }
+
+    override suspend fun startProSubscription(): ProSubscriptionStart =
+        subscriptionRepository.startPro()
 
     override suspend fun submitBugReport(
         email: String,

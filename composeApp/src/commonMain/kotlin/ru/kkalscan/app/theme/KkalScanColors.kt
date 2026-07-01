@@ -24,5 +24,7 @@ object KkalScanColors {
     val ProContainer = Color(0xFFF0E6FF)
     val Protein = Color(0xFF5B8DEF)
     val Fat = Color(0xFFFF9F43)
-    val Carbs = Color(0xFF1EC995)
+    val Carbs = Color(0xFF8B5CF6)
+    val CarbsContainer = Color(0xFFEDE8FF)
+    val Fiber = Color(0xFF16A66F)
 }

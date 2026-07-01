@@ -1,5 +1,6 @@
 package ru.kkalscan.app.ui.result
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -29,9 +31,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.SideEffect
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -55,12 +61,23 @@ import ru.kkalscan.presentation.scan.IScanViewModel
 fun AddToDiaryDialog(
     viewModel: IScanViewModel,
     onDismiss: () -> Unit,
-    onConfirm: () -> Unit,
+    onConfirm: suspend () -> Boolean,
+    onRefreshAfterAdd: () -> Unit,
+    onAddFinished: () -> Unit,
 ) {
     val state by viewModel.state.collectAsState()
     val result = state.result ?: return
     val baseline = state.baselineDishes
     val dish = result.dishes.firstOrNull()
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(state.saveSuccess) {
+        if (state.saveSuccess) {
+            onRefreshAfterAdd()
+            delay(SUCCESS_DISMISS_MS)
+            onAddFinished()
+        }
+    }
 
     SideEffect {
         updateMaestroDebugState(
@@ -87,11 +104,12 @@ fun AddToDiaryDialog(
             color = KkalScanColors.Background,
             shadowElevation = 16.dp,
         ) {
-            Column(
-                Modifier
-                    .padding(20.dp)
-                    .verticalScroll(rememberScrollState()),
-            ) {
+            Box {
+                Column(
+                    Modifier
+                        .padding(20.dp)
+                        .verticalScroll(rememberScrollState()),
+                ) {
                 Text(
                     "Проверьте порции",
                     style = MaterialTheme.typography.labelLarge,
@@ -148,9 +166,13 @@ fun AddToDiaryDialog(
                 Spacer(Modifier.height(20.dp))
                 KkalPrimaryButton(
                     text = "Добавить в дневник",
-                    onClick = onConfirm,
-                    loading = state.isSaving,
-                    enabled = result.dishes.isNotEmpty(),
+                    onClick = {
+                        scope.launch {
+                            if (!onConfirm()) return@launch
+                        }
+                    },
+                    loading = state.isSaving && !state.saveSuccess,
+                    enabled = result.dishes.isNotEmpty() && !state.isSaving,
                     containerColor = KkalScanColors.Secondary,
                 )
                 Spacer(Modifier.height(4.dp))
@@ -165,10 +187,19 @@ fun AddToDiaryDialog(
                         style = MaterialTheme.typography.titleMedium,
                     )
                 }
+                }
+                if (state.isSaving) {
+                    AddToDiaryProgressOverlay(
+                        success = state.saveSuccess,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
         }
     }
 }
+
+private const val SUCCESS_DISMISS_MS = 950L
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -211,7 +242,7 @@ private fun EditableDishCard(
                         color = KkalScanColors.Primary,
                     )
                     Spacer(Modifier.height(8.dp))
-                    MacroChipsRow(protein = dish.protein, fat = dish.fat, carbs = dish.carbs)
+                    MacroChipsRow(protein = dish.protein, fat = dish.fat, carbs = dish.carbs, fiber = dish.fiber)
                 }
                 if (canRemove) {
                     IconButton(
@@ -281,9 +312,13 @@ private fun EditableDishCard(
                     color = KkalScanColors.OnSurfaceVariant,
                 )
                 Spacer(Modifier.height(8.dp))
-                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PortionChip("½", enabled) { onScale(0.5) }
-                    PortionChip("2×", enabled) { onScale(2.0) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    PortionChip("½", enabled, Modifier.weight(1f)) { onScale(0.5) }
+                    PortionChip("1×", enabled, Modifier.weight(1f)) { onScale(1.0) }
+                    PortionChip("2×", enabled, Modifier.weight(1f)) { onScale(2.0) }
                 }
             }
         }
@@ -291,7 +326,7 @@ private fun EditableDishCard(
 }
 
 @Composable
-private fun PortionChip(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun PortionChip(label: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     FilterChip(
         selected = false,
         onClick = onClick,
@@ -302,7 +337,7 @@ private fun PortionChip(label: String, enabled: Boolean, onClick: () -> Unit) {
             labelColor = KkalScanColors.OnBackground,
         ),
         shape = RoundedCornerShape(999.dp),
-        modifier = Modifier.testTag("dish-portion-$label"),
+        modifier = modifier.testTag("dish-portion-$label"),
     )
 }
 

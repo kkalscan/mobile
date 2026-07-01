@@ -10,8 +10,17 @@ import ru.kkalscan.domain.model.MealType
 class StatsAggregatorTest {
 
     @Test
+    fun dayMetrics_includesFiberFromDishes() {
+        val dish = Dish("Рис", 200, 300, 8.0, 2.0, 60.0, fiber = 4.0)
+        val entry = DiaryEntry("1", "2026-06-10T12:00:00Z", MealType.lunch, 300, listOf(dish))
+        val day = DiaryDay("2026-06-10", 300, entries = listOf(entry))
+        val metrics = StatsAggregator.dayMetrics(day)
+        metrics.fiber shouldBe 4.0
+    }
+
+    @Test
     fun weekStats_averagesOnlyDaysWithEntries() {
-        val dish = Dish("Рис", 200, 300, 8.0, 2.0, 60.0)
+        val dish = Dish("Рис", 200, 300, 8.0, 2.0, 60.0, fiber = 4.0)
         val entry = DiaryEntry("1", "2026-06-10T12:00:00Z", MealType.lunch, 300, listOf(dish))
         val days = listOf(
             DiaryDay("2026-06-09", 0, entries = emptyList()),
@@ -23,5 +32,15 @@ class StatsAggregatorTest {
         stats.avgKcal shouldBe 450
         stats.totalKcal shouldBe 900
         stats.avgProtein shouldBe 12.0
+        stats.avgFiber shouldBe 6.0
+    }
+
+    @Test
+    fun macroKcalSplit_usesStandardFactors() {
+        val split = StatsAggregator.macroKcalSplit(protein = 100.0, fat = 50.0, carbs = 200.0)
+        split.proteinKcal shouldBe 400.0
+        split.fatKcal shouldBe 450.0
+        split.carbsKcal shouldBe 800.0
+        split.proteinPercent + split.fatPercent + split.carbsPercent in 99..101
     }
 }

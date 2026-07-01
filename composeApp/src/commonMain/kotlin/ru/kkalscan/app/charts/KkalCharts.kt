@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.stats.DayMetrics
+import ru.kkalscan.stats.StatsAggregator
 import ru.kkalscan.stats.WeekDates
 import kotlin.math.roundToInt
 
@@ -160,27 +161,35 @@ fun KkalCaloriesBarChart(
 }
 
 @Composable
-fun KkalStackedMacroChart(
+fun KkalFiberBarChart(
     days: List<DayMetrics>,
     weekStart: String,
     modifier: Modifier = Modifier,
-    height: androidx.compose.ui.unit.Dp = 200.dp,
+    height: androidx.compose.ui.unit.Dp = 180.dp,
 ) {
-    val dataMax = days.maxOfOrNull { it.protein + it.fat + it.carbs }?.toFloat() ?: 0f
+    val dataMax = days.maxOfOrNull { it.fiber.toFloat() } ?: 0f
     val maxGrams = niceGramsMax(dataMax).toFloat()
     val yTicks = yTicksForMax(maxGrams.toInt())
     val labels = days.map { WeekDates.shortDayLabel(it.date, weekStart) }
-    val proteinColor = KkalScanColors.Protein
-    val fatColor = KkalScanColors.Fat
-    val carbsColor = KkalScanColors.Carbs
 
     Column(modifier) {
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MacroLegendDot("Б", proteinColor)
-            MacroLegendDot("Ж", fatColor)
-            MacroLegendDot("У", carbsColor)
+        Row(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.width(yAxisWidth))
+            days.forEach { day ->
+                Box(Modifier.weight(1f), contentAlignment = Alignment.BottomCenter) {
+                    if (day.fiber > 0) {
+                        Text(
+                            "${day.fiber.toInt()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = KkalScanColors.Fiber,
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                }
+            }
         }
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(4.dp))
         Row(Modifier.fillMaxWidth().height(height)) {
             YAxisLabels(ticks = yTicks, unit = "г")
             Box(Modifier.weight(1f).fillMaxHeight()) {
@@ -204,28 +213,103 @@ fun KkalStackedMacroChart(
 
                     days.forEachIndexed { index, day ->
                         val left = gap + index * (barWidth + gap)
-                        var bottom = chartBottom
-                        listOf(
-                            day.protein to proteinColor,
-                            day.fat to fatColor,
-                            day.carbs to carbsColor,
-                        ).forEach { (grams, color) ->
-                            val h = chartHeight * (grams.toFloat() / maxGrams)
-                            if (h > 0f) {
-                                drawRect(
-                                    color = color,
-                                    topLeft = Offset(left, bottom - h),
-                                    size = Size(barWidth, h),
-                                )
-                                bottom -= h
-                            }
+                        val ratio = (day.fiber / maxGrams).toFloat()
+                        val barHeight = chartHeight * ratio.coerceIn(0f, 1f)
+                        val top = chartBottom - barHeight
+                        val baseColor = if (day.hasData) KkalScanColors.Fiber else KkalScanColors.Outline.copy(0.35f)
+                        val brush = if (day.hasData && day.fiber > 0) {
+                            Brush.verticalGradient(
+                                colors = listOf(Color(0xFF5FD4A4), KkalScanColors.Fiber, Color(0xFF0D8A57)),
+                                startY = top,
+                                endY = chartBottom,
+                            )
+                        } else {
+                            Brush.verticalGradient(listOf(baseColor, baseColor))
                         }
-                        if (!day.hasData) {
+                        drawRoundRect(
+                            brush = brush,
+                            topLeft = Offset(left, top.coerceAtMost(chartBottom - 6f)),
+                            size = Size(barWidth, barHeight.coerceAtLeast(if (day.hasData && day.fiber > 0) 8f else 4f)),
+                            cornerRadius = CornerRadius(barWidth / 2.5f, barWidth / 2.5f),
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.width(yAxisWidth))
+            labels.forEach { label ->
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = KkalScanColors.OnSurfaceVariant,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun KkalGroupedMacroChart(
+    days: List<DayMetrics>,
+    weekStart: String,
+    modifier: Modifier = Modifier,
+    height: androidx.compose.ui.unit.Dp = 200.dp,
+) {
+    val dataMax = days.maxOfOrNull { maxOf(it.protein, it.fat, it.carbs).toFloat() } ?: 0f
+    val maxGrams = niceGramsMax(dataMax).toFloat()
+    val yTicks = yTicksForMax(maxGrams.toInt())
+    val labels = days.map { WeekDates.shortDayLabel(it.date, weekStart) }
+    val macroSeries = listOf(
+        MacroSeries("Б", { it.protein }, KkalScanColors.Protein),
+        MacroSeries("Ж", { it.fat }, KkalScanColors.Fat),
+        MacroSeries("У", { it.carbs }, KkalScanColors.Carbs),
+    )
+
+    Column(modifier) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            macroSeries.forEach { MacroLegendDot(it.label, it.color) }
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth().height(height)) {
+            YAxisLabels(ticks = yTicks, unit = "г")
+            Box(Modifier.weight(1f).fillMaxHeight()) {
+                Canvas(Modifier.fillMaxSize()) {
+                    val dayCount = days.size.coerceAtLeast(1)
+                    val groupGap = size.width * 0.05f
+                    val groupWidth = (size.width - groupGap * (dayCount + 1)) / dayCount
+                    val innerGap = groupWidth * 0.07f
+                    val barWidth = ((groupWidth - innerGap * 2) / 3f).coerceAtLeast(4f)
+                    val chartBottom = size.height * 0.96f
+                    val chartTop = size.height * 0.04f
+                    val chartHeight = chartBottom - chartTop
+
+                    yTicks.forEach { tick ->
+                        val y = chartBottom - chartHeight * (tick / maxGrams)
+                        drawLine(
+                            color = KkalScanColors.Outline.copy(0.35f),
+                            start = Offset(0f, y),
+                            end = Offset(size.width, y),
+                            strokeWidth = 1f,
+                        )
+                    }
+
+                    days.forEachIndexed { dayIndex, day ->
+                        val groupLeft = groupGap + dayIndex * (groupWidth + groupGap)
+                        macroSeries.forEachIndexed { macroIndex, series ->
+                            val grams = series.value(day).toFloat()
+                            val left = groupLeft + macroIndex * (barWidth + innerGap)
+                            val barHeight = chartHeight * (grams / maxGrams)
+                            val top = chartBottom - barHeight
+                            val color = if (day.hasData) series.color else KkalScanColors.Outline.copy(0.35f)
                             drawRoundRect(
-                                color = KkalScanColors.SurfaceVariant,
-                                topLeft = Offset(left, chartBottom - 6f),
-                                size = Size(barWidth, 6f),
-                                cornerRadius = CornerRadius(4f, 4f),
+                                color = color,
+                                topLeft = Offset(left, top.coerceAtMost(chartBottom - if (day.hasData) 6f else 4f)),
+                                size = Size(barWidth, barHeight.coerceAtLeast(if (day.hasData && grams > 0f) 6f else 4f)),
+                                cornerRadius = CornerRadius(barWidth / 3f, barWidth / 3f),
                             )
                         }
                     }
@@ -247,6 +331,93 @@ fun KkalStackedMacroChart(
         }
     }
 }
+
+@Composable
+fun KkalMacroBalanceDonut(
+    protein: Double,
+    fat: Double,
+    carbs: Double,
+    modifier: Modifier = Modifier,
+    size: androidx.compose.ui.unit.Dp = 168.dp,
+) {
+    val split = StatsAggregator.macroKcalSplit(protein, fat, carbs)
+    val segments = listOf(
+        Triple("Белки", split.proteinPercent, KkalScanColors.Protein),
+        Triple("Жиры", split.fatPercent, KkalScanColors.Fat),
+        Triple("Углев.", split.carbsPercent, KkalScanColors.Carbs),
+    )
+    var startAngle = -90f
+
+    Row(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceEvenly,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.size(size), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.fillMaxSize()) {
+                val stroke = size.toPx() * 0.13f
+                val radius = this.size.minDimension / 2f - stroke
+                val center = Offset(this.size.width / 2f, this.size.height / 2f)
+                drawCircle(
+                    color = KkalScanColors.SurfaceVariant,
+                    radius = radius,
+                    center = center,
+                    style = Stroke(stroke),
+                )
+                segments.forEach { (_, percent, color) ->
+                    val sweep = percent / 100f * 360f
+                    if (sweep > 0f) {
+                        drawArc(
+                            color = color,
+                            startAngle = startAngle,
+                            sweepAngle = sweep,
+                            useCenter = false,
+                            topLeft = Offset(center.x - radius, center.y - radius),
+                            size = Size(radius * 2, radius * 2),
+                            style = Stroke(stroke, cap = StrokeCap.Round),
+                        )
+                        startAngle += sweep
+                    }
+                }
+            }
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    "${split.totalKcal.roundToInt()}",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = KkalScanColors.OnBackground,
+                )
+                Text("ккал из БЖУ", style = MaterialTheme.typography.labelSmall, color = KkalScanColors.OnSurfaceVariant)
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            MacroBalanceRow("Белки", split.proteinPercent, protein, KkalScanColors.Protein)
+            MacroBalanceRow("Жиры", split.fatPercent, fat, KkalScanColors.Fat)
+            MacroBalanceRow("Углев.", split.carbsPercent, carbs, KkalScanColors.Carbs)
+        }
+    }
+}
+
+@Composable
+private fun MacroBalanceRow(label: String, percent: Int, grams: Double, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
+        Column {
+            Text(label, style = MaterialTheme.typography.labelMedium, color = color, fontWeight = FontWeight.Bold)
+            Text(
+                "$percent% · ${grams.roundToInt()} г",
+                style = MaterialTheme.typography.bodySmall,
+                color = KkalScanColors.OnSurfaceVariant,
+            )
+        }
+    }
+}
+
+private data class MacroSeries(
+    val label: String,
+    val value: (DayMetrics) -> Double,
+    val color: Color,
+)
 
 @Composable
 private fun YAxisLabels(ticks: List<Int>, unit: String) {
@@ -287,70 +458,6 @@ private fun MacroLegendDot(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Box(Modifier.size(10.dp).background(color, RoundedCornerShape(3.dp)))
         Text(label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold, color = color)
-    }
-}
-
-@Composable
-fun KkalMacroDonutChart(
-    protein: Double,
-    fat: Double,
-    carbs: Double,
-    modifier: Modifier = Modifier,
-    size: androidx.compose.ui.unit.Dp = 160.dp,
-) {
-    val total = (protein + fat + carbs).coerceAtLeast(1.0)
-    val segments = listOf(
-        Triple("Б", protein, KkalScanColors.Protein),
-        Triple("Ж", fat, KkalScanColors.Fat),
-        Triple("У", carbs, KkalScanColors.Carbs),
-    )
-    var startAngle = -90f
-
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Box(modifier.size(size), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.fillMaxSize()) {
-                val stroke = size.toPx() * 0.14f
-                val radius = this.size.minDimension / 2f - stroke
-                val center = Offset(this.size.width / 2f, this.size.height / 2f)
-                drawCircle(color = KkalScanColors.SurfaceVariant, radius = radius, center = center, style = Stroke(stroke))
-                segments.forEach { (_, value, color) ->
-                    val sweep = (value / total * 360f).toFloat()
-                    drawArc(
-                        color = color,
-                        startAngle = startAngle,
-                        sweepAngle = sweep,
-                        useCenter = false,
-                        topLeft = Offset(center.x - radius, center.y - radius),
-                        size = Size(radius * 2, radius * 2),
-                        style = Stroke(stroke, cap = StrokeCap.Round),
-                    )
-                    startAngle += sweep
-                }
-            }
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("БЖУ", style = MaterialTheme.typography.labelLarge, color = KkalScanColors.OnSurfaceVariant)
-                Text(
-                    "${(protein / total * 100).toInt()}%",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = KkalScanColors.Protein,
-                )
-                Text("белок", style = MaterialTheme.typography.labelSmall, color = KkalScanColors.OnSurfaceVariant)
-            }
-        }
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-            segments.forEach { (label, grams, color) ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(label, style = MaterialTheme.typography.labelMedium, color = color, fontWeight = FontWeight.Bold)
-                    Text(
-                        "${grams.roundToInt()} г",
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.SemiBold,
-                    )
-                }
-            }
-        }
     }
 }
 
