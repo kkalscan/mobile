@@ -63,4 +63,13 @@ class FakeKkalScanApiTest {
         api.searchFood(deviceId, "missing-product-xyz", limit = 10, source = "diary").items shouldHaveSize 0
         LocalFoodCatalog.search("творог", 10).isNotEmpty() shouldBe true
     }
+
+    @Test
+    fun searchFeatures_findsProfileAndDeeplink() = runTest {
+        val api = FakeKkalScanApi(todayProvider = { today })
+        val result = api.searchFeatures(deviceId, "профиль", limit = 10, locale = "ru")
+
+        result.items.any { it.deeplink == "kkalscan://profile" } shouldBe true
+        result.items.any { it.title.contains("Профиль", ignoreCase = true) } shouldBe true
+    }
 }

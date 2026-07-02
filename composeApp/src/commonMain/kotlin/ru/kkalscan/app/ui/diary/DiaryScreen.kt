@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.DiaryEntryCard
 import ru.kkalscan.app.components.KkalEmptyState
-import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPageHeader
@@ -37,7 +36,6 @@ import kotlinx.datetime.toLocalDateTime
 fun DiaryScreen(
     viewModel: IDiaryViewModel,
     onScanClick: () -> Unit,
-    onSearchClick: () -> Unit = {},
     onRefresh: () -> Unit,
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = onScanClick,
@@ -96,14 +94,6 @@ fun DiaryScreen(
                     carbs = macros?.carbs ?: 0.0,
                     fiber = macros?.fiber ?: 0.0,
                     watermark = "01",
-                )
-                Spacer(Modifier.height(16.dp))
-                KkalPrimaryButton(
-                    text = "Найти продукт",
-                    onClick = onSearchClick,
-                    containerColor = KkalScanColors.PrimaryContainer,
-                    contentColor = KkalScanColors.Primary,
-                    modifier = Modifier.fillMaxWidth().testTag("diary-search-button"),
                 )
                 Spacer(Modifier.height(24.dp))
                 Text("Приёмы пищи", style = MaterialTheme.typography.titleLarge)

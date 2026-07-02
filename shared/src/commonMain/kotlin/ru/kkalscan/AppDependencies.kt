@@ -7,9 +7,11 @@ import ru.kkalscan.data.api.KkalScanApi
 import ru.kkalscan.data.createHttpClient
 import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
+import ru.kkalscan.data.repository.FeatureSearchRepository
 import ru.kkalscan.data.repository.FoodSearchRepository
 import ru.kkalscan.data.repository.IBugReportRepository
 import ru.kkalscan.data.repository.IDiaryRepository
+import ru.kkalscan.data.repository.IFeatureSearchRepository
 import ru.kkalscan.data.repository.IFoodSearchRepository
 import ru.kkalscan.data.repository.IInsightRepository
 import ru.kkalscan.data.repository.InsightRepository
@@ -19,6 +21,8 @@ import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
+import ru.kkalscan.presentation.features.FeatureSearchViewModel
+import ru.kkalscan.presentation.features.IFeatureSearchViewModel
 import ru.kkalscan.presentation.food.FoodSearchViewModel
 import ru.kkalscan.presentation.food.IFoodSearchViewModel
 import ru.kkalscan.presentation.diary.DiaryViewModel
@@ -39,6 +43,7 @@ class AppDependencies(
     val subscriptionRepository: ISubscriptionRepository = SubscriptionRepository(api, deviceIdStorage),
     val insightRepository: IInsightRepository = InsightRepository(deviceIdStorage),
     val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
+    val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
@@ -46,6 +51,12 @@ class AppDependencies(
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
         FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)
+
+    fun featureSearchViewModel(
+        scope: kotlinx.coroutines.CoroutineScope,
+        onSearchCompleted: ru.kkalscan.presentation.features.FeatureSearchCompletedListener = { _, _ -> },
+    ): IFeatureSearchViewModel =
+        FeatureSearchViewModel(featureSearchRepository, scope, onSearchCompleted)
 
     fun journalViewModel(scope: kotlinx.coroutines.CoroutineScope): IJournalViewModel =
         JournalViewModel(diaryRepository, insightRepository, scope)

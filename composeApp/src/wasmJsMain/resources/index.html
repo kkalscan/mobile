@@ -33,7 +33,7 @@
             opacity: 0.01;
             z-index: 10;
         }
-        #maestro-open-scan, #maestro-open-profile, #maestro-open-journal, #maestro-scan-back, #maestro-stub-scan, #maestro-confirm-add, #maestro-grams-plus, #maestro-grams-minus, #maestro-portion-half, #maestro-portion-double {
+        #maestro-open-scan, #maestro-open-profile, #maestro-open-journal, #maestro-scan-back, #maestro-stub-scan, #maestro-confirm-add, #maestro-grams-plus, #maestro-grams-minus, #maestro-portion-half, #maestro-portion-double, #maestro-open-food-search, #maestro-food-search-demo, #maestro-food-search-add, #maestro-deeplink-profile, #maestro-deeplink-journal, #maestro-deeplink-diary, #maestro-feature-search-first {
             position: fixed;
             opacity: 0.01;
             z-index: 10;
@@ -48,6 +48,12 @@
         #maestro-open-profile { left: 20px; bottom: 24px; width: 80px; height: 48px; }
         #maestro-open-journal { left: 110px; bottom: 24px; width: 80px; height: 48px; }
         #maestro-scan-back { left: 50%; bottom: 90px; width: 120px; height: 40px; transform: translateX(-50%); }
+        #maestro-open-food-search { left: 50%; top: 280px; width: 200px; height: 48px; transform: translateX(-50%); }
+        #maestro-food-search-demo { left: 50%; top: 340px; width: 200px; height: 48px; transform: translateX(-50%); }
+        #maestro-feature-search-first { left: 50%; top: 460px; width: 200px; height: 48px; transform: translateX(-50%); }
+        #maestro-deeplink-profile { left: 8px; top: 40px; width: 80px; height: 32px; }
+        #maestro-deeplink-journal { left: 96px; top: 40px; width: 80px; height: 32px; }
+        #maestro-deeplink-diary { left: 184px; top: 40px; width: 80px; height: 32px; }
     </style>
 </head>
 <body>
@@ -63,6 +69,13 @@
 <button id="maestro-open-profile" type="button" aria-label="open-profile-screen">profile</button>
 <button id="maestro-open-journal" type="button" aria-label="open-journal-screen">journal</button>
 <button id="maestro-scan-back" type="button" aria-label="scan-back">back</button>
+<button id="maestro-open-food-search" type="button" aria-label="open-food-search">food-search</button>
+<button id="maestro-food-search-demo" type="button" aria-label="food-search-demo">food-search-demo</button>
+<button id="maestro-food-search-add" type="button" aria-label="food-search-add">food-search-add</button>
+<button id="maestro-feature-search-first" type="button" aria-label="feature-search-first">feature-search-first</button>
+<button id="maestro-deeplink-profile" type="button" aria-label="deeplink-profile">deeplink-profile</button>
+<button id="maestro-deeplink-journal" type="button" aria-label="deeplink-journal">deeplink-journal</button>
+<button id="maestro-deeplink-diary" type="button" aria-label="deeplink-diary">deeplink-diary</button>
 <canvas id="ComposeTarget"></canvas>
 <script src="kkalscan.js"></script>
 </body>

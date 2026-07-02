@@ -28,6 +28,19 @@ fun App(componentContext: ComponentContext = remember {
     val profileViewModel = remember(deps, scope) { deps.profileViewModel(scope) }
 
     val foodSearchViewModel = remember(deps, scope) { deps.foodSearchViewModel(scope) }
+    val featureSearchViewModel = remember(deps, scope) {
+        deps.featureSearchViewModel(scope) { query, resultsCount ->
+            KkalAnalytics.reportAction(
+                "feature_search_query",
+                mapOf(
+                    "query" to query.take(200),
+                    "query_length" to query.length.toString(),
+                    "results" to resultsCount.toString(),
+                    "empty_query" to query.isBlank().toString(),
+                ),
+            )
+        }
+    }
 
     LaunchedEffect(deps) {
         KkalAnalytics.setDeviceId(deviceId)
@@ -43,6 +56,7 @@ fun App(componentContext: ComponentContext = remember {
                 scanViewModel = scanViewModel,
                 profileViewModel = profileViewModel,
                 foodSearchViewModel = foodSearchViewModel,
+                featureSearchViewModel = featureSearchViewModel,
                 scope = scope,
                 apiConfig = deps.apiConfig,
                 deviceId = deviceId,

@@ -18,9 +18,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -39,9 +44,12 @@ import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.presentation.journal.IJournalViewModel
 import ru.kkalscan.stats.WeekDates
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun JournalScreen(
     viewModel: IJournalViewModel,
+    scrollAnchor: String? = null,
+    onScrollAnchorConsumed: () -> Unit = {},
     onRefresh: () -> Unit,
     onRequestInsight: () -> Unit,
     onNeedPro: () -> Unit,
@@ -49,11 +57,27 @@ fun JournalScreen(
 ) {
     val state by viewModel.state.collectAsState()
     val week = state.week
+    val scrollState = rememberScrollState()
+    val fiberBringIntoView = remember { BringIntoViewRequester() }
+    val dietitianBringIntoView = remember { BringIntoViewRequester() }
+
+    LaunchedEffect(scrollAnchor, week) {
+        when (scrollAnchor) {
+            "fiber" -> {
+                fiberBringIntoView.bringIntoView()
+                onScrollAnchorConsumed()
+            }
+            "dietitian" -> {
+                dietitianBringIntoView.bringIntoView()
+                onScrollAnchorConsumed()
+            }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scrollState)
             .padding(horizontal = KkalScanDimens.screenHorizontal)
             .testTag("journal-screen"),
     ) {
@@ -131,6 +155,7 @@ fun JournalScreen(
                     } else {
                         "Нет записей — график появится после первого приёма пищи"
                     },
+                    modifier = Modifier.bringIntoViewRequester(fiberBringIntoView),
                 ) {
                     KkalFiberBarChart(
                         days = week.days,
@@ -172,6 +197,7 @@ fun JournalScreen(
                     onClick = {
                         if (week.isPro) onRequestInsight() else onNeedPro()
                     },
+                    modifier = Modifier.bringIntoViewRequester(dietitianBringIntoView),
                 )
                 Spacer(Modifier.height(120.dp))
             }

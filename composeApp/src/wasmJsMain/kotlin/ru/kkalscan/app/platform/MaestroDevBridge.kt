@@ -13,26 +13,68 @@ actual fun MaestroDevBridge(
     onGramsMinus: () -> Unit,
     onPortionHalf: () -> Unit,
     onPortionDouble: () -> Unit,
+    onOpenFoodSearch: () -> Unit,
+    onFoodSearchDemo: () -> Unit,
+    onFoodSearchAddFirst: () -> Unit,
+    onDeepLinkProfile: () -> Unit,
+    onDeepLinkJournal: () -> Unit,
+    onDeepLinkDiary: () -> Unit,
+    onFeatureSearchOpenFirst: () -> Unit,
 ) {
-    DisposableEffect(onStubScan, onConfirmAdd, onGramsPlus, onGramsMinus, onPortionHalf, onPortionDouble) {
+    DisposableEffect(
+        onStubScan,
+        onConfirmAdd,
+        onGramsPlus,
+        onGramsMinus,
+        onPortionHalf,
+        onPortionDouble,
+        onOpenFoodSearch,
+        onFoodSearchDemo,
+        onFoodSearchAddFirst,
+        onDeepLinkProfile,
+        onDeepLinkJournal,
+        onDeepLinkDiary,
+        onFeatureSearchOpenFirst,
+    ) {
         val stubBtn = document.getElementById("maestro-stub-scan")
         val confirmBtn = document.getElementById("maestro-confirm-add")
         val plusBtn = document.getElementById("maestro-grams-plus")
         val minusBtn = document.getElementById("maestro-grams-minus")
         val halfBtn = document.getElementById("maestro-portion-half")
         val doubleBtn = document.getElementById("maestro-portion-double")
+        val foodSearchBtn = document.getElementById("maestro-open-food-search")
+        val foodSearchDemoBtn = document.getElementById("maestro-food-search-demo")
+        val foodSearchAddBtn = document.getElementById("maestro-food-search-add")
+        val deeplinkProfileBtn = document.getElementById("maestro-deeplink-profile")
+        val deeplinkJournalBtn = document.getElementById("maestro-deeplink-journal")
+        val deeplinkDiaryBtn = document.getElementById("maestro-deeplink-diary")
+        val featureSearchFirstBtn = document.getElementById("maestro-feature-search-first")
         val stubHandler: (Event) -> Unit = { onStubScan() }
         val confirmHandler: (Event) -> Unit = { onConfirmAdd() }
         val plusHandler: (Event) -> Unit = { onGramsPlus() }
         val minusHandler: (Event) -> Unit = { onGramsMinus() }
         val halfHandler: (Event) -> Unit = { onPortionHalf() }
         val doubleHandler: (Event) -> Unit = { onPortionDouble() }
+        val foodSearchHandler: (Event) -> Unit = { onOpenFoodSearch() }
+        val foodSearchDemoHandler: (Event) -> Unit = { onFoodSearchDemo() }
+        val foodSearchAddHandler: (Event) -> Unit = { onFoodSearchAddFirst() }
+        val deeplinkProfileHandler: (Event) -> Unit = { onDeepLinkProfile() }
+        val deeplinkJournalHandler: (Event) -> Unit = { onDeepLinkJournal() }
+        val deeplinkDiaryHandler: (Event) -> Unit = { onDeepLinkDiary() }
+        val featureSearchFirstHandler: (Event) -> Unit = { onFeatureSearchOpenFirst() }
         stubBtn?.addEventListener("click", stubHandler)
         confirmBtn?.addEventListener("click", confirmHandler)
         plusBtn?.addEventListener("click", plusHandler)
         minusBtn?.addEventListener("click", minusHandler)
         halfBtn?.addEventListener("click", halfHandler)
         doubleBtn?.addEventListener("click", doubleHandler)
+        foodSearchBtn?.addEventListener("click", foodSearchHandler)
+        foodSearchDemoBtn?.addEventListener("click", foodSearchDemoHandler)
+        foodSearchAddBtn?.addEventListener("click", foodSearchAddHandler)
+        deeplinkProfileBtn?.addEventListener("click", deeplinkProfileHandler)
+        deeplinkJournalBtn?.addEventListener("click", deeplinkJournalHandler)
+        deeplinkDiaryBtn?.addEventListener("click", deeplinkDiaryHandler)
+        featureSearchFirstBtn?.addEventListener("click", featureSearchFirstHandler)
         onDispose {
             stubBtn?.removeEventListener("click", stubHandler)
             confirmBtn?.removeEventListener("click", confirmHandler)
@@ -40,6 +82,13 @@ actual fun MaestroDevBridge(
             minusBtn?.removeEventListener("click", minusHandler)
             halfBtn?.removeEventListener("click", halfHandler)
             doubleBtn?.removeEventListener("click", doubleHandler)
+            foodSearchBtn?.removeEventListener("click", foodSearchHandler)
+            foodSearchDemoBtn?.removeEventListener("click", foodSearchDemoHandler)
+            foodSearchAddBtn?.removeEventListener("click", foodSearchAddHandler)
+            deeplinkProfileBtn?.removeEventListener("click", deeplinkProfileHandler)
+            deeplinkJournalBtn?.removeEventListener("click", deeplinkJournalHandler)
+            deeplinkDiaryBtn?.removeEventListener("click", deeplinkDiaryHandler)
+            featureSearchFirstBtn?.removeEventListener("click", featureSearchFirstHandler)
         }
     }
 }

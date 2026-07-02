@@ -32,6 +32,7 @@ interface IScanViewModel {
     fun removeDish(index: Int)
     fun reset()
     fun onProActivated()
+    fun launchAddToDiary(onSuccess: () -> Unit = {})
 }
 
 fun defaultMealType(): MealType {

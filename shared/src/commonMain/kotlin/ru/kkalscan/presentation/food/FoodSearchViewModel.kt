@@ -33,6 +33,7 @@ interface IFoodSearchViewModel {
     suspend fun addDish(dish: Dish): Result<Unit>
     fun clear()
     fun consumeAddSuccess()
+    fun launchAddFirstResult()
 }
 
 class FoodSearchViewModel(
@@ -92,6 +93,13 @@ class FoodSearchViewModel(
 
     override fun consumeAddSuccess() {
         _state.update { it.copy(addSuccess = false) }
+    }
+
+    override fun launchAddFirstResult() {
+        scope.launch {
+            val dish = _state.value.results.firstOrNull() ?: return@launch
+            addDish(dish)
+        }
     }
 
     private fun Throwable.userMessage(): String = when (this) {

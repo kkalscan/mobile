@@ -10,4 +10,11 @@ expect fun MaestroDevBridge(
     onGramsMinus: () -> Unit = {},
     onPortionHalf: () -> Unit = {},
     onPortionDouble: () -> Unit = {},
+    onOpenFoodSearch: () -> Unit = {},
+    onFoodSearchDemo: () -> Unit = {},
+    onFoodSearchAddFirst: () -> Unit = {},
+    onDeepLinkProfile: () -> Unit = {},
+    onDeepLinkJournal: () -> Unit = {},
+    onDeepLinkDiary: () -> Unit = {},
+    onFeatureSearchOpenFirst: () -> Unit = {},
 )

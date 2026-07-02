@@ -92,6 +92,14 @@ class ScanViewModel(
         _state.update { it.copy(limitHit = false, errorMessage = null) }
     }
 
+    override fun launchAddToDiary(onSuccess: () -> Unit) {
+        scope.launch {
+            if (addToDiary().isSuccess) {
+                onSuccess()
+            }
+        }
+    }
+
     override suspend fun addToDiary(): Result<Unit> {
         val result = _state.value.result ?: return Result.failure(IllegalStateException("No scan"))
         if (result.dishes.isEmpty()) {

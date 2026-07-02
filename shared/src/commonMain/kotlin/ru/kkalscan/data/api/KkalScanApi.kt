@@ -23,6 +23,7 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
@@ -108,6 +109,21 @@ class KkalScanApi(
             append(query.encodeURLParameter())
             append("&limit=$limit&source=")
             append(source.encodeURLParameter())
+        }
+        return apiGet(path, deviceId)
+    }
+
+    override suspend fun searchFeatures(
+        deviceId: String,
+        query: String,
+        limit: Int,
+        locale: String,
+    ): FeatureSearchResult {
+        val path = buildString {
+            append("/features/search?q=")
+            append(query.encodeURLParameter())
+            append("&limit=$limit&locale=")
+            append(locale.encodeURLParameter())
         }
         return apiGet(path, deviceId)
     }

@@ -53,6 +53,7 @@ import ru.kkalscan.domain.model.DiaryEntry
 @Composable
 fun KkalScreenScaffold(
     hasBottomBar: Boolean = true,
+    topBar: @Composable (() -> Unit)? = null,
     bottomBar: @Composable () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -71,12 +72,27 @@ fun KkalScreenScaffold(
                 .background(KkalScanColors.Background),
         ) {
             KkalPageGradient()
-            Column(Modifier.fillMaxSize()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding(),
+            ) {
+                topBar?.let { bar ->
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                horizontal = KkalScanDimens.screenHorizontal,
+                                vertical = 12.dp,
+                            ),
+                    ) {
+                        bar()
+                    }
+                }
                 Box(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        .statusBarsPadding()
                         .then(if (!hasBottomBar) Modifier.navigationBarsPadding() else Modifier),
                 ) {
                     content()

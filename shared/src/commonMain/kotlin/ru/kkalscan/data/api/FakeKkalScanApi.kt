@@ -1,7 +1,9 @@
 package ru.kkalscan.data.api
 
 import ru.kkalscan.data.repository.currentDateIso
+import ru.kkalscan.domain.features.FeatureSearchCatalog
 import ru.kkalscan.domain.food.LocalFoodCatalog
+import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
@@ -129,6 +131,22 @@ class FakeKkalScanApi(
             searchLogs.add(Triple(deviceId, normalized, items.size))
         }
         return FoodSearchResult(query = trimmed, items = items, total = items.size)
+    }
+
+    override suspend fun searchFeatures(
+        deviceId: String,
+        query: String,
+        limit: Int,
+        locale: String,
+    ): FeatureSearchResult {
+        val trimmed = query.trim()
+        val outcome = FeatureSearchCatalog.query(trimmed, limit)
+        return FeatureSearchResult(
+            query = trimmed,
+            items = outcome.items,
+            total = outcome.items.size,
+            popularFallback = outcome.popularFallback,
+        )
     }
 
     override suspend fun submitBugReport(

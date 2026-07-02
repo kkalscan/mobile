@@ -26,7 +26,10 @@ MANGO_LIGHT = (255, 228, 209)
 MINT_LIGHT = (212, 250, 238)
 PROTEIN = (91, 141, 239)
 FAT = (255, 159, 67)
-CARBS = (139, 92, 246)
+FIBER = (30, 201, 149)
+FIBER_LIGHT = (225, 247, 240)
+CARBS = (255, 77, 141)
+CARBS_LIGHT = (255, 224, 235)
 
 
 def load_font(size: int, bold: bool = False) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
@@ -255,16 +258,22 @@ def ui_diary() -> Image.Image:
     body = load_font(28)
     small = load_font(24)
     d.text((40, 48), "Сегодня · 17.06.2026", fill=INK, font=h1)
-    rounded_rect(d, (40, 130, 800, 320), 28, MANGO_LIGHT)
-    d.text((70, 160), "Съедено сегодня", fill=INK_MUTED, font=body)
+    rounded_rect(d, (40, 130, 800, 380), 28, MANGO_LIGHT)
+    d.text((70, 160), "СЪЕДЕНО СЕГОДНЯ", fill=INK_MUTED, font=body)
     d.text((70, 210), "1840", fill=MANGO, font=load_font(72, bold=True))
     d.text((250, 245), "ккал", fill=INK_MUTED, font=body)
+    macro_chip(d, 70, 300, "Б 82", PROTEIN, (232, 240, 255))
+    macro_chip(d, 200, 300, "Ж 54", FAT, (255, 240, 224))
+    macro_chip(d, 330, 300, "У 210", CARBS, CARBS_LIGHT)
+    macro_chip(d, 460, 300, "Кл 28", FIBER, FIBER_LIGHT)
+    rounded_rect(d, (40, 400, 800, 480), 999, MANGO_LIGHT)
+    d.text((280, 425), "Найти продукт", fill=MANGO, font=load_font(30, bold=True))
     meals = [
         ("Борщ с говядиной", "320", MINT_LIGHT),
         ("Гречка с курицей", "420", MANGO_LIGHT),
         ("Салат оливье", "280", LEMON if False else (255, 248, 214)),
     ]
-    y = 360
+    y = 500
     for name, kcal, bg in meals:
         rounded_rect(d, (40, y, 800, y + 150), 24, SURFACE)
         d.rectangle((40, y, 120, y + 150), fill=bg)
@@ -292,7 +301,8 @@ def ui_result() -> Image.Image:
     d.text((70, 300), "Борщ с говядиной, сметана", fill=INK, font=load_font(26))
     macro_chip(d, 70, 350, "Б 12", PROTEIN, (232, 240, 255))
     macro_chip(d, 200, 350, "Ж 8", FAT, (255, 240, 224))
-    macro_chip(d, 330, 350, "У 52", CARBS, MINT_LIGHT)
+    macro_chip(d, 330, 350, "У 52", CARBS, CARBS_LIGHT)
+    macro_chip(d, 460, 350, "Кл 8", FIBER, FIBER_LIGHT)
     rounded_rect(d, (40, 470, 800, 620), 24, SURFACE)
     d.text((60, 500), "Борщ с говядиной", fill=INK, font=load_font(32, bold=True))
     d.text((60, 555), "320 г · 420 ккал", fill=INK_MUTED, font=load_font(26))
@@ -329,6 +339,63 @@ def ui_free_badge() -> Image.Image:
     return ui
 
 
+def ui_food_search() -> Image.Image:
+    ui = Image.new("RGB", (840, 1560), CREAM)
+    d = ImageDraw.Draw(ui)
+    d.text((40, 48), "Найти продукт", fill=INK, font=load_font(40, bold=True))
+    rounded_rect(d, (40, 120, 800, 200), 24, SURFACE)
+    d.text((70, 150), "овсянка", fill=INK, font=load_font(32))
+    d.text((40, 220), "Результаты", fill=INK_MUTED, font=load_font(26))
+    results = [
+        ("Овсянка на воде", "320 ккал", "250 г", 8.1),
+        ("Овсянка с бананом", "380 ккал", "280 г", 9.5),
+        ("Овсянка с молоком", "350 ккал", "260 г", 7.2),
+    ]
+    y = 260
+    for name, kcal, grams, fiber in results:
+        rounded_rect(d, (40, y, 800, y + 180), 24, SURFACE)
+        d.text((70, y + 24), name, fill=INK, font=load_font(32, bold=True))
+        d.text((70, y + 72), f"{kcal} · {grams}", fill=INK_MUTED, font=load_font(26))
+        macro_chip(d, 70, y + 118, "Кл " + str(int(fiber)), FIBER, FIBER_LIGHT)
+        rounded_rect(d, (620, y + 110, 770, y + 160), 999, MANGO)
+        d.text((645, y + 122), "Добавить", fill=WHITE, font=load_font(22, bold=True))
+        y += 200
+    return ui
+
+
+def ui_journal_fiber() -> Image.Image:
+    ui = Image.new("RGB", (840, 1560), CREAM)
+    d = ImageDraw.Draw(ui)
+    d.text((40, 48), "Дневник", fill=INK, font=load_font(40, bold=True))
+    d.text((220, 110), "10–16 июня 2026", fill=INK, font=load_font(28, bold=True))
+    rounded_rect(d, (40, 170, 800, 420), 28, MANGO_LIGHT)
+    d.text((70, 200), "СРЕДНЕЕ ЗА НЕДЕЛЮ", fill=INK_MUTED, font=load_font(26))
+    d.text((70, 250), "1680", fill=MANGO, font=load_font(64, bold=True))
+    d.text((230, 285), "ккал/день", fill=INK_MUTED, font=load_font(26))
+    macro_chip(d, 70, 340, "Б 16", PROTEIN, (232, 240, 255))
+    macro_chip(d, 200, 340, "Ж 12", FAT, (255, 240, 224))
+    macro_chip(d, 330, 340, "У 38", CARBS, CARBS_LIGHT)
+    macro_chip(d, 460, 340, "Кл 10", FIBER, FIBER_LIGHT)
+    rounded_rect(d, (40, 460, 800, 900), 24, SURFACE)
+    d.text((70, 490), "Клетчатка по дням", fill=INK, font=load_font(32, bold=True))
+    d.text((70, 540), "Среднее 10 г/день · рекомендуется 25–35 г", fill=INK_MUTED, font=load_font(22))
+    chart_top, chart_bottom = 590, 840
+    values = [6, 8, 12, 9, 15, 0, 0]
+    labels = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    max_val = max(max(values), 15)
+    bar_w = 80
+    for idx, value in enumerate(values):
+        bx = 70 + idx * (bar_w + 12)
+        bh = int((chart_bottom - chart_top) * value / max_val) if value > 0 else 8
+        by = chart_bottom - bh
+        color = FIBER if value > 0 else OUTLINE
+        rounded_rect(d, (bx, by, bx + bar_w, chart_bottom), 8, color)
+        if value > 0:
+            d.text((bx + 20, by - 28), str(value), fill=FIBER, font=load_font(20, bold=True))
+        d.text((bx + 24, chart_bottom + 12), labels[idx], fill=INK_MUTED, font=load_font(20))
+    return ui
+
+
 def ui_limit() -> Image.Image:
     ui = Image.new("RGB", (840, 1560), CREAM)
     d = ImageDraw.Draw(ui)
@@ -360,11 +427,11 @@ def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     icon = generate_icon()
     shots = [
-        generate_screenshot("01-diary", "Дневник питания за день", ui_diary),
+        generate_screenshot("01-diary", "Дневник с клетчаткой", ui_diary),
         generate_screenshot("02-result", "Калории по фото за секунды", ui_result),
-        generate_screenshot("03-scan", "Сфотографируй еду", ui_scan),
+        generate_screenshot("03-scan", "Поиск продуктов", ui_food_search),
         generate_screenshot("04-free", "3 бесплатных скана каждый день", ui_free_badge),
-        generate_screenshot("05-limit", "Лимит на сегодня — завтра снова 3", ui_limit),
+        generate_screenshot("05-limit", "Клетчатка за неделю", ui_journal_fiber),
     ]
     print("Generated:")
     print(icon)

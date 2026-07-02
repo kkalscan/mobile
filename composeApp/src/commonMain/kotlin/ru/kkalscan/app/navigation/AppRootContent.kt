@@ -25,12 +25,15 @@ import ru.kkalscan.app.platform.devStubScanPhotoBytes
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.diary.DiaryScreen
+import ru.kkalscan.app.ui.features.FeatureSearchBar
 import ru.kkalscan.app.ui.food.FoodSearchSheet
 import ru.kkalscan.app.ui.journal.JournalScreen
 import ru.kkalscan.app.ui.paywall.PaywallScreen
 import ru.kkalscan.app.ui.profile.ProfileScreen
 import ru.kkalscan.app.ui.result.AddToDiaryDialog
 import ru.kkalscan.app.ui.scan.ScanScreen
+import ru.kkalscan.navigation.resolveDeepLinkNavigation
+import ru.kkalscan.presentation.features.IFeatureSearchViewModel
 import ru.kkalscan.presentation.food.IFoodSearchViewModel
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.journal.IJournalViewModel
@@ -46,6 +49,7 @@ fun AppRootContent(
     scanViewModel: IScanViewModel,
     profileViewModel: IProfileViewModel,
     foodSearchViewModel: IFoodSearchViewModel,
+    featureSearchViewModel: IFeatureSearchViewModel,
     scope: CoroutineScope,
     apiConfig: IApiConfig,
     deviceId: String,
@@ -53,6 +57,7 @@ fun AppRootContent(
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
     var showFoodSearch by rememberSaveable { mutableStateOf(false) }
+    var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
 
@@ -128,6 +133,17 @@ fun AppRootContent(
         }
     }
 
+    val openDeepLink: (String) -> Unit = { deeplink ->
+        KkalAnalytics.reportAction("deeplink_open", mapOf("link" to deeplink))
+        resolveDeepLinkNavigation(deeplink)?.let { effect ->
+            effect.toAppTab()?.let { selectedTab = it }
+            screen = effect.toAppScreen()
+            journalScrollAnchor = effect.journalScrollAnchor
+            if (effect.openFoodSearch) showFoodSearch = true
+            if (effect.triggerScan && !scanState.isLoading) pickPhoto()
+        }
+    }
+
     MaestroNavigationBridge(
         onOpenScan = pickPhoto,
         onOpenProfile = {
@@ -139,6 +155,7 @@ fun AppRootContent(
             screen = AppScreen.Journal
         },
         onScanBack = {
+            scanViewModel.reset()
             selectedTab = AppTab.Today
             screen = AppScreen.Diary
         },
@@ -146,27 +163,55 @@ fun AppRootContent(
 
     MaestroDevBridge(
         onStubScan = {
-            if (!scanState.isLoading) {
+            val state = scanViewModel.state.value
+            if (!state.isLoading) {
                 KkalAnalytics.reportAction("dev_stub_scan")
                 val bytes = devStubScanPhotoBytes() ?: byteArrayOf(1, 2, 3)
                 runScan(bytes)
             }
         },
         onConfirmAdd = {
-            if (scanState.result != null && !scanState.isSaving) {
-                scope.launch { confirmAddToDiary(scanViewModel, diaryViewModel, journalViewModel, profileViewModel) }
+            scanViewModel.launchAddToDiary {
+                scope.launch { refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel) }
+                scanViewModel.reset()
             }
         },
         onGramsPlus = { scanViewModel.adjustDishGrams(0, DishPortion.STEP_GRAMS) },
         onGramsMinus = { scanViewModel.adjustDishGrams(0, -DishPortion.STEP_GRAMS) },
         onPortionHalf = { scanViewModel.scaleDishFromBaseline(0, 0.5) },
         onPortionDouble = { scanViewModel.scaleDishFromBaseline(0, 2.0) },
+        onOpenFoodSearch = {
+            KkalAnalytics.reportAction("feature_search_open")
+            featureSearchViewModel.onQueryChange("")
+        },
+        onFoodSearchDemo = {
+            KkalAnalytics.reportAction("feature_search_open")
+            featureSearchViewModel.onQueryChange("профиль")
+        },
+        onFoodSearchAddFirst = {
+            foodSearchViewModel.launchAddFirstResult()
+        },
+        onDeepLinkProfile = { openDeepLink("kkalscan://profile") },
+        onDeepLinkJournal = { openDeepLink("kkalscan://journal") },
+        onDeepLinkDiary = { openDeepLink("kkalscan://diary") },
+        onFeatureSearchOpenFirst = {
+            featureSearchViewModel.state.value.results.firstOrNull()?.deeplink?.let { link ->
+                featureSearchViewModel.clear()
+                openDeepLink(link)
+            }
+        },
     )
 
     val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Journal || screen == AppScreen.Profile
 
     KkalScreenScaffold(
         hasBottomBar = showBottomBar,
+        topBar = {
+            FeatureSearchBar(
+                viewModel = featureSearchViewModel,
+                onOpenDeepLink = openDeepLink,
+            )
+        },
         bottomBar = {
             KkalBottomBar(
                     selectedTab = selectedTab,
@@ -190,16 +235,12 @@ fun AppRootContent(
     ) {
         when (screen) {
             AppScreen.Diary -> {
-                MaestroScreenHook("diary-screen")
+                MaestroScreenHook("diary-screen feature-search-bar")
                 DiaryScreen(
                     viewModel = diaryViewModel,
                     onScanClick = {
                         KkalAnalytics.reportAction("scan_open")
                         pickPhoto()
-                    },
-                    onSearchClick = {
-                        KkalAnalytics.reportAction("food_search_open")
-                        showFoodSearch = true
                     },
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
@@ -211,9 +252,11 @@ fun AppRootContent(
             }
 
             AppScreen.Journal -> {
-                MaestroScreenHook("journal-screen")
+                MaestroScreenHook("journal-screen feature-search-bar")
                 JournalScreen(
                     viewModel = journalViewModel,
+                    scrollAnchor = journalScrollAnchor,
+                    onScrollAnchorConsumed = { journalScrollAnchor = null },
                     onRefresh = { scope.launch { journalViewModel.refresh() } },
                     onRequestInsight = {
                         KkalAnalytics.reportAction("dietitian_insight_click")
@@ -230,7 +273,7 @@ fun AppRootContent(
             }
 
             AppScreen.Profile -> {
-                MaestroScreenHook("profile-screen")
+                MaestroScreenHook("profile-screen feature-search-bar")
                 ProfileScreen(
                     viewModel = profileViewModel,
                     onRefresh = { scope.launch { profileViewModel.refresh() } },
@@ -249,7 +292,7 @@ fun AppRootContent(
             }
 
             AppScreen.Scan -> {
-                MaestroScreenHook("scan-screen")
+                MaestroScreenHook("scan-screen feature-search-bar")
                 ScanScreen(
                     viewModel = scanViewModel,
                     onPickPhoto = {
@@ -269,7 +312,7 @@ fun AppRootContent(
             }
 
             AppScreen.Paywall -> {
-                MaestroScreenHook("paywall-screen")
+                MaestroScreenHook("paywall-screen feature-search-bar")
                 PaywallScreen(
                     scansLeft = scanState.scansLeft,
                     onWatchAd = {

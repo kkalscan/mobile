@@ -1,6 +1,7 @@
 package ru.kkalscan.data.api
 
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.DiaryDay
@@ -35,4 +36,10 @@ interface IKkalScanApi {
         limit: Int = 20,
         source: String = "diary",
     ): FoodSearchResult
+    suspend fun searchFeatures(
+        deviceId: String,
+        query: String,
+        limit: Int = 20,
+        locale: String = "ru",
+    ): FeatureSearchResult
 }
