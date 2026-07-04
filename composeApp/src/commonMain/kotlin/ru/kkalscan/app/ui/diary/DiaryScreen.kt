@@ -29,6 +29,7 @@ import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -41,7 +42,10 @@ fun DiaryScreen(
     onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
-    val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    // Prefer the date the diary was actually loaded for so the header rolls over
+    // together with the data when the app returns from a long background stay.
+    val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val dateLabel = "${today.dayOfMonth}.${today.monthNumber.toString().padStart(2, '0')}.${today.year}"
 
     Column(

@@ -11,6 +11,8 @@ import ru.kkalscan.util.kkalLog
 import ru.kkalscan.util.maskDeviceId
 
 interface IDiaryRepository {
+    /** Current calendar date in ISO (yyyy-MM-dd), re-read from the clock on every call. */
+    fun currentDate(): String
     suspend fun getToday(timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): DiaryDay
     suspend fun getDay(date: String, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): DiaryDay
     suspend fun getWeek(weekStartIso: String, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): List<DiaryDay>
@@ -24,6 +26,8 @@ class DiaryRepository(
     private val deviceIdStorage: IDeviceIdStorage,
     private val todayProvider: () -> String = { currentDateIso() },
 ) : IDiaryRepository {
+
+    override fun currentDate(): String = todayProvider()
 
     override suspend fun getToday(timezoneOffsetMinutes: Int): DiaryDay =
         getDay(todayProvider(), timezoneOffsetMinutes)

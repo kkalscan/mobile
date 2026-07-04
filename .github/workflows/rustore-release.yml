@@ -107,7 +107,7 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
           echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
 
-      - name: Build signed AAB
+      - name: Build signed AAB and APK
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
@@ -115,7 +115,7 @@ jobs:
         run: |
           set -euo pipefail
           chmod +x gradlew
-          ./gradlew :composeApp:bundleRelease --no-daemon \
+          ./gradlew :composeApp:bundleRelease :composeApp:assembleRelease --no-daemon \
             -PVERSION_NAME="${{ steps.version.outputs.name }}" \
             -PVERSION_CODE="${{ steps.version.outputs.code }}"
           AAB=$(find composeApp/build/outputs/bundle/release -name '*.aab' | head -1)
@@ -125,6 +125,13 @@ jobs:
           fi
           echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
           ls -lh "$AAB"
+          APK=$(find composeApp/build/outputs/apk/release -name '*.apk' | head -1)
+          if [ -z "$APK" ]; then
+            echo "APK not found"
+            exit 1
+          fi
+          echo "APK_PATH=$APK" >> "$GITHUB_ENV"
+          ls -lh "$APK"
 
       - name: Publish to RuStore
         env:
@@ -149,4 +156,11 @@ jobs:
         with:
           name: kkalscan-release-aab
           path: ${{ env.AAB_PATH }}
+          if-no-files-found: error
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kkalscan-release-apk
+          path: ${{ env.APK_PATH }}
           if-no-files-found: error

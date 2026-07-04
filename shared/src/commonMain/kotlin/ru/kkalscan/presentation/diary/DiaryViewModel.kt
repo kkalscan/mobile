@@ -23,15 +23,25 @@ class DiaryViewModel(
     }
 
     override suspend fun refresh() {
+        val date = diaryRepository.currentDate()
         _state.update { it.copy(isLoading = true, errorMessage = null) }
         runCatching { diaryRepository.getToday() }
-            .onSuccess { day -> _state.update { DiaryUiState(isLoading = false, day = day) } }
+            .onSuccess { day -> _state.update { DiaryUiState(isLoading = false, day = day, date = date) } }
             .onFailure { e ->
                 kkalLog("Diary", "refresh fail ${e::class.simpleName}: ${e.message}")
                 _state.update {
-                    it.copy(isLoading = false, errorMessage = e.userMessage())
+                    it.copy(isLoading = false, date = date, errorMessage = e.userMessage())
                 }
             }
+    }
+
+    override suspend fun onForeground() {
+        val loadedDate = _state.value.date ?: return
+        val currentDate = diaryRepository.currentDate()
+        if (loadedDate != currentDate) {
+            kkalLog("Diary", "date rolled over $loadedDate -> $currentDate, refreshing")
+            refresh()
+        }
     }
 
     override suspend fun deleteEntry(entryId: String) {

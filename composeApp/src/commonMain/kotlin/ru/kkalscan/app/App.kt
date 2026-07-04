@@ -10,9 +10,11 @@ import androidx.compose.ui.Modifier
 import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
+import kotlinx.coroutines.launch
 import ru.kkalscan.AppDependencies
 import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.navigation.AppRootContent
+import ru.kkalscan.app.platform.PlatformForegroundEffect
 import ru.kkalscan.app.theme.KkalScanTheme
 
 @Composable
@@ -45,6 +47,12 @@ fun App(componentContext: ComponentContext = remember {
     LaunchedEffect(deps) {
         KkalAnalytics.setDeviceId(deviceId)
         KkalAnalytics.reportAppLaunch()
+    }
+
+    // When the app comes back from a long background stay, roll "today" over
+    // to the current calendar day instead of showing yesterday until restart.
+    PlatformForegroundEffect {
+        scope.launch { diaryViewModel.onForeground() }
     }
 
     KkalScanTheme {
