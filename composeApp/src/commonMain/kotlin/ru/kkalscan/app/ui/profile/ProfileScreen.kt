@@ -24,8 +24,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import ru.kkalscan.analytics.AnalyticsEvents
 import ru.kkalscan.app.analytics.KkalAnalytics
+import ru.kkalscan.app.platform.appVersionInfo
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalIconBadge
 import ru.kkalscan.app.components.KkalPageHeader
@@ -143,7 +146,7 @@ fun ProfileScreen(
                     title = "Нашли баг?",
                     body = "Сообщите об ошибке — подарим Pro на месяц бесплатно",
                     onClick = {
-                        KkalAnalytics.reportAction("bug_report_open")
+                        KkalAnalytics.reportAction(AnalyticsEvents.BUG_REPORT_OPEN)
                         pendingScreenshots = emptyList()
                         viewModel.clearBugReportFeedback()
                         showBugReportDialog = true
@@ -151,6 +154,15 @@ fun ProfileScreen(
                 )
             }
         }
+        Spacer(Modifier.height(24.dp))
+        val version = remember { appVersionInfo() }
+        Text(
+            text = "Версия ${version.versionName} (${version.versionCode})",
+            style = MaterialTheme.typography.bodySmall,
+            color = KkalScanColors.OnSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().testTag("profile-version"),
+        )
         Spacer(Modifier.height(120.dp))
     }
 
@@ -170,7 +182,7 @@ fun ProfileScreen(
                 pendingScreenshots = pendingScreenshots.filterIndexed { i, _ -> i != index }
             },
             onSubmit = { email, description, screenshots ->
-                KkalAnalytics.reportAction("bug_report_submit")
+                KkalAnalytics.reportAction(AnalyticsEvents.BUG_REPORT_SUBMIT)
                 onSubmitBugReport(email, description, screenshots)
             },
         )

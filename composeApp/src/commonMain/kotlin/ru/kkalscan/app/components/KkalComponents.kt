@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +37,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -46,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ru.kkalscan.app.platform.isStoreScreenshotMode
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryEntry
@@ -60,15 +64,20 @@ fun KkalScreenScaffold(
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(KkalScanColors.PageOuter),
+            .background(
+                if (isStoreScreenshotMode()) KkalScanColors.Background else KkalScanColors.PageOuter,
+            ),
     ) {
-        val phoneWidth = if (maxWidth < KkalScanDimens.phoneMaxWidth) maxWidth else KkalScanDimens.phoneMaxWidth
+        val phoneWidth = when {
+            maxWidth < KkalScanDimens.phoneMaxWidth -> maxWidth
+            else -> KkalScanDimens.phoneMaxWidth
+        }
         Box(
             modifier = Modifier
                 .width(phoneWidth)
                 .fillMaxHeight()
                 .align(Alignment.TopCenter)
-                .shadow(8.dp)
+                .then(if (isStoreScreenshotMode()) Modifier else Modifier.shadow(8.dp))
                 .background(KkalScanColors.Background),
         ) {
             KkalPageGradient()
@@ -133,8 +142,9 @@ fun KkalPageHeader(
 fun KkalBottomBar(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
+    onDescribeClick: () -> Unit,
     onScanClick: () -> Unit,
-    scanLoading: Boolean = false,
+    actionLoading: Boolean = false,
 ) {
     Box(Modifier.fillMaxWidth()) {
         Surface(
@@ -174,19 +184,50 @@ fun KkalBottomBar(
             }
         }
         }
+        if (selectedTab == AppTab.Today) {
         Surface(
-            onClick = { if (!scanLoading) onScanClick() },
+            onClick = { if (!actionLoading) onDescribeClick() },
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 16.dp)
+                .align(Alignment.TopStart)
+                .padding(start = 16.dp)
                 .offset(y = -KkalScanDimens.fabFloatOffset)
                 .size(KkalScanDimens.fabSize)
+                .testTag("diary-describe-food")
                 .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
             shape = CircleShape,
             color = KkalScanColors.Primary,
         ) {
             Box(contentAlignment = Alignment.Center) {
-                if (scanLoading) {
+                if (actionLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(28.dp),
+                        color = KkalScanColors.OnPrimary,
+                        strokeWidth = 3.dp,
+                    )
+                } else {
+                    Icon(
+                        Icons.Outlined.Edit,
+                        contentDescription = "Описать еду",
+                        tint = KkalScanColors.OnPrimary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+            }
+        }
+        Surface(
+            onClick = { if (!actionLoading) onScanClick() },
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 16.dp)
+                .offset(y = -KkalScanDimens.fabFloatOffset)
+                .size(KkalScanDimens.fabSize)
+                .testTag("diary-scan-photo")
+                .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
+            shape = CircleShape,
+            color = KkalScanColors.Primary,
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                if (actionLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(28.dp),
                         color = KkalScanColors.OnPrimary,
@@ -201,6 +242,7 @@ fun KkalBottomBar(
                     )
                 }
             }
+        }
         }
     }
 }

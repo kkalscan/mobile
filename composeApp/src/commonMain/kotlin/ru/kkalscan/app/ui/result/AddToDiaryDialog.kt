@@ -123,10 +123,22 @@ fun AddToDiaryDialog(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "AI оценил порцию — поправьте граммы, если знаете точнее",
+                    if (state.descriptionText != null) {
+                        "По вашему описанию — поправьте граммы, если знаете точнее"
+                    } else {
+                        "AI оценил порцию — поправьте граммы, если знаете точнее"
+                    },
                     style = MaterialTheme.typography.bodyMedium,
                     color = KkalScanColors.OnSurfaceVariant,
                 )
+                state.descriptionText?.let { text ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "«$text»",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = KkalScanColors.OnSurfaceVariant,
+                    )
+                }
                 Spacer(Modifier.height(16.dp))
                 result.dishes.forEachIndexed { index, dish ->
                     val aiGrams = baseline.getOrNull(index)?.grams ?: dish.grams

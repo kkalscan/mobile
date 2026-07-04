@@ -55,6 +55,40 @@ class ScanViewModel(
             }
     }
 
+    override suspend fun describeText(description: String) {
+        _state.update { it.copy(isLoading = true, errorMessage = null, limitHit = false) }
+        kkalLog("Scan", "describe start chars=${description.trim().length}")
+        runCatching { scanRepository.describeFood(description) }
+            .onSuccess { result ->
+                kkalLog(
+                    "Scan",
+                    "describe ok scanId=${result.scanId.take(8)}… dishes=${result.dishes.size} kcal=${result.totalKcal}",
+                )
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        result = result,
+                        baselineDishes = result.dishes,
+                        photoBytes = null,
+                        descriptionText = description.trim(),
+                        scansLeft = result.scansLeft,
+                        selectedMealType = defaultMealType(),
+                    )
+                }
+            }
+            .onFailure { e ->
+                kkalLog("Scan", "describe fail ${e::class.simpleName}: ${e.message}")
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = e.userMessage(isDescribe = true),
+                        limitHit = e is KkalScanException.LimitHit,
+                        scansLeft = (e as? KkalScanException.LimitHit)?.scansLeft,
+                    )
+                }
+            }
+    }
+
     override suspend fun grantAdBonus() {
         runCatching { scanRepository.grantAdBonus() }
             .onSuccess { bonus ->
@@ -144,10 +178,14 @@ class ScanViewModel(
         }
     }
 
-    private fun Throwable.userMessage(): String = when (this) {
+    private fun Throwable.userMessage(isDescribe: Boolean = false): String = when (this) {
         is KkalScanException.Network -> "Нет сети. Проверьте подключение."
         is KkalScanException.LimitHit -> "На сегодня бесплатные сканы закончились"
-        is KkalScanException.Api -> message ?: "Не удалось распознать фото"
+        is KkalScanException.Api -> message ?: if (isDescribe) {
+            "Не удалось понять описание"
+        } else {
+            "Не удалось распознать фото"
+        }
         else -> message ?: "Ошибка"
     }
 }

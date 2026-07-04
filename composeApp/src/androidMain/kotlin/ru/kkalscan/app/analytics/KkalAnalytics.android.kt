@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import io.appmetrica.analytics.AppMetrica
 import io.appmetrica.analytics.AppMetricaConfig
+import ru.kkalscan.analytics.AnalyticsEvents
 
 actual object KkalAnalytics {
     private var enabled = false
@@ -24,11 +25,11 @@ actual object KkalAnalytics {
     }
 
     actual fun reportAppLaunch() {
-        reportAction("app_launch")
+        reportAction(AnalyticsEvents.APP_LAUNCH)
     }
 
     actual fun reportFeatureOpen(feature: String) {
-        reportAction("feature_open", mapOf("feature" to feature))
+        reportAction(AnalyticsEvents.FEATURE_OPEN, mapOf("feature" to feature))
     }
 
     actual fun reportAction(action: String, attributes: Map<String, String>) {

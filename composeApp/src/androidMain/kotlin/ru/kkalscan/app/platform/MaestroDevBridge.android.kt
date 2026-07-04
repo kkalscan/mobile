@@ -11,6 +11,8 @@ actual fun MaestroDevBridge(
     onPortionHalf: () -> Unit,
     onPortionDouble: () -> Unit,
     onOpenFoodSearch: () -> Unit,
+    onOpenDescribeFood: () -> Unit,
+    onDescribeFoodDemo: () -> Unit,
     onFoodSearchDemo: () -> Unit,
     onFoodSearchAddFirst: () -> Unit,
     onDeepLinkProfile: () -> Unit,

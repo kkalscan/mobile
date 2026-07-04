@@ -106,6 +106,24 @@ class DiaryPersistenceFlowTest {
     }
 
     @Test
+    fun describeText_addToDiary_thenRefresh_showsEntry() = runTest {
+        val api = StatefulDiaryApi(diaryDate = today)
+        val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
+        val repo = repository(api, storage)
+
+        repo.getToday(tz).entries shouldHaveSize 0
+
+        val scan = api.describeFood(storage.getDeviceId(), "тарелка борща", tz)
+        repo.addFromScan(scan.scanId, MealType.dinner, scan.dishes)
+
+        val afterRefresh = repo.getToday(tz)
+        afterRefresh.entries shouldHaveSize 1
+        afterRefresh.entries.first().dishes.first().name shouldBe "Борщ с говядиной"
+        afterRefresh.entries.first().mealType shouldBe MealType.dinner
+        afterRefresh.totalKcal shouldBe 250
+    }
+
+    @Test
     fun viewModel_addToDiary_thenRefresh_showsEntries() = runTest {
         val api = StatefulDiaryApi(diaryDate = today)
         var stored: String? = null

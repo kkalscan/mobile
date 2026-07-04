@@ -20,6 +20,14 @@ class ScanRepositoryTest {
     }
 
     @Test
+    fun describeFood_returnsResult() = runTest {
+        val result = repository.describeFood("тарелка борща")
+        result.totalKcal shouldBe 250
+        result.dishes.single().name shouldBe "Борщ по описанию"
+        result.scansLeft shouldBe 3
+    }
+
+    @Test
     fun grantAdBonus_increasesScans() = runTest {
         val bonus = repository.grantAdBonus()
         bonus.scansLeft shouldBe 5

@@ -10,6 +10,14 @@ KkalScan uses AppMetrica in release Android builds to understand where users get
 scan_open -> photo_selected -> photo_scan -> scan_success -> add_to_diary
 ```
 
+### Describe Food Funnel
+
+```text
+describe_food_open -> describe_text_scan -> scan_success -> describe_food_recognized -> add_to_diary
+```
+
+Text description reuses the same `scan_success`, `limit_hit`, and `add_to_diary` events as photo scan.
+
 Read this funnel as:
 
 | Drop-off | Likely signal |
@@ -57,6 +65,9 @@ Read this funnel as:
 | `photo_selected` | Photo bytes are returned by the picker | none |
 | `photo_picker_cancel` | Picker returns no photo. This includes user cancel, denied camera permission, or camera URI creation failure in the current picker API. | none |
 | `photo_scan` | Photo is submitted to backend recognition | none |
+| `describe_food_open` | User opens text description sheet | none |
+| `describe_text_scan` | Text description is submitted to backend | none |
+| `describe_food_recognized` | AI returned a result for text description | none |
 | `scan_success` | Backend returns a scan result | none |
 | `scan_error` | Scan finishes without result and without limit-hit state | `reason` |
 | `first_scan_success` | Scan success leaves 3 free scans | none |
@@ -73,7 +84,15 @@ Read this funnel as:
 | `ad_watch_complete` | Ad bonus grant succeeds | `scans_left` |
 | `ad_bonus_failed` | Ad bonus grant fails or leaves user blocked | `reason` |
 | `bug_report_open` | User opens bug report dialog | none |
+| `bug_report_submit` | User submits bug report | none |
 | `dietitian_insight_click` | User requests AI dietitian insight | none |
+| `feature_search_open` | Feature search opened | none |
+| `feature_search_query` | Feature search query executed | `query`, `query_length`, `results`, `empty_query` |
+| `food_search_add` | Food added from catalog search | none |
+| `deeplink_open` | Deeplink navigation | `link` |
+| `subscription_start` | Pro subscription activated | none |
+| `day_1_return` | User returns on day 1 after install | none |
+| `day_7_return` | User returns on day 7 after install | none |
 | `dev_stub_scan` | Maestro/dev bridge triggers a stub scan | none |
 
 ## Device Segments
@@ -98,3 +117,7 @@ If one model has lower `scan_success / photo_scan`, look for camera, image compr
 ## Current Limitation
 
 The photo picker currently reports a single `photo_picker_cancel` event for user cancel, denied camera permission, and camera URI creation failure. Split this into separate reason values if picker-level diagnosis becomes important.
+
+`install` is tracked by AppMetrica automatically — no custom event required. Use AppMetrica installs metric in funnel denominators.
+
+`subscription_cancel` is not implemented yet.

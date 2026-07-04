@@ -20,6 +20,7 @@ import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.CameraAlt
 import androidx.compose.material.icons.outlined.CardGiftcard
 import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Eco
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.PieChart
@@ -254,6 +255,7 @@ private fun FeatureSearchResultRow(
 private fun iconForFeature(key: String): ImageVector = when (key) {
     "today" -> Icons.Outlined.Today
     "scan" -> Icons.Outlined.CameraAlt
+    "edit" -> Icons.Outlined.Edit
     "search" -> Icons.Outlined.Search
     "journal", "macros" -> Icons.Outlined.CalendarMonth
     "fiber" -> Icons.Outlined.Eco

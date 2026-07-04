@@ -65,6 +65,28 @@ class FakeKkalScanApiTest {
     }
 
     @Test
+    fun describeFood_recognizesBorscht() = runTest {
+        val api = FakeKkalScanApi(todayProvider = { today })
+        val scan = api.describeFood(deviceId, "тарелка борща", timezoneOffsetMinutes = 180)
+
+        scan.dishes.single().name shouldBe "Борщ с говядиной"
+        scan.totalKcal shouldBe 250
+    }
+
+    @Test
+    fun describeFood_addToDiary_persistsEntry() = runTest {
+        val api = FakeKkalScanApi(todayProvider = { today })
+        val scan = api.describeFood(deviceId, "тарелка борща", timezoneOffsetMinutes = 180)
+        api.addDiaryEntry(deviceId, ru.kkalscan.domain.model.MealType.lunch, scan.scanId, null)
+
+        val day = api.getDiary(deviceId, today, timezoneOffsetMinutes = 180)
+        day.entries shouldHaveSize 1
+        day.entries.single().dishes.single().name shouldBe "Борщ с говядиной"
+        day.totalKcal shouldBe 250
+        day.entries.single().mealType shouldBe ru.kkalscan.domain.model.MealType.lunch
+    }
+
+    @Test
     fun searchFeatures_findsProfileAndDeeplink() = runTest {
         val api = FakeKkalScanApi(todayProvider = { today })
         val result = api.searchFeatures(deviceId, "профиль", limit = 10, locale = "ru")

@@ -11,7 +11,12 @@ import com.arkivanov.decompose.ComponentContext
 import com.arkivanov.decompose.DefaultComponentContext
 import com.arkivanov.essenty.lifecycle.LifecycleRegistry
 import kotlinx.coroutines.launch
-import ru.kkalscan.AppDependencies
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import ru.kkalscan.analytics.AnalyticsEvents
+import ru.kkalscan.analytics.LaunchRetentionTracker
+import ru.kkalscan.analytics.createLaunchRetentionStorage
 import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.navigation.AppRootContent
 import ru.kkalscan.app.platform.PlatformForegroundEffect
@@ -33,7 +38,7 @@ fun App(componentContext: ComponentContext = remember {
     val featureSearchViewModel = remember(deps, scope) {
         deps.featureSearchViewModel(scope) { query, resultsCount ->
             KkalAnalytics.reportAction(
-                "feature_search_query",
+                AnalyticsEvents.FEATURE_SEARCH_QUERY,
                 mapOf(
                     "query" to query.take(200),
                     "query_length" to query.length.toString(),
@@ -47,6 +52,9 @@ fun App(componentContext: ComponentContext = remember {
     LaunchedEffect(deps) {
         KkalAnalytics.setDeviceId(deviceId)
         KkalAnalytics.reportAppLaunch()
+        val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+        LaunchRetentionTracker(createLaunchRetentionStorage(), KkalAnalytics::reportAction)
+            .onAppLaunch(today)
     }
 
     // When the app comes back from a long background stay, roll "today" over

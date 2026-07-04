@@ -15,6 +15,8 @@ data class ScanUiState(
     /** AI baseline portions — used for ½ / 2× chips. */
     val baselineDishes: List<Dish> = emptyList(),
     val photoBytes: ByteArray? = null,
+    /** Original text when the meal was recognized from a description (not a photo). */
+    val descriptionText: String? = null,
     val selectedMealType: MealType = defaultMealType(),
     val errorMessage: String? = null,
     val limitHit: Boolean = false,
@@ -24,6 +26,7 @@ data class ScanUiState(
 interface IScanViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<ScanUiState>
     suspend fun scanPhoto(photoBytes: ByteArray)
+    suspend fun describeText(description: String)
     suspend fun grantAdBonus()
     suspend fun addToDiary(): Result<Unit>
     fun selectMealType(mealType: MealType)

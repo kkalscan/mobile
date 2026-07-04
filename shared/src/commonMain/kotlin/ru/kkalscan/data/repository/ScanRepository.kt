@@ -7,6 +7,7 @@ import ru.kkalscan.domain.model.ScanResult
 
 interface IScanRepository {
     suspend fun scanPhoto(photoBytes: ByteArray, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): ScanResult
+    suspend fun describeFood(description: String, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): ScanResult
     suspend fun grantAdBonus(): ScanBonusResult
 }
 
@@ -18,6 +19,11 @@ class ScanRepository(
     override suspend fun scanPhoto(photoBytes: ByteArray, timezoneOffsetMinutes: Int): ScanResult {
         val deviceId = deviceIdStorage.getDeviceId()
         return api.scanPhoto(deviceId, photoBytes, timezoneOffsetMinutes)
+    }
+
+    override suspend fun describeFood(description: String, timezoneOffsetMinutes: Int): ScanResult {
+        val deviceId = deviceIdStorage.getDeviceId()
+        return api.describeFood(deviceId, description, timezoneOffsetMinutes)
     }
 
     override suspend fun grantAdBonus(): ScanBonusResult {

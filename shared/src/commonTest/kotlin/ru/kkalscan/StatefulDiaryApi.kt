@@ -56,6 +56,50 @@ class StatefulDiaryApi(
         return result
     }
 
+    override suspend fun describeFood(
+        deviceId: String,
+        description: String,
+        timezoneOffsetMinutes: Int,
+    ): ScanResult {
+        scanCounter++
+        val normalized = description.trim().lowercase()
+        val dish = if (normalized.contains("борщ")) {
+            Dish(
+                name = "Борщ с говядиной",
+                grams = 300,
+                kcal = 250,
+                protein = 12.0,
+                fat = 8.0,
+                carbs = 22.0,
+                fiber = 5.5,
+            )
+        } else {
+            Dish(
+                name = "Блюдо $scanCounter (описание)",
+                grams = 200,
+                kcal = 100 * scanCounter,
+                protein = 10.0,
+                fat = 5.0,
+                carbs = 20.0,
+                fiber = 4.0,
+            )
+        }
+        val scanId = UUID.randomUUID().toString()
+        val result = ScanResult(
+            scanId = scanId,
+            dishes = listOf(dish),
+            totalKcal = dish.kcal,
+            totalProtein = dish.protein,
+            totalFat = dish.fat,
+            totalCarbs = dish.carbs,
+            totalFiber = dish.fiber,
+            scansLeft = 3,
+            isPro = false,
+        )
+        scansById[scanId] = result
+        return result
+    }
+
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =
         ScanBonusResult(scansLeft = 5, bonusGranted = true)
 

@@ -34,6 +34,23 @@ object TestApiFixtures {
                 status = HttpStatusCode.OK,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
+            path.endsWith("/scan/text") && request.method.value == "POST" -> respond(
+                content = """
+                    {
+                      "scan_id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                      "dishes": [{"name":"Борщ по описанию","grams":300,"kcal":250,"protein":12,"fat":8,"carbs":22,"fiber":5.5}],
+                      "total_kcal": 250,
+                      "total_protein": 12,
+                      "total_fat": 8,
+                      "total_carbs": 22,
+                      "total_fiber": 5.5,
+                      "scans_left": 3,
+                      "is_pro": false
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
             path.endsWith("/diary/entries") && request.method.value == "POST" -> respond(
                 content = """
                     {

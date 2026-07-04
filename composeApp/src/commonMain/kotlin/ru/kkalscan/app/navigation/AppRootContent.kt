@@ -12,7 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import ru.kkalscan.analytics.AnalyticsEvents
 import ru.kkalscan.app.analytics.KkalAnalytics
+import ru.kkalscan.app.analytics.ScanAnalytics
+import ru.kkalscan.app.analytics.analyticsReason
+import ru.kkalscan.app.analytics.orEmptyAnalyticsValue
 import ru.kkalscan.app.platform.rememberProPaymentOpener
 import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.app.components.AppTab
@@ -24,6 +28,7 @@ import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.domain.model.DishPortion
+import ru.kkalscan.app.ui.describe.DescribeFoodSheet
 import ru.kkalscan.app.ui.diary.DiaryScreen
 import ru.kkalscan.app.ui.features.FeatureSearchBar
 import ru.kkalscan.app.ui.food.FoodSearchSheet
@@ -57,6 +62,7 @@ fun AppRootContent(
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
     var showFoodSearch by rememberSaveable { mutableStateOf(false) }
+    var showDescribeFood by rememberSaveable { mutableStateOf(false) }
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
@@ -64,13 +70,13 @@ fun AppRootContent(
     LaunchedEffect(screen) {
         KkalAnalytics.reportFeatureOpen(screen.analyticsFeatureName())
         if (screen == AppScreen.Paywall) {
-            KkalAnalytics.reportAction("paywall_shown")
-            KkalAnalytics.reportAction("ad_offer_shown")
+            KkalAnalytics.reportAction(AnalyticsEvents.PAYWALL_SHOWN)
+            KkalAnalytics.reportAction(AnalyticsEvents.AD_OFFER_SHOWN)
         }
     }
 
     val startProPayment: () -> Unit = {
-        KkalAnalytics.reportAction("pro_click")
+        KkalAnalytics.reportAction(AnalyticsEvents.PRO_CLICK)
         scope.launch {
             runCatching {
                 profileViewModel.startProSubscription()
@@ -83,7 +89,7 @@ fun AppRootContent(
                         profileViewModel.refresh()
                         diaryViewModel.refresh()
                         if (profileViewModel.state.value.status?.isPro == true) {
-                            KkalAnalytics.reportAction("subscription_start")
+                            KkalAnalytics.reportAction(AnalyticsEvents.SUBSCRIPTION_START)
                             scanViewModel.onProActivated()
                             screen = AppScreen.Diary
                             selectedTab = AppTab.Today
@@ -91,7 +97,7 @@ fun AppRootContent(
                         }
                     }
                 } else if (result.isPro) {
-                    KkalAnalytics.reportAction("subscription_start")
+                    KkalAnalytics.reportAction(AnalyticsEvents.SUBSCRIPTION_START)
                     profileViewModel.refresh()
                     diaryViewModel.refresh()
                     scanViewModel.onProActivated()
@@ -103,43 +109,63 @@ fun AppRootContent(
     }
 
     val runScan: (ByteArray) -> Unit = { bytes ->
-        KkalAnalytics.reportAction("photo_scan")
+        KkalAnalytics.reportAction(AnalyticsEvents.PHOTO_SCAN)
         scope.launch {
             scanViewModel.scanPhoto(bytes)
             val stateAfterScan = scanViewModel.state.value
             if (stateAfterScan.limitHit) {
-                KkalAnalytics.reportAction(
-                    "limit_hit",
-                    mapOf("scans_left" to stateAfterScan.scansLeft.orEmptyAnalyticsValue()),
-                )
                 screen = AppScreen.Paywall
-            } else if (stateAfterScan.result != null) {
-                reportScanSuccess(stateAfterScan.scansLeft)
-            } else if (stateAfterScan.errorMessage != null) {
-                KkalAnalytics.reportAction(
-                    "scan_error",
-                    mapOf("reason" to stateAfterScan.errorMessage.analyticsReason()),
-                )
             }
+            ScanAnalytics.reportScanOutcome(
+                scansLeft = stateAfterScan.scansLeft,
+                limitHit = stateAfterScan.limitHit,
+                hasResult = stateAfterScan.result != null,
+                errorMessage = stateAfterScan.errorMessage,
+            )
+        }
+    }
+
+    val runDescribe: (String) -> Unit = { description ->
+        KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_TEXT_SCAN)
+        scope.launch {
+            scanViewModel.describeText(description)
+            val stateAfterDescribe = scanViewModel.state.value
+            if (stateAfterDescribe.limitHit) {
+                showDescribeFood = false
+                screen = AppScreen.Paywall
+            }
+            ScanAnalytics.reportScanOutcome(
+                scansLeft = stateAfterDescribe.scansLeft,
+                limitHit = stateAfterDescribe.limitHit,
+                hasResult = stateAfterDescribe.result != null,
+                errorMessage = stateAfterDescribe.errorMessage,
+            )
         }
     }
 
     val pickPhoto = rememberPhotoPicker { bytes ->
         if (bytes != null && !scanState.isLoading) {
-            KkalAnalytics.reportAction("photo_selected")
+            KkalAnalytics.reportAction(AnalyticsEvents.PHOTO_SELECTED)
             runScan(bytes)
         } else if (bytes == null) {
-            KkalAnalytics.reportAction("photo_picker_cancel")
+            KkalAnalytics.reportAction(AnalyticsEvents.PHOTO_PICKER_CANCEL)
         }
     }
 
+    val openDescribeFood: () -> Unit = {
+        KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_OPEN)
+        scanViewModel.reset()
+        showDescribeFood = true
+    }
+
     val openDeepLink: (String) -> Unit = { deeplink ->
-        KkalAnalytics.reportAction("deeplink_open", mapOf("link" to deeplink))
+        KkalAnalytics.reportAction(AnalyticsEvents.DEEPLINK_OPEN, mapOf("link" to deeplink))
         resolveDeepLinkNavigation(deeplink)?.let { effect ->
             effect.toAppTab()?.let { selectedTab = it }
             screen = effect.toAppScreen()
             journalScrollAnchor = effect.journalScrollAnchor
             if (effect.openFoodSearch) showFoodSearch = true
+            if (effect.openDescribeFood) openDescribeFood()
             if (effect.triggerScan && !scanState.isLoading) pickPhoto()
         }
     }
@@ -165,7 +191,7 @@ fun AppRootContent(
         onStubScan = {
             val state = scanViewModel.state.value
             if (!state.isLoading) {
-                KkalAnalytics.reportAction("dev_stub_scan")
+                KkalAnalytics.reportAction(AnalyticsEvents.DEV_STUB_SCAN)
                 val bytes = devStubScanPhotoBytes() ?: byteArrayOf(1, 2, 3)
                 runScan(bytes)
             }
@@ -181,11 +207,16 @@ fun AppRootContent(
         onPortionHalf = { scanViewModel.scaleDishFromBaseline(0, 0.5) },
         onPortionDouble = { scanViewModel.scaleDishFromBaseline(0, 2.0) },
         onOpenFoodSearch = {
-            KkalAnalytics.reportAction("feature_search_open")
+            KkalAnalytics.reportAction(AnalyticsEvents.FEATURE_SEARCH_OPEN)
             featureSearchViewModel.onQueryChange("")
         },
+        onOpenDescribeFood = openDescribeFood,
+        onDescribeFoodDemo = {
+            openDescribeFood()
+            runDescribe("тарелка борща")
+        },
         onFoodSearchDemo = {
-            KkalAnalytics.reportAction("feature_search_open")
+            KkalAnalytics.reportAction(AnalyticsEvents.FEATURE_SEARCH_OPEN)
             featureSearchViewModel.onQueryChange("профиль")
         },
         onFoodSearchAddFirst = {
@@ -223,13 +254,16 @@ fun AppRootContent(
                             AppTab.Profile -> AppScreen.Profile
                         }
                     },
+                    onDescribeClick = {
+                        if (!scanState.isLoading) openDescribeFood()
+                    },
                     onScanClick = {
                         if (!scanState.isLoading) {
-                            KkalAnalytics.reportAction("scan_open")
+                            KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
                             pickPhoto()
                         }
                     },
-                scanLoading = scanState.isLoading,
+                    actionLoading = scanState.isLoading,
             )
         },
     ) {
@@ -239,13 +273,13 @@ fun AppRootContent(
                 DiaryScreen(
                     viewModel = diaryViewModel,
                     onScanClick = {
-                        KkalAnalytics.reportAction("scan_open")
+                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
                         pickPhoto()
                     },
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = {
-                        KkalAnalytics.reportAction("scan_retry")
+                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)
                         pickPhoto()
                     },
                 )
@@ -259,7 +293,7 @@ fun AppRootContent(
                     onScrollAnchorConsumed = { journalScrollAnchor = null },
                     onRefresh = { scope.launch { journalViewModel.refresh() } },
                     onRequestInsight = {
-                        KkalAnalytics.reportAction("dietitian_insight_click")
+                        KkalAnalytics.reportAction(AnalyticsEvents.DIETITIAN_INSIGHT_CLICK)
                         scope.launch {
                             when (journalViewModel.requestDietitianInsight()) {
                                 InsightRequestResult.NeedPro -> screen = AppScreen.Paywall
@@ -285,7 +319,7 @@ fun AppRootContent(
                     },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = {
-                        KkalAnalytics.reportAction("scan_retry")
+                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)
                         pickPhoto()
                     },
                 )
@@ -296,7 +330,7 @@ fun AppRootContent(
                 ScanScreen(
                     viewModel = scanViewModel,
                     onPickPhoto = {
-                        KkalAnalytics.reportAction("scan_open")
+                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
                         pickPhoto()
                     },
                     onBack = {
@@ -316,19 +350,19 @@ fun AppRootContent(
                 PaywallScreen(
                     scansLeft = scanState.scansLeft,
                     onWatchAd = {
-                        KkalAnalytics.reportAction("ad_bonus_click")
+                        KkalAnalytics.reportAction(AnalyticsEvents.AD_BONUS_CLICK)
                         scope.launch {
                             scanViewModel.grantAdBonus()
                             val stateAfterBonus = scanViewModel.state.value
                             if (stateAfterBonus.limitHit || stateAfterBonus.errorMessage != null) {
                                 KkalAnalytics.reportAction(
-                                    "ad_bonus_failed",
+                                    AnalyticsEvents.AD_BONUS_FAILED,
                                     mapOf("reason" to stateAfterBonus.errorMessage.analyticsReason()),
                                 )
                                 return@launch
                             }
                             KkalAnalytics.reportAction(
-                                "ad_watch_complete",
+                                AnalyticsEvents.AD_WATCH_COMPLETE,
                                 mapOf("scans_left" to stateAfterBonus.scansLeft.orEmptyAnalyticsValue()),
                             )
                             profileViewModel.refresh()
@@ -339,7 +373,7 @@ fun AppRootContent(
                     },
                     onBuyPro = startProPayment,
                     onBack = {
-                        KkalAnalytics.reportAction("paywall_back")
+                        KkalAnalytics.reportAction(AnalyticsEvents.PAYWALL_BACK)
                         selectedTab = AppTab.Today
                         screen = AppScreen.Diary
                     },
@@ -353,11 +387,11 @@ fun AppRootContent(
                 viewModel = scanViewModel,
                 onDismiss = { scanViewModel.reset() },
                 onConfirm = {
-                    KkalAnalytics.reportAction("add_to_diary")
+                    KkalAnalytics.reportAction(AnalyticsEvents.ADD_TO_DIARY)
                     val ok = scanViewModel.addToDiary().isSuccess
                     if (!ok) {
                         KkalAnalytics.reportAction(
-                            "add_to_diary_failed",
+                            AnalyticsEvents.ADD_TO_DIARY_FAILED,
                             mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
                         )
                     }
@@ -381,7 +415,7 @@ fun AppRootContent(
                     foodSearchViewModel.clear()
                 },
                 onAdded = {
-                    KkalAnalytics.reportAction("food_search_add")
+                    KkalAnalytics.reportAction(AnalyticsEvents.FOOD_SEARCH_ADD)
                     scope.launch {
                         diaryViewModel.refresh()
                         journalViewModel.refresh()
@@ -389,12 +423,24 @@ fun AppRootContent(
                 },
             )
         }
+
+        if (showDescribeFood) {
+            MaestroScreenHook("describe-food-sheet")
+            DescribeFoodSheet(
+                viewModel = scanViewModel,
+                onDismiss = {
+                    showDescribeFood = false
+                    scanViewModel.reset()
+                },
+                onRecognized = {
+                    KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_RECOGNIZED)
+                    showDescribeFood = false
+                },
+                onSubmitDescription = runDescribe,
+            )
+        }
     }
 }
-
-private fun Int?.orEmptyAnalyticsValue(): String = this?.toString() ?: "unknown"
-
-private fun String?.analyticsReason(): String = this?.takeIf { it.isNotBlank() } ?: "unknown"
 
 private fun AppScreen.analyticsFeatureName(): String = when (this) {
     AppScreen.Diary -> "diary"
@@ -403,33 +449,6 @@ private fun AppScreen.analyticsFeatureName(): String = when (this) {
     AppScreen.Scan -> "scan"
     AppScreen.Result -> "result"
     AppScreen.Paywall -> "paywall"
-}
-
-private fun reportScanSuccess(scansLeft: Int?) {
-    KkalAnalytics.reportAction("scan_success")
-    when (scansLeft) {
-        3 -> KkalAnalytics.reportAction("first_scan_success")
-        2 -> KkalAnalytics.reportAction("second_scan_success")
-        1 -> KkalAnalytics.reportAction("third_scan_success")
-    }
-}
-
-private suspend fun confirmAddToDiary(
-    scanViewModel: IScanViewModel,
-    diaryViewModel: IDiaryViewModel,
-    journalViewModel: IJournalViewModel,
-    profileViewModel: IProfileViewModel,
-) {
-    KkalAnalytics.reportAction("add_to_diary")
-    if (scanViewModel.addToDiary().isFailure) {
-        KkalAnalytics.reportAction(
-            "add_to_diary_failed",
-            mapOf("reason" to scanViewModel.state.value.errorMessage.analyticsReason()),
-        )
-        return
-    }
-    refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
-    scanViewModel.reset()
 }
 
 private suspend fun refreshAfterDiaryAdd(

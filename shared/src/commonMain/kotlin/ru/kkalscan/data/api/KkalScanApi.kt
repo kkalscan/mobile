@@ -61,6 +61,16 @@ class KkalScanApi(
             throw KkalScanException.Network(e.message ?: "Network error")
         }
 
+    override suspend fun describeFood(
+        deviceId: String,
+        description: String,
+        timezoneOffsetMinutes: Int,
+    ): ScanResult =
+        postJson(
+            "/scan/text",
+            ScanTextRequest(deviceId, description, timezoneOffsetMinutes),
+        )
+
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =
         postJson("/scan/bonus", BonusRequest(deviceId))
 
@@ -196,6 +206,13 @@ class KkalScanApi(
 
     @Serializable
     private data class BonusRequest(val device_id: String)
+
+    @Serializable
+    private data class ScanTextRequest(
+        val device_id: String,
+        val description: String,
+        val timezone_offset_minutes: Int,
+    )
 
     @Serializable
     private data class ProSubscriptionStartRequest(

@@ -59,6 +59,37 @@ class FakeKkalScanApi(
         return result
     }
 
+    override suspend fun describeFood(
+        deviceId: String,
+        description: String,
+        timezoneOffsetMinutes: Int,
+    ): ScanResult {
+        ensureSampleWeekSeeded(deviceId)
+        val normalized = description.trim().lowercase()
+        val dish = when {
+            normalized.contains("борщ") -> scanPresets[0]
+            normalized.contains("куриц") || normalized.contains("рис") -> scanPresets[1]
+            normalized.contains("салат") -> scanPresets[2]
+            normalized.contains("овсян") -> scanPresets[3]
+            normalized.contains("плов") -> scanPresets[4]
+            else -> scanPresets[normalized.hashCode().let { if (it < 0) -it else it } % scanPresets.size]
+        }
+        val scanId = nextId("scan")
+        val result = ScanResult(
+            scanId = scanId,
+            dishes = listOf(dish),
+            totalKcal = dish.kcal,
+            totalProtein = dish.protein,
+            totalFat = dish.fat,
+            totalCarbs = dish.carbs,
+            totalFiber = dish.fiber,
+            scansLeft = scansLeft(deviceId),
+            isPro = deviceId in proDevices,
+        )
+        scansById[scanId] = result
+        return result
+    }
+
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =
         ScanBonusResult(scansLeft = 5, bonusGranted = true)
 

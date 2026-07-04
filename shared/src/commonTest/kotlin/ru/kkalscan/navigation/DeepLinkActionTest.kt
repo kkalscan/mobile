@@ -25,6 +25,12 @@ class DeepLinkActionTest {
     }
 
     @Test
+    fun resolveDeepLink_describeFood() {
+        assertIs<DeepLinkAction.DescribeFood>(resolveDeepLink("kkalscan://describe-food"))
+        assertIs<DeepLinkAction.DescribeFood>(resolveDeepLink("kkalscan://describe_food"))
+    }
+
+    @Test
     fun resolveDeepLink_invalidHost() {
         assertNull(resolveDeepLink("kkalscan://settings"))
     }
