@@ -62,7 +62,15 @@ class FeatureSearchDeepLinkIntegrationTest {
     }
 
     @Test
-    fun searchFoodProduct_opensFoodSearch() {
+    fun searchDescribeFood_opensDescribeSheet() {
+        val item = FeatureSearchCatalog.search("описать", limit = 5)
+            .first { it.deeplink == "kkalscan://describe-food" }
+        val effect = resolveDeepLinkNavigation(item.deeplink)
+        assertNotNull(effect)
+        assertTrue(effect.openDescribeFood)
+    }
+
+    @Test
         val item = FeatureSearchCatalog.search("продукт", limit = 5)
             .first { it.deeplink == "kkalscan://food-search" }
         val effect = resolveDeepLinkNavigation(item.deeplink)

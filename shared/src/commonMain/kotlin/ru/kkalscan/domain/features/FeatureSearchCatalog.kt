@@ -12,6 +12,7 @@ object FeatureSearchCatalog {
     val items: List<FeatureSearchItem> = listOf(
         FeatureSearchItem("diary_today", "Сегодня", "Дневник питания и калории за день", "kkalscan://diary", "today"),
         FeatureSearchItem("scan", "Сканировать еду", "Калории и БЖУ по фото", "kkalscan://scan", "scan"),
+        FeatureSearchItem("describe_food", "Описать еду", "Текстом — без выбора из базы", "kkalscan://describe-food", "edit"),
         FeatureSearchItem("food_search", "Найти продукт", "Добавить блюдо из каталога", "kkalscan://food-search", "search"),
         FeatureSearchItem("journal", "Дневник за неделю", "Графики калорий и БЖУ", "kkalscan://journal", "journal"),
         FeatureSearchItem("fiber", "Клетчатка", "График клетчатки за неделю", "kkalscan://journal/fiber", "fiber"),
@@ -25,6 +26,7 @@ object FeatureSearchCatalog {
     private val keywordMap: Map<String, List<String>> = mapOf(
         "diary_today" to listOf("сегодня", "дневник", "калории", "ккал", "день", "съедено", "питание"),
         "scan" to listOf("скан", "фото", "камера", "распознать", "добавить", "еда", "сфотографировать"),
+        "describe_food" to listOf("описать", "текст", "написать", "сказать", "без фото", "без базы", "рассказать"),
         "food_search" to listOf("продукт", "каталог", "найти", "борщ", "творог", "добавить еду"),
         "journal" to listOf("дневник", "неделя", "график", "статистика", "калории", "прогресс", "журнал"),
         "fiber" to listOf("клетчатка", "график", "кл", "волокна", "клетчатки"),

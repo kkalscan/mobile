@@ -141,9 +141,33 @@ def find_draft_version_id(token: str) -> int | None:
     return None
 
 
-def create_draft(token: str) -> int:
-    body = {
+def load_listing_from_copy() -> dict[str, Any]:
+    copy_path = os.path.join(os.path.dirname(__file__), "..", "store", "rustore", "copy.md")
+    with open(copy_path, encoding="utf-8") as f:
+        text = f.read()
+
+    def block(section: str) -> str:
+        import re
+
+        pattern = rf"## {re.escape(section)}\s*\n\n```\n(.*?)\n```"
+        match = re.search(pattern, text, re.DOTALL)
+        return match.group(1).strip() if match else ""
+
+    return {
+        "appName": block("Название (≤50 символов, ASO)"),
+        "shortDescription": block("Краткое описание"),
+        "fullDescription": block("Полное описание"),
+        "moderInfo": block("Комментарий модератору"),
         "appType": "MAIN",
+        "categories": ["health"],
+        "ageLegal": "12+",
+    }
+
+
+def create_draft(token: str) -> int:
+    listing = load_listing_from_copy()
+    body = {
+        **listing,
         "publishType": PUBLISH_TYPE,
         "whatsNew": WHATS_NEW[:5000],
     }
