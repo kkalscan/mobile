@@ -26,9 +26,12 @@ import ru.kkalscan.app.platform.MaestroDevBridge
 import ru.kkalscan.app.platform.MaestroNavigationBridge
 import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
+import ru.kkalscan.app.platform.rememberHealthConnectPermissionRequest
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.describe.DescribeFoodSheet
+import ru.kkalscan.app.ui.workout.AddWorkoutDialog
+import ru.kkalscan.app.ui.workout.DescribeWorkoutSheet
 import ru.kkalscan.app.ui.diary.DiaryScreen
 import ru.kkalscan.app.ui.features.FeatureSearchBar
 import ru.kkalscan.app.ui.food.FoodSearchSheet
@@ -45,6 +48,7 @@ import ru.kkalscan.presentation.journal.IJournalViewModel
 import ru.kkalscan.presentation.journal.InsightRequestResult
 import ru.kkalscan.presentation.profile.IProfileViewModel
 import ru.kkalscan.presentation.scan.IScanViewModel
+import ru.kkalscan.presentation.workout.IWorkoutViewModel
 
 @Composable
 fun AppRootContent(
@@ -52,6 +56,7 @@ fun AppRootContent(
     diaryViewModel: IDiaryViewModel,
     journalViewModel: IJournalViewModel,
     scanViewModel: IScanViewModel,
+    workoutViewModel: IWorkoutViewModel,
     profileViewModel: IProfileViewModel,
     foodSearchViewModel: IFoodSearchViewModel,
     featureSearchViewModel: IFeatureSearchViewModel,
@@ -63,9 +68,16 @@ fun AppRootContent(
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
     var showFoodSearch by rememberSaveable { mutableStateOf(false) }
     var showDescribeFood by rememberSaveable { mutableStateOf(false) }
+    var showDescribeWorkout by rememberSaveable { mutableStateOf(false) }
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
+    val workoutState by workoutViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
+    val requestHealthConnect = rememberHealthConnectPermissionRequest { granted ->
+        if (granted) {
+            scope.launch { diaryViewModel.refresh() }
+        }
+    }
 
     LaunchedEffect(screen) {
         KkalAnalytics.reportFeatureOpen(screen.analyticsFeatureName())
@@ -158,6 +170,17 @@ fun AppRootContent(
         showDescribeFood = true
     }
 
+    val runWorkoutDescribe: (String) -> Unit = { description ->
+        scope.launch {
+            workoutViewModel.describeText(description)
+        }
+    }
+
+    val openDescribeWorkout: () -> Unit = {
+        workoutViewModel.reset()
+        showDescribeWorkout = true
+    }
+
     val openDeepLink: (String) -> Unit = { deeplink ->
         KkalAnalytics.reportAction(AnalyticsEvents.DEEPLINK_OPEN, mapOf("link" to deeplink))
         resolveDeepLinkNavigation(deeplink)?.let { effect ->
@@ -214,6 +237,17 @@ fun AppRootContent(
         onDescribeFoodDemo = {
             openDescribeFood()
             runDescribe("тарелка борща")
+        },
+        onOpenDescribeWorkout = openDescribeWorkout,
+        onDescribeWorkoutDemo = {
+            openDescribeWorkout()
+            runWorkoutDescribe("бег 5 км")
+        },
+        onConfirmWorkoutAdd = {
+            workoutViewModel.launchAddToDay {
+                scope.launch { diaryViewModel.refresh() }
+                workoutViewModel.reset()
+            }
         },
         onFoodSearchDemo = {
             KkalAnalytics.reportAction(AnalyticsEvents.FEATURE_SEARCH_OPEN)
@@ -276,6 +310,8 @@ fun AppRootContent(
                         KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
                         pickPhoto()
                     },
+                    onAddWorkoutClick = openDescribeWorkout,
+                    onRequestHealthConnect = requestHealthConnect,
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = {
@@ -437,6 +473,35 @@ fun AppRootContent(
                     showDescribeFood = false
                 },
                 onSubmitDescription = runDescribe,
+            )
+        }
+
+        if (showDescribeWorkout) {
+            MaestroScreenHook("describe-workout-sheet")
+            DescribeWorkoutSheet(
+                viewModel = workoutViewModel,
+                onDismiss = {
+                    showDescribeWorkout = false
+                    workoutViewModel.reset()
+                },
+                onRecognized = {
+                    showDescribeWorkout = false
+                },
+                onSubmitDescription = runWorkoutDescribe,
+            )
+        }
+
+        if (workoutState.result != null && !showDescribeWorkout) {
+            MaestroScreenHook("add-workout-dialog")
+            AddWorkoutDialog(
+                viewModel = workoutViewModel,
+                onDismiss = { workoutViewModel.reset() },
+                onConfirm = {
+                    workoutViewModel.launchAddToDay {
+                        scope.launch { diaryViewModel.refresh() }
+                        workoutViewModel.reset()
+                    }
+                },
             )
         }
     }

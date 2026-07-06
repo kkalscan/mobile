@@ -15,6 +15,7 @@ import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
+import ru.kkalscan.domain.model.WorkoutResult
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -88,6 +89,37 @@ class FakeKkalScanApi(
         )
         scansById[scanId] = result
         return result
+    }
+
+    private val workoutPresets = listOf(
+        Triple("Бег", 30, 280),
+        Triple("Плавание", 45, 350),
+        Triple("Силовая тренировка", 60, 420),
+        Triple("Велосипед", 40, 320),
+        Triple("Йога", 50, 180),
+    )
+
+    override suspend fun describeWorkout(
+        deviceId: String,
+        description: String,
+        timezoneOffsetMinutes: Int,
+    ): WorkoutResult {
+        val normalized = description.trim().lowercase()
+        val preset = when {
+            normalized.contains("бег") || normalized.contains("пробеж") -> workoutPresets[0]
+            normalized.contains("плав") -> workoutPresets[1]
+            normalized.contains("силов") || normalized.contains("зал") || normalized.contains("тренаж") -> workoutPresets[2]
+            normalized.contains("велос") || normalized.contains("байк") -> workoutPresets[3]
+            normalized.contains("йог") -> workoutPresets[4]
+            else -> workoutPresets[normalized.hashCode().let { if (it < 0) -it else it } % workoutPresets.size]
+        }
+        val (name, duration, kcal) = preset
+        return WorkoutResult(
+            workoutId = nextId("workout"),
+            name = name,
+            kcal = kcal,
+            durationMinutes = duration,
+        )
     }
 
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =

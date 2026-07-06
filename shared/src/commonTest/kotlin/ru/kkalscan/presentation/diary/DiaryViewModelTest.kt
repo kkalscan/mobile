@@ -25,7 +25,7 @@ class DiaryViewModelTest {
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
             { TestApiFixtures.TODAY },
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, todayProvider = { TestApiFixtures.TODAY })
         vm.refresh()
 
         vm.state.value.isLoading shouldBe false
@@ -40,7 +40,7 @@ class DiaryViewModelTest {
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
             { TestApiFixtures.TODAY },
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, todayProvider = { TestApiFixtures.TODAY })
         vm.refresh()
         vm.deleteEntry("entry-1")
 
@@ -60,7 +60,7 @@ class DiaryViewModelTest {
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, api = api, todayProvider = { today })
         advanceUntilIdle() // init refresh loads day one
 
         // Day one: the user logged a meal today.
@@ -88,23 +88,23 @@ class DiaryViewModelTest {
         vm.state.value.day!!.entries shouldHaveSize 0
     }
 
-    /** Coming back the same day must not trigger a needless network reload. */
+    /** Returning to foreground refreshes activity data (Health Connect / workouts). */
     @Test
-    fun onForeground_sameDay_doesNotRefetch() = runTest {
+    fun onForeground_sameDay_refetchesActivity() = runTest {
         val today = "2026-07-03"
         val api = StatefulDiaryApi(diaryDate = today)
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, api = api, todayProvider = { today })
         advanceUntilIdle()
 
         val fetchesBefore = repo.getTodayCalls
         vm.onForeground()
         advanceUntilIdle()
 
-        repo.getTodayCalls shouldBe fetchesBefore
+        repo.getTodayCalls shouldBe fetchesBefore + 1
     }
 }
 

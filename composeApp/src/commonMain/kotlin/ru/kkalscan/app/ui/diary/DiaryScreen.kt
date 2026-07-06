@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -20,10 +21,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.DiaryEntryCard
+import ru.kkalscan.app.components.KkalCalorieBalanceCard
 import ru.kkalscan.app.components.KkalEmptyState
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPageHeader
+import ru.kkalscan.app.components.KkalPrimaryButton
+import ru.kkalscan.app.components.WorkoutEntryCard
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
@@ -37,13 +41,13 @@ import kotlinx.datetime.toLocalDateTime
 fun DiaryScreen(
     viewModel: IDiaryViewModel,
     onScanClick: () -> Unit,
+    onAddWorkoutClick: () -> Unit,
+    onRequestHealthConnect: () -> Unit,
     onRefresh: () -> Unit,
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
-    // Prefer the date the diary was actually loaded for so the header rolls over
-    // together with the data when the app returns from a long background stay.
     val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val dateLabel = "${today.dayOfMonth}.${today.monthNumber.toString().padStart(2, '0')}.${today.year}"
@@ -83,7 +87,32 @@ fun DiaryScreen(
 
             else -> {
                 val day = state.day
+                val balance = state.balance
+                val activity = state.activity
                 val macros = day?.macroTotals()
+
+                if (balance != null) {
+                    KkalCalorieBalanceCard(
+                        eatenKcal = balance.eatenKcal,
+                        burnedKcal = balance.burnedKcal,
+                        deficitKcal = balance.deficitKcal,
+                        healthConnectKcal = balance.healthConnectKcal,
+                        workoutKcal = balance.workoutKcal,
+                        steps = activity?.steps,
+                    )
+                    Spacer(Modifier.height(16.dp))
+                }
+
+                if (state.healthConnectAvailable && !state.healthConnectPermissionsGranted) {
+                    OutlinedButton(
+                        onClick = onRequestHealthConnect,
+                        modifier = Modifier.fillMaxWidth().testTag("health-connect-request"),
+                    ) {
+                        Text("Подключить Health Connect")
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+
                 KkalHeroCard(
                     title = "СЪЕДЕНО СЕГОДНЯ",
                     kcal = day?.totalKcal ?: 0,
@@ -99,6 +128,12 @@ fun DiaryScreen(
                     fiber = macros?.fiber ?: 0.0,
                     watermark = "01",
                 )
+                Spacer(Modifier.height(16.dp))
+                KkalPrimaryButton(
+                    text = "Добавить тренировку",
+                    onClick = onAddWorkoutClick,
+                    modifier = Modifier.fillMaxWidth().testTag("add-workout-button"),
+                )
                 Spacer(Modifier.height(24.dp))
                 Text("Приёмы пищи", style = MaterialTheme.typography.titleLarge)
                 Spacer(Modifier.height(12.dp))
@@ -113,6 +148,29 @@ fun DiaryScreen(
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         day!!.entries.forEach { entry ->
                             DiaryEntryCard(entry)
+                        }
+                    }
+                }
+
+                Spacer(Modifier.height(24.dp))
+                Text("Активность", style = MaterialTheme.typography.titleLarge)
+                Spacer(Modifier.height(12.dp))
+
+                val workouts = activity?.workouts.orEmpty()
+                if (workouts.isEmpty() && (activity?.healthConnectKcal ?: 0) == 0) {
+                    KkalEmptyState(
+                        iconLabel = "HC",
+                        title = "Нет данных об активности",
+                        message = "Health Connect или тренировка по описанию — увидите потраченные калории",
+                    )
+                } else {
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        workouts.forEach { workout ->
+                            WorkoutEntryCard(
+                                name = workout.name,
+                                kcal = workout.kcal,
+                                durationMinutes = workout.durationMinutes,
+                            )
                         }
                     }
                 }

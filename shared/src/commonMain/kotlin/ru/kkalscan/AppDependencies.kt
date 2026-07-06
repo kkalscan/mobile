@@ -5,11 +5,14 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.data.api.KkalScanApi
 import ru.kkalscan.data.createHttpClient
+import ru.kkalscan.data.health.createHealthConnectReader
+import ru.kkalscan.data.repository.ActivityRepository
 import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.FeatureSearchRepository
 import ru.kkalscan.data.repository.FoodSearchRepository
 import ru.kkalscan.data.repository.IBugReportRepository
+import ru.kkalscan.data.repository.IActivityRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.IFeatureSearchRepository
 import ru.kkalscan.data.repository.IFoodSearchRepository
@@ -21,6 +24,7 @@ import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
+import ru.kkalscan.data.storage.createWorkoutStorage
 import ru.kkalscan.presentation.features.FeatureSearchViewModel
 import ru.kkalscan.presentation.features.IFeatureSearchViewModel
 import ru.kkalscan.presentation.food.FoodSearchViewModel
@@ -34,11 +38,22 @@ import ru.kkalscan.presentation.profile.ProfileViewModel
 import ru.kkalscan.presentation.scan.IScanViewModel
 import ru.kkalscan.presentation.scan.ScanViewModel
 
+import ru.kkalscan.presentation.workout.IWorkoutViewModel
+import ru.kkalscan.presentation.workout.WorkoutViewModel
+
 class AppDependencies(
     val apiConfig: IApiConfig = DefaultApiConfig,
     val deviceIdStorage: IDeviceIdStorage = createDeviceIdStorage(),
     val api: IKkalScanApi = KkalScanApi(createHttpClient(), apiConfig),
+    val healthConnectReader: ru.kkalscan.data.health.IHealthConnectReader = createHealthConnectReader(),
+    val workoutStorage: ru.kkalscan.data.storage.IWorkoutStorage = createWorkoutStorage(),
     val diaryRepository: IDiaryRepository = DiaryRepository(api, deviceIdStorage),
+    val activityRepository: IActivityRepository = ActivityRepository(
+        api = api,
+        deviceIdStorage = deviceIdStorage,
+        healthConnect = healthConnectReader,
+        workoutStorage = workoutStorage,
+    ),
     val scanRepository: IScanRepository = ScanRepository(api, deviceIdStorage),
     val subscriptionRepository: ISubscriptionRepository = SubscriptionRepository(api, deviceIdStorage),
     val insightRepository: IInsightRepository = InsightRepository(deviceIdStorage),
@@ -47,7 +62,10 @@ class AppDependencies(
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
-        DiaryViewModel(diaryRepository, scope)
+        DiaryViewModel(diaryRepository, activityRepository, healthConnectReader, scope)
+
+    fun workoutViewModel(scope: kotlinx.coroutines.CoroutineScope): IWorkoutViewModel =
+        WorkoutViewModel(activityRepository, scope)
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
         FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)

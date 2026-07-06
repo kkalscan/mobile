@@ -32,6 +32,7 @@ fun App(componentContext: ComponentContext = remember {
     val diaryViewModel = remember(deps, scope) { deps.diaryViewModel(scope) }
     val journalViewModel = remember(deps, scope) { deps.journalViewModel(scope) }
     val scanViewModel = remember(deps, scope) { deps.scanViewModel(scope) }
+    val workoutViewModel = remember(deps, scope) { deps.workoutViewModel(scope) }
     val profileViewModel = remember(deps, scope) { deps.profileViewModel(scope) }
 
     val foodSearchViewModel = remember(deps, scope) { deps.foodSearchViewModel(scope) }
@@ -70,6 +71,7 @@ fun App(componentContext: ComponentContext = remember {
                 diaryViewModel = diaryViewModel,
                 journalViewModel = journalViewModel,
                 scanViewModel = scanViewModel,
+                workoutViewModel = workoutViewModel,
                 profileViewModel = profileViewModel,
                 foodSearchViewModel = foodSearchViewModel,
                 featureSearchViewModel = featureSearchViewModel,

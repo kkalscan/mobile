@@ -100,6 +100,35 @@ data class FoodSearchResult(
 )
 
 @Serializable
+data class WorkoutEntry(
+    val id: String,
+    @SerialName("created_at") val createdAt: String,
+    val name: String,
+    @SerialName("duration_minutes") val durationMinutes: Int? = null,
+    val kcal: Int,
+    val description: String? = null,
+)
+
+@Serializable
+data class WorkoutResult(
+    @SerialName("workout_id") val workoutId: String,
+    val name: String,
+    val kcal: Int,
+    @SerialName("duration_minutes") val durationMinutes: Int? = null,
+)
+
+@Serializable
+data class ActivityDay(
+    val date: String,
+    @SerialName("health_connect_kcal") val healthConnectKcal: Int = 0,
+    val steps: Int? = null,
+    val workouts: List<WorkoutEntry> = emptyList(),
+) {
+    val workoutKcal: Int get() = workouts.sumOf { it.kcal }
+    val totalBurnedKcal: Int get() = healthConnectKcal + workoutKcal
+}
+
+@Serializable
 data class ProSubscriptionStart(
     @SerialName("is_pro") val isPro: Boolean,
     @SerialName("pro_until") val proUntil: String? = null,

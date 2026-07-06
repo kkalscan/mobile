@@ -15,6 +15,7 @@ import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
+import ru.kkalscan.domain.model.WorkoutResult
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -98,6 +99,24 @@ class StatefulDiaryApi(
         )
         scansById[scanId] = result
         return result
+    }
+
+    override suspend fun describeWorkout(
+        deviceId: String,
+        description: String,
+        timezoneOffsetMinutes: Int,
+    ): WorkoutResult {
+        val normalized = description.trim().lowercase()
+        val (name, duration, kcal) = when {
+            normalized.contains("бег") -> Triple("Бег", 30, 280)
+            else -> Triple("Тренировка", 45, 300)
+        }
+        return WorkoutResult(
+            workoutId = UUID.randomUUID().toString(),
+            name = name,
+            kcal = kcal,
+            durationMinutes = duration,
+        )
     }
 
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =

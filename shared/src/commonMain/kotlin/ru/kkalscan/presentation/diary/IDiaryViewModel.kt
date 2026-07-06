@@ -1,14 +1,20 @@
 package ru.kkalscan.presentation.diary
 
+import ru.kkalscan.domain.activity.CalorieBalance
+import ru.kkalscan.domain.model.ActivityDay
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.DiaryEntry
 
 data class DiaryUiState(
     val isLoading: Boolean = false,
     val day: DiaryDay? = null,
+    val activity: ActivityDay? = null,
+    val balance: CalorieBalance? = null,
     /** ISO date (yyyy-MM-dd) the currently shown diary was loaded for. */
     val date: String? = null,
     val errorMessage: String? = null,
+    val healthConnectAvailable: Boolean = false,
+    val healthConnectPermissionsGranted: Boolean = false,
 )
 
 interface IDiaryViewModel {
@@ -22,5 +28,6 @@ interface IDiaryViewModel {
      */
     suspend fun onForeground()
     suspend fun deleteEntry(entryId: String)
+    suspend fun deleteWorkout(entryId: String)
     fun clearError()
 }
