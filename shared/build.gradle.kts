@@ -45,6 +45,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.cio)
+            implementation("androidx.health.connect:connect-client:1.1.0-rc02")
         }
         wasmJsMain.dependencies {
             implementation(libs.ktor.client.js)

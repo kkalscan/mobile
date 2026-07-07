@@ -19,8 +19,6 @@ import ru.kkalscan.data.repository.IScanRepository
 import ru.kkalscan.data.repository.ISubscriptionRepository
 import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
-import ru.kkalscan.data.health.IHealthConnectReader
-import ru.kkalscan.data.health.createHealthConnectReader
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
 import ru.kkalscan.presentation.features.FeatureSearchViewModel
@@ -47,10 +45,9 @@ class AppDependencies(
     val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
-    val healthConnectReader: IHealthConnectReader = createHealthConnectReader(),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
-        DiaryViewModel(diaryRepository, healthConnectReader, scope)
+        DiaryViewModel(diaryRepository, scope)
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
         FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)

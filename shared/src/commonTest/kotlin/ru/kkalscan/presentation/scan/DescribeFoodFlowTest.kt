@@ -13,7 +13,7 @@ import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.domain.model.MealType
-import ru.kkalscan.presentation.diary.DiaryViewModel
+import ru.kkalscan.presentation.diary.createDiaryViewModelForTest
 import kotlin.test.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -55,7 +55,7 @@ class DescribeFoodFlowTest {
         val scanRepo = ScanRepository(api, storage)
         val diaryRepo = DiaryRepository(api, storage, todayProvider = { today })
         val scanVm = ScanViewModel(scanRepo, diaryRepo, this)
-        val diaryVm = DiaryViewModel(diaryRepo, this)
+        val diaryVm = createDiaryViewModelForTest(diaryRepo, this)
         advanceUntilIdle()
 
         diaryVm.state.value.day!!.entries shouldHaveSize 0

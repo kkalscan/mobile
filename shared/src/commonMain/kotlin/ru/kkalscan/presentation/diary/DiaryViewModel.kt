@@ -12,6 +12,7 @@ import ru.kkalscan.data.health.IHealthConnectReader
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.domain.activity.CalorieBalanceCalculator
 import ru.kkalscan.domain.error.KkalScanException
+import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.util.kkalLog
 
 class DiaryViewModel(
@@ -39,10 +40,9 @@ class DiaryViewModel(
                 val hcStepsDeferred = async { healthConnect.readTodaySteps() }
                 val day = dayDeferred.await()
                 val healthConnectKcal = hcKcalDeferred.await()
-                val balance = CalorieBalanceCalculator.compute(day, healthConnectKcal)
                 DiaryLoadResult(
                     day = day,
-                    balance = balance,
+                    balance = CalorieBalanceCalculator.compute(day, healthConnectKcal),
                     steps = hcStepsDeferred.await(),
                     healthConnectAvailable = hcAvailableDeferred.await(),
                     healthConnectPermissionsGranted = hcPermissionsDeferred.await(),
@@ -69,7 +69,6 @@ class DiaryViewModel(
     }
 
     override suspend fun onForeground() {
-        if (_state.value.date == null) return
         refresh()
     }
 
@@ -85,11 +84,67 @@ class DiaryViewModel(
     override suspend fun addWorkout(name: String, kcal: Int) {
         _state.update { it.copy(errorMessage = null) }
         runCatching { diaryRepository.addWorkout(name, kcal) }
-            .onSuccess { day -> updateDayState(day) }
+            .onSuccess { day -> updateDayState(day, clearWorkoutParse = true) }
             .onFailure { e ->
                 kkalLog("Diary", "add workout fail ${e.message}")
                 _state.update { it.copy(errorMessage = e.userMessage()) }
             }
+    }
+
+    override suspend fun parseWorkoutDescription(description: String) {
+        _state.update {
+            it.copy(
+                workoutParse = WorkoutParseUiState(isLoading = true),
+                errorMessage = null,
+            )
+        }
+        runCatching { diaryRepository.parseWorkout(description) }
+            .onSuccess { preview ->
+                _state.update {
+                    it.copy(
+                        workoutParse = WorkoutParseUiState(
+                            isLoading = false,
+                            preview = preview,
+                        ),
+                    )
+                }
+            }
+            .onFailure { e ->
+                kkalLog("Diary", "parse workout fail ${e.message}")
+                _state.update {
+                    it.copy(
+                        workoutParse = WorkoutParseUiState(
+                            isLoading = false,
+                            errorMessage = e.userMessage(isWorkoutParse = true),
+                        ),
+                    )
+                }
+            }
+    }
+
+    override suspend fun confirmParsedWorkout(): Boolean {
+        val preview = _state.value.workoutParse.preview ?: return false
+        _state.update {
+            it.copy(workoutParse = it.workoutParse.copy(isLoading = true, errorMessage = null))
+        }
+        return runCatching { diaryRepository.addWorkout(preview.title, preview.burnedKcal) }
+            .onSuccess { day -> updateDayState(day, clearWorkoutParse = true) }
+            .onFailure { e ->
+                kkalLog("Diary", "confirm workout fail ${e.message}")
+                _state.update {
+                    it.copy(
+                        workoutParse = it.workoutParse.copy(
+                            isLoading = false,
+                            errorMessage = e.userMessage(),
+                        ),
+                    )
+                }
+            }
+            .isSuccess
+    }
+
+    override fun clearWorkoutParse() {
+        _state.update { it.copy(workoutParse = WorkoutParseUiState()) }
     }
 
     override suspend fun deleteWorkout(workoutId: String) {
@@ -105,23 +160,32 @@ class DiaryViewModel(
         _state.update { it.copy(errorMessage = null) }
     }
 
-    private suspend fun updateDayState(day: ru.kkalscan.domain.model.DiaryDay) {
+    private suspend fun updateDayState(day: DiaryDay, clearWorkoutParse: Boolean = false) {
         val healthConnectKcal = healthConnect.readTodayActiveCalories()
-        val balance = CalorieBalanceCalculator.compute(day, healthConnectKcal)
         _state.update {
-            it.copy(isLoading = false, day = day, balance = balance, date = day.date)
+            it.copy(
+                isLoading = false,
+                day = day,
+                balance = CalorieBalanceCalculator.compute(day, healthConnectKcal),
+                date = day.date,
+                workoutParse = if (clearWorkoutParse) WorkoutParseUiState() else it.workoutParse,
+            )
         }
     }
 
-    private fun Throwable.userMessage(): String = when (this) {
+    private fun Throwable.userMessage(isWorkoutParse: Boolean = false): String = when (this) {
         is KkalScanException.Network -> "Нет сети. Проверьте подключение."
         is KkalScanException.LimitHit -> message ?: "Лимит сканов исчерпан"
-        is KkalScanException.Api -> message ?: "Ошибка сервера"
+        is KkalScanException.Api -> message ?: if (isWorkoutParse) {
+            "Не удалось понять описание тренировки"
+        } else {
+            "Ошибка сервера"
+        }
         else -> message ?: "Неизвестная ошибка"
     }
 
     private data class DiaryLoadResult(
-        val day: ru.kkalscan.domain.model.DiaryDay,
+        val day: DiaryDay,
         val balance: ru.kkalscan.domain.activity.CalorieBalance,
         val steps: Int?,
         val healthConnectAvailable: Boolean,

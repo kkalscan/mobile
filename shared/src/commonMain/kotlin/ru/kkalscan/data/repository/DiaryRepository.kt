@@ -76,6 +76,11 @@ class DiaryRepository(
         return api.getDiary(deviceId, todayProvider(), currentTimezoneOffsetMinutes())
     }
 
+    override suspend fun parseWorkout(description: String): WorkoutParseResult {
+        val deviceId = deviceIdStorage.getDeviceId()
+        return api.parseWorkout(deviceId, description)
+    }
+
     override suspend fun deleteWorkout(workoutId: String) {
         val deviceId = deviceIdStorage.getDeviceId()
         api.deleteWorkout(deviceId, workoutId)
