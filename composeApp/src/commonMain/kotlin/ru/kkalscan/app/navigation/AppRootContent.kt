@@ -470,6 +470,7 @@ fun AppRootContent(
         }
 
         if (showAddWorkoutDialog) {
+            MaestroScreenHook("quick-workout-dialog")
             QuickAddWorkoutDialog(
                 viewModel = diaryViewModel,
                 onDismiss = {
