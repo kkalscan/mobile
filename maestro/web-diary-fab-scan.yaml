@@ -17,6 +17,6 @@ url: https://kkalscan.github.io/mobile/?fake=1
 - tapOn:
     id: "maestro-tap-fab-scan"
 - extendedWaitUntil:
-    visible: "scan-result"
+    visible: "scan-result-dialog"
     timeout: 60000
-- assertVisible: "scan-result"
+- assertVisible: "scan-result-dialog"

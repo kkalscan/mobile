@@ -215,8 +215,15 @@ fun KkalBottomBar(
                         isFabExpanded = !isFabExpanded
                     }
                 }
+                MaestroFabController.onTapFabScan = {
+                    if (!actionLoading) {
+                        isFabExpanded = false
+                        onScanClick()
+                    }
+                }
                 onDispose {
                     MaestroFabController.onTapMainFab = null
+                    MaestroFabController.onTapFabScan = null
                     updateMaestroFabState(false)
                 }
             }
@@ -611,6 +618,106 @@ fun KkalFoodCard(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun KkalCalorieBalanceCard(
+    eatenKcal: Int,
+    burnedKcal: Int,
+    deficitKcal: Int,
+    healthConnectKcal: Int,
+    workoutKcal: Int,
+    steps: Int? = null,
+    modifier: Modifier = Modifier,
+) {
+    val deficitColor = when {
+        deficitKcal > 0 -> KkalScanColors.Secondary
+        deficitKcal < 0 -> KkalScanColors.Error
+        else -> KkalScanColors.OnSurfaceVariant
+    }
+    val deficitLabel = when {
+        deficitKcal > 0 -> "Дефицит"
+        deficitKcal < 0 -> "Профицит"
+        else -> "Баланс"
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("calorie-balance-card")
+            .shadow(16.dp, RoundedCornerShape(KkalScanDimens.cardRadius), ambientColor = Color(0x14000000)),
+        shape = RoundedCornerShape(KkalScanDimens.cardRadius),
+        color = KkalScanColors.Surface,
+        border = androidx.compose.foundation.BorderStroke(1.dp, KkalScanColors.Outline.copy(alpha = 0.6f)),
+    ) {
+        Column(Modifier.padding(24.dp)) {
+            Text(
+                "БАЛАНС КАЛОРИЙ",
+                style = MaterialTheme.typography.labelSmall,
+                color = KkalScanColors.OnSurfaceVariant,
+            )
+            Spacer(Modifier.height(16.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                BalanceMetric(label = "Съедено", value = eatenKcal, color = KkalScanColors.Primary)
+                BalanceMetric(label = "Потрачено", value = burnedKcal, color = KkalScanColors.Protein)
+            }
+            Spacer(Modifier.height(16.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    if (deficitKcal > 0) "+$deficitKcal" else deficitKcal.toString(),
+                    style = MaterialTheme.typography.displayLarge,
+                    color = deficitColor,
+                    modifier = Modifier.testTag("calorie-deficit-value"),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "ккал",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = KkalScanColors.OnSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    deficitLabel,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = deficitColor,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            val details = buildList {
+                if (healthConnectKcal > 0) add("Health Connect: $healthConnectKcal ккал")
+                if (workoutKcal > 0) add("Тренировки: $workoutKcal ккал")
+                steps?.let { add("Шаги: $it") }
+            }
+            if (details.isNotEmpty()) {
+                Text(
+                    details.joinToString(" · "),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KkalScanColors.OnSurfaceVariant,
+                )
+            } else {
+                Text(
+                    "Подключите Health Connect или добавьте тренировку",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = KkalScanColors.OnSurfaceVariant,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BalanceMetric(label: String, value: Int, color: Color) {
+    Column {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = KkalScanColors.OnSurfaceVariant)
+        Spacer(Modifier.height(4.dp))
+        Text("$value", style = MaterialTheme.typography.headlineMedium, color = color, fontWeight = FontWeight.Bold)
+        Text("ккал", style = MaterialTheme.typography.bodySmall, color = KkalScanColors.OnSurfaceVariant)
     }
 }
 

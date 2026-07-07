@@ -19,7 +19,7 @@ actual fun MaestroFabScanBridge(onFakeScanPhoto: () -> Unit) {
                 onFakeScanPhoto()
             }
         }
-        val tapScanHandler: (Event) -> Unit = { onFakeScanPhoto() }
+        val tapScanHandler: (Event) -> Unit = { MaestroFabController.onTapFabScan?.invoke() }
         label?.addEventListener("click", fakeHandler, true)
         tapScanBtn?.addEventListener("click", tapScanHandler)
 
