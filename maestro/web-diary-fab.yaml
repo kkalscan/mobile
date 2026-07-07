@@ -6,7 +6,7 @@ url: https://kkalscan.github.io/mobile/?fake=1
       id: "maestro-hook"
     timeout: 240000
 - extendedWaitUntil:
-    visible: "diary-screen"
+    visible: "diary-fab-main-count-1"
     timeout: 240000
 - assertVisible: "diary-fab-collapsed"
 - assertVisible: "diary-fab-actions-0"

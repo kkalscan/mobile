@@ -12,9 +12,9 @@ DEFAULT_URL = "https://kkalscan.github.io/mobile/?fake=1"
 SCREENSHOT = Path(os.environ.get("FAB_SCREENSHOT", "fab-expanded-pages.png"))
 
 
-def wait_hook(page, text: str, timeout_ms: int = 120_000) -> None:
+def wait_hook(page, element_id: str, text: str, timeout_ms: int = 120_000) -> None:
     page.wait_for_function(
-        f"() => document.getElementById('maestro-hook')?.textContent?.includes('{text}')",
+        f"() => document.getElementById('{element_id}')?.textContent?.includes('{text}')",
         timeout=timeout_ms,
     )
 
@@ -38,7 +38,7 @@ def main() -> int:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 430, "height": 900})
         page.goto(url, wait_until="networkidle", timeout=180_000)
-        wait_hook(page, "diary-screen")
+        wait_hook(page, "diary-fab-main-count-1")
 
         fab_main = page.locator("#maestro-fab-main-hook").inner_text()
         if "diary-fab-main-count-1" not in fab_main:

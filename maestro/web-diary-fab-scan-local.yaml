@@ -6,7 +6,7 @@ url: http://localhost:8080/?fake=1
       id: "maestro-hook"
     timeout: 240000
 - extendedWaitUntil:
-    visible: "diary-screen"
+    visible: "diary-fab-main-count-1"
     timeout: 240000
 - tapOn:
     id: "maestro-tap-main-fab"
@@ -17,6 +17,6 @@ url: http://localhost:8080/?fake=1
 - tapOn:
     id: "maestro-fab-scan-photo"
 - extendedWaitUntil:
-    visible: "scan-result-dialog"
+    visible: "scan-result"
     timeout: 30000
-- assertVisible: "scan-result-dialog"
+- assertVisible: "scan-result"
