@@ -19,6 +19,8 @@ import ru.kkalscan.data.repository.IScanRepository
 import ru.kkalscan.data.repository.ISubscriptionRepository
 import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
+import ru.kkalscan.data.health.IHealthConnectReader
+import ru.kkalscan.data.health.createHealthConnectReader
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
 import ru.kkalscan.presentation.features.FeatureSearchViewModel

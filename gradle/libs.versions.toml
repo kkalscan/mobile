@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.1.10"
-agp = "8.7.3"
+agp = "8.9.1"
 compose-multiplatform = "1.7.3"
 ktor = "3.1.1"
 decompose = "3.2.2"
@@ -9,7 +9,7 @@ coroutines = "1.10.1"
 serialization = "1.8.0"
 datetime = "0.6.2"
 android-minSdk = "26"
-android-compileSdk = "35"
+android-compileSdk = "36"
 android-targetSdk = "35"
 appmetrica = "8.3.0"
 
