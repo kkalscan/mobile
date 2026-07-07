@@ -16,7 +16,16 @@ rm -rf "$SITE"
 mkdir -p "$SITE"
 
 build_esm_bundle() {
-  ./gradlew :composeApp:compileDevelopmentExecutableKotlinWasmJs :composeApp:wasmJsDevelopmentExecutableCompileSync --no-daemon
+  ./gradlew :composeApp:compileDevelopmentExecutableKotlinWasmJs \
+    :composeApp:wasmJsDevelopmentExecutableCompileSync \
+    :composeApp:wasmJsPackageJson \
+    :kotlinNpmInstall \
+    --no-daemon
+  JS_JODA="$NPM/@js-joda/core/dist/js-joda.esm.js"
+  if [ ! -f "$JS_JODA" ]; then
+    echo "js-joda not found at $JS_JODA after kotlinNpmInstall"
+    exit 1
+  fi
   mkdir -p "$SITE/kotlin" "$SITE/node_modules/@js-joda/core/dist"
   cp "$KOTLIN/"* "$SITE/kotlin/"
   cp "$SKIKO/skiko.mjs" "$SKIKO/skiko.wasm" "$SITE/kotlin/"
