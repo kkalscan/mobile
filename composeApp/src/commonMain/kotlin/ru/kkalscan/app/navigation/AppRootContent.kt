@@ -477,16 +477,13 @@ fun AppRootContent(
                     diaryViewModel.clearWorkoutParse()
                 },
                 onSubmitDescription = { description ->
-                    scope.launch {
-                        diaryViewModel.parseWorkoutDescription(description)
-                    }
+                    scope.launch { diaryViewModel.parseWorkoutDescription(description) }
                 },
                 onConfirm = {
                     scope.launch {
                         if (diaryViewModel.confirmParsedWorkout()) {
-                            journalViewModel.refresh()
                             showAddWorkoutDialog = false
-                            diaryViewModel.clearWorkoutParse()
+                            refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
                         }
                     }
                 },
