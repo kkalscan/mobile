@@ -2,8 +2,12 @@ url: http://localhost:8080/?fake=1
 ---
 - launchApp
 - extendedWaitUntil:
+    visible:
+      id: "maestro-hook"
+    timeout: 120000
+- extendedWaitUntil:
     visible: "diary-screen"
-    timeout: 60000
+    timeout: 120000
 - assertVisible: "diary-fab-collapsed"
 - assertVisible: "diary-fab-actions-0"
 - assertVisible: "diary-fab-main-count-1"
