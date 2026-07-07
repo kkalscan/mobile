@@ -56,7 +56,7 @@ internal fun setFabScanOverlayVisible(visible: Boolean) {
     if (visible) {
         positionFabScanOverlay()
         scanLabel.style.setProperty("pointer-events", "auto")
-        scanLabel.style.setProperty("opacity", "0.01")
+        scanLabel.style.setProperty("opacity", "0.15")
         scanLabel.style.setProperty("z-index", "12")
     } else {
         scanLabel.style.setProperty("pointer-events", "none")
