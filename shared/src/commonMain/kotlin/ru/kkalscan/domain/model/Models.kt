@@ -32,14 +32,25 @@ data class DiaryEntry(
 )
 
 @Serializable
+data class WorkoutEntry(
+    val id: String,
+    @SerialName("created_at") val createdAt: String,
+    val name: String,
+    val kcal: Int,
+)
+
+@Serializable
 data class DiaryDay(
     val date: String,
     @SerialName("total_kcal") val totalKcal: Int,
+    @SerialName("total_burned_kcal") val totalBurnedKcal: Int = 0,
+    @SerialName("net_kcal") val netKcal: Int = totalKcal - totalBurnedKcal,
     @SerialName("scans_left") val scansLeft: Int? = null,
     @SerialName("is_pro") val isPro: Boolean = false,
     @SerialName("account_linked") val accountLinked: Boolean = false,
     @SerialName("linked_providers") val linkedProviders: List<String> = emptyList(),
     val entries: List<DiaryEntry> = emptyList(),
+    val workouts: List<WorkoutEntry> = emptyList(),
 )
 
 @Serializable
@@ -75,6 +86,11 @@ data class ScanBonusResult(
 data class CreateDiaryEntryResponse(
     val entry: DiaryEntry,
     @SerialName("scans_left") val scansLeft: Int? = null,
+)
+
+@Serializable
+data class CreateWorkoutResponse(
+    val workout: WorkoutEntry,
 )
 
 @Serializable

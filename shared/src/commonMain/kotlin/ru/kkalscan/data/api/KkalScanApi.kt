@@ -25,7 +25,7 @@ import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.FoodSearchResult
-import ru.kkalscan.domain.model.CreateDiaryEntryResponse
+import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
@@ -95,6 +95,21 @@ class KkalScanApi(
 
     override suspend fun deleteDiaryEntry(deviceId: String, entryId: String) {
         val response = httpClient.delete("${config.apiBaseUrl}/diary/entries/$entryId") {
+            header("X-Device-Id", deviceId)
+        }
+        if (response.status != HttpStatusCode.NoContent && !response.status.isSuccess()) {
+            throw mapError(response.status.value, response.bodyAsText())
+        }
+    }
+
+    override suspend fun addWorkout(deviceId: String, name: String, kcal: Int): CreateWorkoutResponse =
+        postJson(
+            "/diary/workouts",
+            WorkoutRequest(device_id = deviceId, name = name, kcal = kcal),
+        )
+
+    override suspend fun deleteWorkout(deviceId: String, workoutId: String) {
+        val response = httpClient.delete("${config.apiBaseUrl}/diary/workouts/$workoutId") {
             header("X-Device-Id", deviceId)
         }
         if (response.status != HttpStatusCode.NoContent && !response.status.isSuccess()) {
@@ -226,5 +241,12 @@ class KkalScanApi(
         val meal_type: MealType,
         val scan_id: String? = null,
         val dishes: List<Dish>? = null,
+    )
+
+    @Serializable
+    private data class WorkoutRequest(
+        val device_id: String,
+        val name: String,
+        val kcal: Int,
     )
 }

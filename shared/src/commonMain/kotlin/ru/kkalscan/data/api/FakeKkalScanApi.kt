@@ -7,6 +7,7 @@ import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
+import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.DiaryEntry
 import ru.kkalscan.domain.model.Dish
@@ -14,7 +15,7 @@ import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
-import ru.kkalscan.domain.model.SubscriptionStatus
+import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -28,6 +29,7 @@ class FakeKkalScanApi(
 ) : IKkalScanApi {
 
     private val entriesByKey = mutableMapOf<String, MutableList<DiaryEntry>>()
+    private val workoutsByKey = mutableMapOf<String, MutableList<WorkoutEntry>>()
     private val scansById = mutableMapOf<String, ScanResult>()
     private val weekSeedMarkers = mutableSetOf<String>()
     private val seedMutex = Mutex()
@@ -95,13 +97,23 @@ class FakeKkalScanApi(
 
     override suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay {
         ensureSampleWeekSeeded(deviceId)
+        return buildDiaryDay(deviceId, date)
+    }
+
+    private fun buildDiaryDay(deviceId: String, date: String): DiaryDay {
         val entries = entriesByKey[key(deviceId, date)].orEmpty()
+        val workouts = workoutsByKey[key(deviceId, date)].orEmpty()
+        val consumed = entries.sumOf { it.totalKcal }
+        val burned = workouts.sumOf { it.kcal }
         return DiaryDay(
             date = date,
-            totalKcal = entries.sumOf { it.totalKcal },
+            totalKcal = consumed,
+            totalBurnedKcal = burned,
+            netKcal = consumed - burned,
             scansLeft = scansLeft(deviceId),
             isPro = deviceId in proDevices,
             entries = entries,
+            workouts = workouts,
         )
     }
 
@@ -127,6 +139,24 @@ class FakeKkalScanApi(
     override suspend fun deleteDiaryEntry(deviceId: String, entryId: String) {
         entriesByKey.filterKeys { it.startsWith("$deviceId|") }.values.forEach { list ->
             list.removeAll { it.id == entryId }
+        }
+    }
+
+    override suspend fun addWorkout(deviceId: String, name: String, kcal: Int): CreateWorkoutResponse {
+        val date = todayProvider()
+        val workout = WorkoutEntry(
+            id = nextId("workout"),
+            createdAt = "${date}T12:00:00Z",
+            name = name.trim(),
+            kcal = kcal,
+        )
+        workoutsByKey.getOrPut(key(deviceId, date)) { mutableListOf() }.add(workout)
+        return CreateWorkoutResponse(workout = workout)
+    }
+
+    override suspend fun deleteWorkout(deviceId: String, workoutId: String) {
+        workoutsByKey.filterKeys { it.startsWith("$deviceId|") }.values.forEach { list ->
+            list.removeAll { it.id == workoutId }
         }
     }
 

@@ -22,5 +22,7 @@ interface IDiaryViewModel {
      */
     suspend fun onForeground()
     suspend fun deleteEntry(entryId: String)
+    suspend fun addWorkout(name: String, kcal: Int)
+    suspend fun deleteWorkout(workoutId: String)
     fun clearError()
 }

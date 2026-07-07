@@ -1,5 +1,10 @@
 package ru.kkalscan.app.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -35,6 +40,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -50,6 +61,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.platform.isStoreScreenshotMode
+import ru.kkalscan.app.platform.MaestroFabController
+import ru.kkalscan.app.platform.updateMaestroFabState
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryEntry
@@ -143,6 +156,7 @@ fun KkalBottomBar(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
     onDescribeClick: () -> Unit,
+    onAddWorkoutClick: () -> Unit,
     onScanClick: () -> Unit,
     actionLoading: Boolean = false,
 ) {
@@ -185,64 +199,138 @@ fun KkalBottomBar(
         }
         }
         if (selectedTab == AppTab.Today) {
-        Surface(
-            onClick = { if (!actionLoading) onDescribeClick() },
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(start = 16.dp)
-                .offset(y = -KkalScanDimens.fabFloatOffset)
-                .size(KkalScanDimens.fabSize)
-                .testTag("diary-describe-food")
-                .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
-            shape = CircleShape,
-            color = KkalScanColors.Primary,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (actionLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(28.dp),
-                        color = KkalScanColors.OnPrimary,
-                        strokeWidth = 3.dp,
-                    )
-                } else {
-                    Icon(
-                        Icons.Outlined.Edit,
+            var isFabExpanded by rememberSaveable { mutableStateOf(false) }
+
+            LaunchedEffect(isFabExpanded) {
+                updateMaestroFabState(isFabExpanded)
+            }
+
+            DisposableEffect(actionLoading) {
+                MaestroFabController.onTapMainFab = {
+                    if (!actionLoading) {
+                        isFabExpanded = !isFabExpanded
+                    }
+                }
+                onDispose {
+                    MaestroFabController.onTapMainFab = null
+                    updateMaestroFabState(false)
+                }
+            }
+
+            AnimatedVisibility(
+                visible = isFabExpanded,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = -(KkalScanDimens.fabFloatOffset + 74.dp)),
+                enter = fadeIn() + slideInVertically { it / 3 },
+                exit = fadeOut() + slideOutVertically { it / 3 },
+            ) {
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    DiaryFabAction(
+                        testTag = "diary-fab-describe-food",
                         contentDescription = "Описать еду",
-                        tint = KkalScanColors.OnPrimary,
-                        modifier = Modifier.size(28.dp),
+                        icon = Icons.Outlined.Edit,
+                        onClick = {
+                            if (!actionLoading) {
+                                isFabExpanded = false
+                                onDescribeClick()
+                            }
+                        },
+                    )
+                    DiaryFabAction(
+                        testTag = "diary-fab-add-workout",
+                        contentDescription = "Добавить тренировку",
+                        label = "W",
+                        onClick = {
+                            if (!actionLoading) {
+                                isFabExpanded = false
+                                onAddWorkoutClick()
+                            }
+                        },
+                    )
+                    DiaryFabAction(
+                        testTag = "diary-fab-scan-photo",
+                        contentDescription = "Скан фото",
+                        label = "S",
+                        onClick = {
+                            if (!actionLoading) {
+                                isFabExpanded = false
+                                onScanClick()
+                            }
+                        },
                     )
                 }
             }
-        }
-        Surface(
-            onClick = { if (!actionLoading) onScanClick() },
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(end = 16.dp)
-                .offset(y = -KkalScanDimens.fabFloatOffset)
-                .size(KkalScanDimens.fabSize)
-                .testTag("diary-scan-photo")
-                .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
-            shape = CircleShape,
-            color = KkalScanColors.Primary,
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                if (actionLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(28.dp),
-                        color = KkalScanColors.OnPrimary,
-                        strokeWidth = 3.dp,
-                    )
-                } else {
-                    Text(
-                        "+",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = KkalScanColors.OnPrimary,
-                        fontWeight = FontWeight.Bold,
-                    )
+
+            Surface(
+                onClick = {
+                    if (!actionLoading) {
+                        isFabExpanded = !isFabExpanded
+                    }
+                },
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .offset(y = -KkalScanDimens.fabFloatOffset)
+                    .size(KkalScanDimens.fabSize)
+                    .testTag("diary-main-fab")
+                    .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
+                shape = CircleShape,
+                color = KkalScanColors.Primary,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    if (actionLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(28.dp),
+                            color = KkalScanColors.OnPrimary,
+                            strokeWidth = 3.dp,
+                        )
+                    } else {
+                        Text(
+                            if (isFabExpanded) "x" else "+",
+                            style = MaterialTheme.typography.headlineMedium,
+                            color = KkalScanColors.OnPrimary,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun DiaryFabAction(
+    testTag: String,
+    contentDescription: String,
+    label: String? = null,
+    icon: ImageVector? = null,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .size(52.dp)
+            .testTag(testTag)
+            .shadow(10.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.25f)),
+        shape = CircleShape,
+        color = KkalScanColors.Primary,
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            if (icon != null) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    tint = KkalScanColors.OnPrimary,
+                    modifier = Modifier.size(24.dp),
+                )
+            } else {
+                Text(
+                    text = label ?: "?",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = KkalScanColors.OnPrimary,
+                    fontWeight = FontWeight.Bold,
+                )
+            }
         }
     }
 }

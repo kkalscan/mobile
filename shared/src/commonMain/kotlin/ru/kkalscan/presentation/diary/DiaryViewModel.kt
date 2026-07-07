@@ -53,6 +53,33 @@ class DiaryViewModel(
             }
     }
 
+    override suspend fun addWorkout(name: String, kcal: Int) {
+        _state.update { it.copy(errorMessage = null) }
+        runCatching { diaryRepository.addWorkout(name, kcal) }
+            .onSuccess { day ->
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        day = day,
+                        date = day.date,
+                    )
+                }
+            }
+            .onFailure { e ->
+                kkalLog("Diary", "add workout fail ${e.message}")
+                _state.update { it.copy(errorMessage = e.userMessage()) }
+            }
+    }
+
+    override suspend fun deleteWorkout(workoutId: String) {
+        runCatching { diaryRepository.deleteWorkout(workoutId) }
+            .onSuccess { refresh() }
+            .onFailure { e ->
+                kkalLog("Diary", "delete workout fail workoutId=${workoutId.take(8)}… ${e.message}")
+                _state.update { it.copy(errorMessage = e.userMessage()) }
+            }
+    }
+
     override fun clearError() {
         _state.update { it.copy(errorMessage = null) }
     }

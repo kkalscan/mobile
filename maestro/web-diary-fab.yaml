@@ -1,0 +1,24 @@
+url: http://localhost:8080/?fake=1
+---
+- launchApp
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 60000
+- assertVisible: "diary-fab-collapsed"
+- assertVisible: "diary-fab-actions-0"
+- assertVisible: "diary-fab-main-count-1"
+- assertNotVisible: "diary-fab-expanded"
+- tapOn:
+    id: "maestro-tap-main-fab"
+- extendedWaitUntil:
+    visible: "diary-fab-expanded"
+    timeout: 10000
+- assertVisible: "diary-fab-actions-3"
+- assertVisible: "diary-fab-main-count-1"
+- tapOn:
+    id: "maestro-tap-main-fab"
+- extendedWaitUntil:
+    visible: "diary-fab-collapsed"
+    timeout: 10000
+- assertVisible: "diary-fab-actions-0"
+- assertVisible: "diary-fab-main-count-1"

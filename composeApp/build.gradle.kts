@@ -44,6 +44,13 @@ kotlin {
             implementation("androidx.browser:browser:1.8.0")
             implementation("androidx.exifinterface:exifinterface:1.3.7")
         }
+        val androidInstrumentedTest by getting {
+            dependencies {
+                implementation(libs.androidx.compose.ui.test.junit4)
+                implementation(libs.androidx.test.ext.junit)
+                implementation(libs.androidx.test.runner)
+            }
+        }
     }
 }
 
@@ -56,6 +63,7 @@ android {
         targetSdk = libs.versions.android.targetSdk.get().toInt()
         versionCode = (findProperty("VERSION_CODE") as String?)?.toIntOrNull() ?: 1
         versionName = findProperty("VERSION_NAME") as String? ?: "0.1.0"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     signingConfigs {
         create("release") {

@@ -18,7 +18,9 @@ interface IDiaryRepository {
     suspend fun getWeek(weekStartIso: String, timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): List<DiaryDay>
     suspend fun addFromScan(scanId: String, mealType: MealType, dishes: List<ru.kkalscan.domain.model.Dish>): DiaryDay
     suspend fun addFromDishes(dishes: List<ru.kkalscan.domain.model.Dish>, mealType: MealType): DiaryDay
+    suspend fun addWorkout(name: String, kcal: Int): DiaryDay
     suspend fun deleteEntry(entryId: String)
+    suspend fun deleteWorkout(workoutId: String)
 }
 
 class DiaryRepository(
@@ -64,6 +66,17 @@ class DiaryRepository(
     override suspend fun deleteEntry(entryId: String) {
         val deviceId = deviceIdStorage.getDeviceId()
         api.deleteDiaryEntry(deviceId, entryId)
+    }
+
+    override suspend fun addWorkout(name: String, kcal: Int): DiaryDay {
+        val deviceId = deviceIdStorage.getDeviceId()
+        api.addWorkout(deviceId, name, kcal)
+        return api.getDiary(deviceId, todayProvider(), currentTimezoneOffsetMinutes())
+    }
+
+    override suspend fun deleteWorkout(workoutId: String) {
+        val deviceId = deviceIdStorage.getDeviceId()
+        api.deleteWorkout(deviceId, workoutId)
     }
 }
 

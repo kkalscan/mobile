@@ -5,6 +5,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import com.arkivanov.decompose.ComponentContext
@@ -23,6 +24,7 @@ import ru.kkalscan.app.components.AppTab
 import ru.kkalscan.app.components.KkalBottomBar
 import ru.kkalscan.app.components.KkalScreenScaffold
 import ru.kkalscan.app.platform.MaestroDevBridge
+import ru.kkalscan.app.platform.MaestroFabTapBridge
 import ru.kkalscan.app.platform.MaestroNavigationBridge
 import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
@@ -37,6 +39,7 @@ import ru.kkalscan.app.ui.paywall.PaywallScreen
 import ru.kkalscan.app.ui.profile.ProfileScreen
 import ru.kkalscan.app.ui.result.AddToDiaryDialog
 import ru.kkalscan.app.ui.scan.ScanScreen
+import ru.kkalscan.app.ui.workout.QuickAddWorkoutDialog
 import ru.kkalscan.navigation.resolveDeepLinkNavigation
 import ru.kkalscan.presentation.features.IFeatureSearchViewModel
 import ru.kkalscan.presentation.food.IFoodSearchViewModel
@@ -63,6 +66,7 @@ fun AppRootContent(
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
     var showFoodSearch by rememberSaveable { mutableStateOf(false) }
     var showDescribeFood by rememberSaveable { mutableStateOf(false) }
+    var showAddWorkoutDialog by rememberSaveable { mutableStateOf(false) }
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
@@ -233,6 +237,8 @@ fun AppRootContent(
         },
     )
 
+    MaestroFabTapBridge()
+
     val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Journal || screen == AppScreen.Profile
 
     KkalScreenScaffold(
@@ -256,6 +262,11 @@ fun AppRootContent(
                     },
                     onDescribeClick = {
                         if (!scanState.isLoading) openDescribeFood()
+                    },
+                    onAddWorkoutClick = {
+                        if (!scanState.isLoading) {
+                            showAddWorkoutDialog = true
+                        }
                     },
                     onScanClick = {
                         if (!scanState.isLoading) {
@@ -437,6 +448,19 @@ fun AppRootContent(
                     showDescribeFood = false
                 },
                 onSubmitDescription = runDescribe,
+            )
+        }
+
+        if (showAddWorkoutDialog) {
+            QuickAddWorkoutDialog(
+                onDismiss = { showAddWorkoutDialog = false },
+                onConfirm = { name, kcal ->
+                    showAddWorkoutDialog = false
+                    scope.launch {
+                        diaryViewModel.addWorkout(name, kcal)
+                        journalViewModel.refresh()
+                    }
+                },
             )
         }
     }

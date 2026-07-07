@@ -23,6 +23,8 @@ interface IKkalScanApi {
         dishes: List<ru.kkalscan.domain.model.Dish>? = null,
     ): CreateDiaryEntryResponse
     suspend fun deleteDiaryEntry(deviceId: String, entryId: String)
+    suspend fun addWorkout(deviceId: String, name: String, kcal: Int): CreateWorkoutResponse
+    suspend fun deleteWorkout(deviceId: String, workoutId: String)
     suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus
     suspend fun startProSubscription(deviceId: String, tariff: String = "pro_monthly_199"): ProSubscriptionStart
     suspend fun submitBugReport(

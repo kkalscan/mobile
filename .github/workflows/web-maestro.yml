@@ -1,0 +1,41 @@
+name: Web Maestro
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  fab-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Build WASM bundle
+        run: |
+          chmod +x gradlew
+          ./gradlew :composeApp:wasmJsBrowserDevelopmentWebpack --no-daemon
+
+      - name: Install Maestro
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
+
+      - name: Run diary FAB Maestro flow
+        run: |
+          WASM_DIR="composeApp/build/kotlin-webpack/wasmJs/developmentExecutable"
+          test -f "$WASM_DIR/index.html"
+          python3 -m http.server 8080 --directory "$WASM_DIR" &
+          SERVER_PID=$!
+          trap "kill $SERVER_PID" EXIT
+          sleep 2
+          maestro test maestro/web-diary-fab.yaml

@@ -6,6 +6,7 @@ import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
+import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.DiaryEntry
 import ru.kkalscan.domain.model.Dish
@@ -14,7 +15,7 @@ import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
-import ru.kkalscan.domain.model.SubscriptionStatus
+import ru.kkalscan.domain.model.WorkoutEntry
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -26,6 +27,7 @@ class StatefulDiaryApi(
 ) : IKkalScanApi {
 
     private val entriesByDevice = ConcurrentHashMap<String, MutableList<DiaryEntry>>()
+    private val workoutsByDevice = ConcurrentHashMap<String, MutableList<WorkoutEntry>>()
     private val scansById = ConcurrentHashMap<String, ScanResult>()
     private var scanCounter = 0
 
@@ -109,12 +111,22 @@ class StatefulDiaryApi(
         } else {
             emptyList()
         }
+        val workouts = if (date == diaryDate) {
+            workoutsByDevice[deviceId].orEmpty()
+        } else {
+            emptyList()
+        }
+        val consumed = entries.sumOf { it.totalKcal }
+        val burned = workouts.sumOf { it.kcal }
         return DiaryDay(
             date = date,
-            totalKcal = entries.sumOf { it.totalKcal },
+            totalKcal = consumed,
+            totalBurnedKcal = burned,
+            netKcal = consumed - burned,
             scansLeft = (3 - entries.size).coerceAtLeast(0),
             isPro = false,
             entries = entries,
+            workouts = workouts,
         )
     }
 
@@ -139,6 +151,21 @@ class StatefulDiaryApi(
 
     override suspend fun deleteDiaryEntry(deviceId: String, entryId: String) {
         entriesByDevice[deviceId]?.removeAll { it.id == entryId }
+    }
+
+    override suspend fun addWorkout(deviceId: String, name: String, kcal: Int): CreateWorkoutResponse {
+        val workout = WorkoutEntry(
+            id = UUID.randomUUID().toString(),
+            createdAt = "${diaryDate}T12:00:00Z",
+            name = name.trim(),
+            kcal = kcal,
+        )
+        workoutsByDevice.computeIfAbsent(deviceId) { mutableListOf() }.add(workout)
+        return CreateWorkoutResponse(workout = workout)
+    }
+
+    override suspend fun deleteWorkout(deviceId: String, workoutId: String) {
+        workoutsByDevice[deviceId]?.removeAll { it.id == workoutId }
     }
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
