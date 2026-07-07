@@ -38,7 +38,7 @@ def main() -> int:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 430, "height": 900})
         page.goto(url, wait_until="networkidle", timeout=180_000)
-        wait_hook(page, "diary-fab-main-count-1")
+        wait_hook(page, "maestro-fab-main-hook", "diary-fab-main-count-1")
 
         fab_main = page.locator("#maestro-fab-main-hook").inner_text()
         if "diary-fab-main-count-1" not in fab_main:
@@ -46,7 +46,7 @@ def main() -> int:
 
         page.locator("#maestro-tap-main-fab").click(force=True)
         page.wait_for_function(
-            "() => document.getElementById('maestro-fab-hook')?.textContent === 'diary-fab-expanded'",
+            "() => document.getElementById('maestro-fab-actions-hook')?.textContent === 'diary-fab-actions-3'",
             timeout=15_000,
         )
         actions = page.locator("#maestro-fab-actions-hook").inner_text()
