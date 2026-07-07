@@ -15,6 +15,7 @@ import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
+import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
