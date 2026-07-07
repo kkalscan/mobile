@@ -11,6 +11,7 @@ import org.w3c.dom.events.Event
 actual fun MaestroFabScanBridge(onFakeScanPhoto: () -> Unit) {
     DisposableEffect(onFakeScanPhoto) {
         val label = document.getElementById("maestro-fab-scan-photo")
+        val tapScanBtn = document.getElementById("maestro-tap-fab-scan")
         val fakeHandler: (Event) -> Unit = { event ->
             if (useWasmFakeApi()) {
                 event.preventDefault()
@@ -18,10 +19,12 @@ actual fun MaestroFabScanBridge(onFakeScanPhoto: () -> Unit) {
                 onFakeScanPhoto()
             }
         }
+        val tapScanHandler: (Event) -> Unit = { onFakeScanPhoto() }
         label?.addEventListener("click", fakeHandler, true)
+        tapScanBtn?.addEventListener("click", tapScanHandler)
 
         val resizeHandler: (Event) -> Unit = {
-            if (document.getElementById("maestro-fab-hook")?.textContent == "diary-fab-expanded") {
+            if (document.getElementById("maestro-fab-actions-hook")?.textContent == "diary-fab-actions-3") {
                 positionFabScanOverlay()
             }
         }
@@ -29,14 +32,24 @@ actual fun MaestroFabScanBridge(onFakeScanPhoto: () -> Unit) {
 
         onDispose {
             label?.removeEventListener("click", fakeHandler, true)
+            tapScanBtn?.removeEventListener("click", tapScanHandler)
             window.removeEventListener("resize", resizeHandler)
         }
     }
 }
 
+private fun positionFabScanTapTarget(element: HTMLElement, leftPx: Double, topPx: Double) {
+    element.style.position = "fixed"
+    element.style.left = "${leftPx}px"
+    element.style.top = "${topPx}px"
+    element.style.width = "52px"
+    element.style.height = "52px"
+}
+
 internal fun positionFabScanOverlay() {
     val mainFab = document.getElementById("maestro-tap-main-fab") as? HTMLElement ?: return
     val scanLabel = document.getElementById("maestro-fab-scan-photo") as? HTMLElement ?: return
+    val tapScanBtn = document.getElementById("maestro-tap-fab-scan") as? HTMLElement ?: return
     val rect = mainFab.getBoundingClientRect()
     val slots = computeFabActionSlots(
         mainFabLeft = rect.left,
@@ -44,22 +57,24 @@ internal fun positionFabScanOverlay() {
         mainFabWidth = rect.width,
     )
     val scan = slots[2]
-    scanLabel.style.position = "fixed"
-    scanLabel.style.left = "${scan.leftPx}px"
-    scanLabel.style.top = "${scan.topPx}px"
-    scanLabel.style.width = "52px"
-    scanLabel.style.height = "52px"
+    positionFabScanTapTarget(scanLabel, scan.leftPx, scan.topPx)
+    positionFabScanTapTarget(tapScanBtn, scan.leftPx, scan.topPx)
 }
 
 internal fun setFabScanOverlayVisible(visible: Boolean) {
     val scanLabel = document.getElementById("maestro-fab-scan-photo") as? HTMLElement ?: return
+    val tapScanBtn = document.getElementById("maestro-tap-fab-scan") as? HTMLElement ?: return
     if (visible) {
         positionFabScanOverlay()
-        scanLabel.style.setProperty("pointer-events", "auto")
-        scanLabel.style.setProperty("opacity", "0.15")
-        scanLabel.style.setProperty("z-index", "12")
+        listOf(scanLabel, tapScanBtn).forEach { target ->
+            target.style.setProperty("pointer-events", "auto")
+            target.style.setProperty("opacity", "0.15")
+            target.style.setProperty("z-index", "12")
+        }
     } else {
-        scanLabel.style.setProperty("pointer-events", "none")
-        scanLabel.style.setProperty("opacity", "0")
+        listOf(scanLabel, tapScanBtn).forEach { target ->
+            target.style.setProperty("pointer-events", "none")
+            target.style.setProperty("opacity", "0")
+        }
     }
 }

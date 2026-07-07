@@ -49,7 +49,7 @@
             opacity: 0.01;
             z-index: 10;
         }
-        #maestro-tap-main-fab, #maestro-fab-scan-photo {
+        #maestro-tap-main-fab, #maestro-tap-fab-scan, #maestro-fab-scan-photo {
             position: fixed;
             z-index: 12;
             opacity: 0.15;
@@ -60,7 +60,7 @@
         }
         #maestro-open-scan { right: 20px; bottom: 130px; width: 56px; height: 56px; }
         #maestro-tap-main-fab { right: 20px; left: auto; bottom: 130px; width: 56px; height: 56px; }
-        #maestro-fab-scan-photo { pointer-events: none; opacity: 0; z-index: 12; }
+        #maestro-tap-fab-scan, #maestro-fab-scan-photo { pointer-events: none; opacity: 0; z-index: 12; }
         #maestro-open-describe-food { left: 16px; bottom: 130px; width: 56px; height: 56px; }
         #maestro-stub-scan { right: 20px; bottom: 150px; width: 56px; height: 56px; }
         #maestro-grams-plus { right: 80px; bottom: 150px; width: 40px; height: 40px; }
@@ -87,6 +87,7 @@
 <div id="maestro-fab-actions-hook" role="status" aria-live="polite">diary-fab-actions-0</div>
 <div id="maestro-fab-main-hook" role="status" aria-live="polite">diary-fab-main-count-0</div>
 <button id="maestro-tap-main-fab" type="button" aria-label="tap-main-fab">main-fab</button>
+<button id="maestro-tap-fab-scan" type="button" aria-label="tap-fab-scan">fab-scan</button>
 <input type="file" id="wasm-photo-input" accept="image/*" hidden>
 <label id="maestro-fab-scan-photo" for="wasm-photo-input" aria-label="scan-photo">scan-photo</label>
 <button id="maestro-open-scan" type="button" aria-label="open-scan-picker">scan</button>

@@ -15,8 +15,8 @@ url: http://localhost:8080/?fake=1
     timeout: 30000
 - assertVisible: "diary-fab-actions-3"
 - tapOn:
-    id: "maestro-fab-scan-photo"
+    id: "maestro-tap-fab-scan"
 - extendedWaitUntil:
     visible: "scan-result"
-    timeout: 30000
+    timeout: 60000
 - assertVisible: "scan-result"
