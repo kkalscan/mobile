@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.DiaryEntryCard
+import ru.kkalscan.app.components.KkalFoodCard
 import ru.kkalscan.app.components.KkalEmptyState
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalHeroCard
@@ -27,6 +28,7 @@ import ru.kkalscan.app.components.KkalPageHeader
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
+import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -42,8 +44,6 @@ fun DiaryScreen(
     onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
-    // Prefer the date the diary was actually loaded for so the header rolls over
-    // together with the data when the app returns from a long background stay.
     val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val dateLabel = "${today.dayOfMonth}.${today.monthNumber.toString().padStart(2, '0')}.${today.year}"
@@ -84,20 +84,19 @@ fun DiaryScreen(
             else -> {
                 val day = state.day
                 val macros = day?.macroTotals()
+                val consumed = day?.totalKcal ?: 0
+                val burned = day?.totalBurnedKcal ?: 0
+                val net = day?.netKcal ?: (consumed - burned)
                 KkalHeroCard(
-                    title = "СЪЕДЕНО СЕГОДНЯ",
-                    kcal = day?.totalKcal ?: 0,
-                    subtitle = if ((day?.entries?.size ?: 0) > 0) {
-                        "${day?.entries?.size} приёма пищи"
-                    } else {
-                        "Сфотографируйте еду — AI посчитает ккал и БЖУ"
-                    },
+                    title = "БАЛАНС СЕГОДНЯ",
+                    kcal = net,
+                    subtitle = "Съедено $consumed ккал · Сожжено $burned ккал",
                     badge = day?.scansLeft?.let { "Осталось $it скана" },
                     protein = macros?.protein ?: 0.0,
                     fat = macros?.fat ?: 0.0,
                     carbs = macros?.carbs ?: 0.0,
                     fiber = macros?.fiber ?: 0.0,
-                    watermark = "01",
+                    watermark = null,
                 )
                 Spacer(Modifier.height(24.dp))
                 Text("Приёмы пищи", style = MaterialTheme.typography.titleLarge)
@@ -116,10 +115,32 @@ fun DiaryScreen(
                         }
                     }
                 }
+
+                if (!day?.workouts.isNullOrEmpty()) {
+                    Spacer(Modifier.height(24.dp))
+                    Text("Тренировки", style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        day!!.workouts.forEach { workout ->
+                            WorkoutEntryCard(workout)
+                        }
+                    }
+                }
                 Spacer(Modifier.height(120.dp))
             }
         }
     }
+}
+
+@Composable
+private fun WorkoutEntryCard(entry: WorkoutEntry) {
+    KkalFoodCard(
+        title = entry.name,
+        kcal = entry.kcal,
+        subtitle = "Сожжено",
+        tipBadge = "Тренировка",
+        iconLabel = "W",
+    )
 }
 
 private data class MacroSummary(
