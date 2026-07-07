@@ -11,10 +11,12 @@ import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
+import ru.kkalscan.domain.model.WorkoutParseResult
 
 interface IKkalScanApi {
     suspend fun scanPhoto(deviceId: String, photoBytes: ByteArray, timezoneOffsetMinutes: Int): ScanResult
     suspend fun describeFood(deviceId: String, description: String, timezoneOffsetMinutes: Int): ScanResult
+    suspend fun parseWorkout(deviceId: String, description: String): WorkoutParseResult
     suspend fun grantScanBonus(deviceId: String): ScanBonusResult
     suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay
     suspend fun addDiaryEntry(

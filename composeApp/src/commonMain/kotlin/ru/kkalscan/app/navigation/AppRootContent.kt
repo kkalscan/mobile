@@ -470,7 +470,6 @@ fun AppRootContent(
         }
 
         if (showAddWorkoutDialog) {
-            MaestroScreenHook("quick-workout-dialog")
             QuickAddWorkoutDialog(
                 viewModel = diaryViewModel,
                 onDismiss = {
@@ -485,7 +484,6 @@ fun AppRootContent(
                         if (diaryViewModel.confirmParsedWorkout()) {
                             showAddWorkoutDialog = false
                             refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
-                            diaryViewModel.clearWorkoutParse()
                         }
                     }
                 },
