@@ -20,6 +20,7 @@ interface IDiaryRepository {
     suspend fun addFromScan(scanId: String, mealType: MealType, dishes: List<ru.kkalscan.domain.model.Dish>): DiaryDay
     suspend fun addFromDishes(dishes: List<ru.kkalscan.domain.model.Dish>, mealType: MealType): DiaryDay
     suspend fun addWorkout(name: String, kcal: Int): DiaryDay
+    suspend fun parseWorkout(description: String): WorkoutParseResult
     suspend fun deleteEntry(entryId: String)
     suspend fun deleteWorkout(workoutId: String)
 }
