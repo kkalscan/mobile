@@ -29,7 +29,6 @@ import ru.kkalscan.app.platform.MaestroFabTapBridge
 import ru.kkalscan.app.platform.MaestroNavigationBridge
 import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
-import ru.kkalscan.app.platform.rememberHealthConnectPermissionRequest
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.describe.DescribeFoodSheet
@@ -72,11 +71,6 @@ fun AppRootContent(
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
-    val requestHealthConnect = rememberHealthConnectPermissionRequest { granted ->
-        if (granted) {
-            scope.launch { diaryViewModel.refresh() }
-        }
-    }
 
     LaunchedEffect(screen) {
         KkalAnalytics.reportFeatureOpen(screen.analyticsFeatureName())
@@ -304,7 +298,6 @@ fun AppRootContent(
                         KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
                         pickPhoto()
                     },
-                    onRequestHealthConnect = requestHealthConnect,
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = {
@@ -471,23 +464,12 @@ fun AppRootContent(
 
         if (showAddWorkoutDialog) {
             QuickAddWorkoutDialog(
-                viewModel = diaryViewModel,
-                onDismiss = {
+                onDismiss = { showAddWorkoutDialog = false },
+                onConfirm = { name, kcal ->
                     showAddWorkoutDialog = false
-                    diaryViewModel.clearWorkoutParse()
-                },
-                onSubmitDescription = { description ->
                     scope.launch {
-                        diaryViewModel.parseWorkoutDescription(description)
-                    }
-                },
-                onConfirm = {
-                    scope.launch {
-                        if (diaryViewModel.confirmParsedWorkout()) {
-                            journalViewModel.refresh()
-                            showAddWorkoutDialog = false
-                            diaryViewModel.clearWorkoutParse()
-                        }
+                        diaryViewModel.addWorkout(name, kcal)
+                        journalViewModel.refresh()
                     }
                 },
             )

@@ -1,18 +1,14 @@
 package ru.kkalscan.presentation.diary
 
-import ru.kkalscan.domain.activity.CalorieBalance
 import ru.kkalscan.domain.model.DiaryDay
+import ru.kkalscan.domain.model.DiaryEntry
 
 data class DiaryUiState(
     val isLoading: Boolean = false,
     val day: DiaryDay? = null,
-    val balance: CalorieBalance? = null,
-    val steps: Int? = null,
     /** ISO date (yyyy-MM-dd) the currently shown diary was loaded for. */
     val date: String? = null,
     val errorMessage: String? = null,
-    val healthConnectAvailable: Boolean = false,
-    val healthConnectPermissionsGranted: Boolean = false,
 )
 
 interface IDiaryViewModel {
