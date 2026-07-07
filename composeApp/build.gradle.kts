@@ -43,6 +43,7 @@ kotlin {
             implementation(libs.appmetrica.analytics)
             implementation("androidx.browser:browser:1.8.0")
             implementation("androidx.exifinterface:exifinterface:1.3.7")
+            implementation("androidx.health.connect:connect-client:1.1.0-rc02")
         }
         val androidInstrumentedTest by getting {
             dependencies {

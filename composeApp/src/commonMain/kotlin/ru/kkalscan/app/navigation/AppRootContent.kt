@@ -472,20 +472,12 @@ fun AppRootContent(
         if (showAddWorkoutDialog) {
             MaestroScreenHook("quick-workout-dialog")
             QuickAddWorkoutDialog(
-                viewModel = diaryViewModel,
-                onDismiss = {
+                onDismiss = { showAddWorkoutDialog = false },
+                onConfirm = { name, kcal ->
                     showAddWorkoutDialog = false
-                    diaryViewModel.clearWorkoutParse()
-                },
-                onSubmitDescription = { description ->
-                    scope.launch { diaryViewModel.parseWorkoutDescription(description) }
-                },
-                onConfirm = {
                     scope.launch {
-                        if (diaryViewModel.confirmParsedWorkout()) {
-                            showAddWorkoutDialog = false
-                            refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
-                        }
+                        diaryViewModel.addWorkout(name, kcal)
+                        journalViewModel.refresh()
                     }
                 },
             )
