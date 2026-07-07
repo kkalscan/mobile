@@ -1,0 +1,26 @@
+url: https://kkalscan.github.io/mobile/?fake=1
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "maestro-hook"
+    timeout: 240000
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 240000
+- tapOn:
+    id: "maestro-tap-main-fab"
+- extendedWaitUntil:
+    visible: "diary-fab-expanded"
+    timeout: 10000
+- tapOn:
+    id: "maestro-open-workout"
+- extendedWaitUntil:
+    visible: "quick-workout-dialog"
+    timeout: 10000
+- tapOn:
+    id: "maestro-workout-demo"
+- extendedWaitUntil:
+    visible: "quick-workout-preview"
+    timeout: 15000
+- assertVisible: "quick-workout-save"
