@@ -12,8 +12,6 @@ import ru.kkalscan.data.health.IHealthConnectReader
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.domain.activity.CalorieBalanceCalculator
 import ru.kkalscan.domain.error.KkalScanException
-import ru.kkalscan.domain.model.DiaryDay
-import ru.kkalscan.util.kkalLog
 
 class DiaryViewModel(
     private val diaryRepository: IDiaryRepository,
@@ -35,14 +33,10 @@ class DiaryViewModel(
                 val hcKcal = async { healthConnect.readTodayActiveCalories() }
                 val hcSteps = async { healthConnect.readTodaySteps() }
                 val d = day.await()
-                val kcal = hcKcal.await()
-                DiaryLoadResult(d, CalorieBalanceCalculator.compute(d, kcal), hcSteps.await(), hcAvail.await(), hcPerm.await())
+                DiaryLoadResult(d, CalorieBalanceCalculator.compute(d, hcKcal.await()), hcSteps.await(), hcAvail.await(), hcPerm.await())
             }
-        }.onSuccess { r ->
-            _state.update { it.copy(isLoading = false, day = r.day, balance = r.balance, steps = r.steps, date = date, healthConnectAvailable = r.healthConnectAvailable, healthConnectPermissionsGranted = r.healthConnectPermissionsGranted) }
-        }.onFailure { e ->
-            _state.update { it.copy(isLoading = false, date = date, errorMessage = e.userMessage()) }
-        }
+        }.onSuccess { r -> _state.update { DiaryUiState(false, r.day, r.balance, r.steps, date, null, r.healthConnectAvailable, r.healthConnectPermissionsGranted) } }
+         .onFailure { e -> _state.update { it.copy(isLoading = false, date = date, errorMessage = e.userMessage()) } }
     }
 
     override suspend fun onForeground() {
@@ -50,50 +44,19 @@ class DiaryViewModel(
         if (loaded != diaryRepository.currentDate()) refresh()
     }
 
-    override suspend fun deleteEntry(entryId: String) {
-        runCatching { diaryRepository.deleteEntry(entryId) }.onSuccess { refresh() }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
-    }
-
-    override suspend fun addWorkout(name: String, kcal: Int) {
-        _state.update { it.copy(errorMessage = null) }
-        runCatching { diaryRepository.addWorkout(name, kcal) }.onSuccess { updateDayState(it, true) }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
-    }
-
-    override suspend fun parseWorkoutDescription(description: String) {
-        _state.update { it.copy(workoutParse = WorkoutParseUiState(isLoading = true), errorMessage = null) }
-        runCatching { diaryRepository.parseWorkout(description) }
-            .onSuccess { preview -> _state.update { it.copy(workoutParse = WorkoutParseUiState(isLoading = false, preview = preview)) } }
-            .onFailure { e -> _state.update { it.copy(workoutParse = WorkoutParseUiState(isLoading = false, errorMessage = e.userMessage(true))) } }
-    }
-
-    override suspend fun confirmParsedWorkout(): Boolean {
-        val preview = _state.value.workoutParse.preview ?: return false
-        _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = true, errorMessage = null)) }
-        return runCatching { diaryRepository.addWorkout(preview.title, preview.burnedKcal) }
-            .onSuccess { updateDayState(it, true) }
-            .onFailure { e -> _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = false, errorMessage = e.userMessage())) } }
-            .isSuccess
-    }
-
-    override fun clearWorkoutParse() { _state.update { it.copy(workoutParse = WorkoutParseUiState()) } }
-
-    override suspend fun deleteWorkout(workoutId: String) {
-        runCatching { diaryRepository.deleteWorkout(workoutId) }.onSuccess { refresh() }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
-    }
-
+    override suspend fun deleteEntry(entryId: String) { runCatching { diaryRepository.deleteEntry(entryId) }.onSuccess { refresh() }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } } }
+    override suspend fun addWorkout(name: String, kcal: Int) { runCatching { diaryRepository.addWorkout(name, kcal) }.onSuccess { updateDayState(it) }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } } }
+    override suspend fun deleteWorkout(workoutId: String) { runCatching { diaryRepository.deleteWorkout(workoutId) }.onSuccess { refresh() }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } } }
     override fun clearError() { _state.update { it.copy(errorMessage = null) } }
 
-    private suspend fun updateDayState(day: DiaryDay, clearWorkoutParse: Boolean = false) {
-        val hcKcal = healthConnect.readTodayActiveCalories()
-        _state.update { it.copy(isLoading = false, day = day, balance = CalorieBalanceCalculator.compute(day, hcKcal), date = day.date, workoutParse = if (clearWorkoutParse) WorkoutParseUiState() else it.workoutParse) }
+    private suspend fun updateDayState(day: ru.kkalscan.domain.model.DiaryDay) {
+        _state.update { it.copy(isLoading = false, day = day, balance = CalorieBalanceCalculator.compute(day, healthConnect.readTodayActiveCalories()), date = day.date) }
     }
-
-    private fun Throwable.userMessage(isWorkoutParse: Boolean = false) = when (this) {
+    private fun Throwable.userMessage() = when (this) {
         is KkalScanException.Network -> "Нет сети. Проверьте подключение."
         is KkalScanException.LimitHit -> message ?: "Лимит сканов исчерпан"
-        is KkalScanException.Api -> message ?: if (isWorkoutParse) "Не удалось понять описание тренировки" else "Ошибка сервера"
+        is KkalScanException.Api -> message ?: "Ошибка сервера"
         else -> message ?: "Неизвестная ошибка"
     }
-
-    private data class DiaryLoadResult(val day: DiaryDay, val balance: ru.kkalscan.domain.activity.CalorieBalance, val steps: Int?, val healthConnectAvailable: Boolean, val healthConnectPermissionsGranted: Boolean)
+    private data class DiaryLoadResult(val day: ru.kkalscan.domain.model.DiaryDay, val balance: ru.kkalscan.domain.activity.CalorieBalance, val steps: Int?, val healthConnectAvailable: Boolean, val healthConnectPermissionsGranted: Boolean)
 }

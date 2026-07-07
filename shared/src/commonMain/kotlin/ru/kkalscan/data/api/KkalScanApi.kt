@@ -34,7 +34,6 @@ import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
-import ru.kkalscan.domain.model.WorkoutParseResult
 
 class KkalScanApi(
     private val httpClient: HttpClient,
@@ -71,12 +70,6 @@ class KkalScanApi(
         postJson(
             "/scan/text",
             ScanTextRequest(deviceId, description, timezoneOffsetMinutes),
-        )
-
-    override suspend fun parseWorkout(deviceId: String, description: String): WorkoutParseResult =
-        postJson(
-            "/workout/text",
-            WorkoutTextRequest(device_id = deviceId, description = description),
         )
 
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =
@@ -249,12 +242,6 @@ class KkalScanApi(
         val meal_type: MealType,
         val scan_id: String? = null,
         val dishes: List<Dish>? = null,
-    )
-
-    @Serializable
-    private data class WorkoutTextRequest(
-        val device_id: String,
-        val description: String,
     )
 
     @Serializable

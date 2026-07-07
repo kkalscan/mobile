@@ -17,7 +17,6 @@ import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
-import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -92,27 +91,6 @@ class FakeKkalScanApi(
         )
         scansById[scanId] = result
         return result
-    }
-
-    override suspend fun parseWorkout(deviceId: String, description: String): WorkoutParseResult {
-        ensureSampleWeekSeeded(deviceId)
-        val normalized = description.trim().lowercase()
-        val minutes = Regex("(\\d+)\\s*мин").find(normalized)?.groupValues?.get(1)?.toIntOrNull()
-            ?: Regex("(\\d+)\\s*ч").find(normalized)?.groupValues?.get(1)?.toIntOrNull()?.times(60)
-            ?: 30
-        val (title, kcalPerMinute) = when {
-            normalized.contains("бег") || normalized.contains("пробеж") -> "Бег" to 10
-            normalized.contains("йога") -> "Йога" to 4
-            normalized.contains("плава") -> "Плавание" to 8
-            normalized.contains("ходьб") -> "Ходьба" to 5
-            normalized.contains("велос") -> "Велосипед" to 9
-            else -> "Тренировка" to 7
-        }
-        return WorkoutParseResult(
-            title = title,
-            burnedKcal = (kcalPerMinute * minutes).coerceIn(50, 1500),
-            durationMinutes = minutes,
-        )
     }
 
     override suspend fun grantScanBonus(deviceId: String): ScanBonusResult =
