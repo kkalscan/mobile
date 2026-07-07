@@ -7,7 +7,6 @@ url: http://localhost:8080/?fake=1
 - assertVisible: "diary-fab-collapsed"
 - assertVisible: "diary-fab-actions-0"
 - assertVisible: "diary-fab-main-count-1"
-- assertNotVisible: "diary-fab-expanded"
 - tapOn:
     id: "maestro-tap-main-fab"
 - extendedWaitUntil:

@@ -33,9 +33,15 @@ jobs:
       - name: Run diary FAB Maestro flow
         run: |
           WASM_DIR="composeApp/build/kotlin-webpack/wasmJs/developmentExecutable"
-          test -f "$WASM_DIR/index.html"
-          python3 -m http.server 8080 --directory "$WASM_DIR" &
+          SERVE_DIR="composeApp/build/wasm-serve"
+          mkdir -p "$SERVE_DIR"
+          cp -R "$WASM_DIR"/. "$SERVE_DIR"/
+          cp composeApp/src/wasmJsMain/resources/index.html "$SERVE_DIR"/
+          cp composeApp/src/wasmJsMain/resources/*.png "$SERVE_DIR"/ 2>/dev/null || true
+          cp composeApp/src/wasmJsMain/resources/*.svg "$SERVE_DIR"/ 2>/dev/null || true
+          cp composeApp/src/wasmJsMain/resources/*.webmanifest "$SERVE_DIR"/ 2>/dev/null || true
+          python3 -m http.server 8080 --directory "$SERVE_DIR" &
           SERVER_PID=$!
           trap "kill $SERVER_PID" EXIT
           sleep 2
-          maestro test maestro/web-diary-fab.yaml
+          maestro test -p web --headless --screen-size 390x844 maestro/web-diary-fab.yaml
