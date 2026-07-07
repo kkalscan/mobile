@@ -25,7 +25,7 @@ class DiaryViewModelTest {
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
             { TestApiFixtures.TODAY },
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this)
         vm.refresh()
 
         vm.state.value.isLoading shouldBe false
@@ -40,7 +40,7 @@ class DiaryViewModelTest {
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
             { TestApiFixtures.TODAY },
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this)
         vm.refresh()
         vm.deleteEntry("entry-1")
 
@@ -60,7 +60,7 @@ class DiaryViewModelTest {
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this)
         advanceUntilIdle() // init refresh loads day one
 
         // Day one: the user logged a meal today.
@@ -97,7 +97,7 @@ class DiaryViewModelTest {
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = DiaryViewModel(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this)
         advanceUntilIdle()
 
         val fetchesBefore = repo.getTodayCalls
