@@ -6,6 +6,7 @@ import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.stats.WeekDates
 import ru.kkalscan.util.kkalLog
 import ru.kkalscan.util.maskDeviceId
@@ -19,6 +20,7 @@ interface IDiaryRepository {
     suspend fun addFromScan(scanId: String, mealType: MealType, dishes: List<ru.kkalscan.domain.model.Dish>): DiaryDay
     suspend fun addFromDishes(dishes: List<ru.kkalscan.domain.model.Dish>, mealType: MealType): DiaryDay
     suspend fun addWorkout(name: String, kcal: Int): DiaryDay
+    suspend fun parseWorkout(description: String): WorkoutParseResult
     suspend fun deleteEntry(entryId: String)
     suspend fun deleteWorkout(workoutId: String)
 }

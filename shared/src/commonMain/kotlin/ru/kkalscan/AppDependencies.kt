@@ -47,9 +47,10 @@ class AppDependencies(
     val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
+    val healthConnectReader: IHealthConnectReader = createHealthConnectReader(),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
-        DiaryViewModel(diaryRepository, scope)
+        DiaryViewModel(diaryRepository, healthConnectReader, scope)
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
         FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)
