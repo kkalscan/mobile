@@ -8,4 +8,5 @@ internal actual fun updateMaestroFabState(expanded: Boolean) {
     document.getElementById("maestro-fab-actions-hook")?.textContent =
         if (expanded) "diary-fab-actions-3" else "diary-fab-actions-0"
     document.getElementById("maestro-fab-main-hook")?.textContent = "diary-fab-main-count-1"
+    setFabScanOverlayVisible(expanded)
 }

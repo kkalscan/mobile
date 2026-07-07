@@ -1,8 +1,6 @@
-name: Web Maestro
+name: Web Maestro (PR)
 
 on:
-  push:
-    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -20,28 +18,29 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - name: Build WASM bundle
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Build static WASM site
         run: |
-          chmod +x gradlew
-          ./gradlew :composeApp:wasmJsBrowserDevelopmentWebpack --no-daemon
+          chmod +x gradlew scripts/prepare-wasm-site.sh
+          ./scripts/prepare-wasm-site.sh
 
       - name: Install Maestro
         run: |
           curl -Ls "https://get.maestro.mobile.dev" | bash
           echo "$HOME/.maestro/bin" >> "$GITHUB_PATH"
 
-      - name: Run diary FAB Maestro flow
+      - name: Run diary FAB Maestro flow (local artifact)
         run: |
-          WASM_DIR="composeApp/build/kotlin-webpack/wasmJs/developmentExecutable"
-          SERVE_DIR="composeApp/build/wasm-serve"
-          mkdir -p "$SERVE_DIR"
-          cp -R "$WASM_DIR"/. "$SERVE_DIR"/
-          cp composeApp/src/wasmJsMain/resources/index.html "$SERVE_DIR"/
-          cp composeApp/src/wasmJsMain/resources/*.png "$SERVE_DIR"/ 2>/dev/null || true
-          cp composeApp/src/wasmJsMain/resources/*.svg "$SERVE_DIR"/ 2>/dev/null || true
-          cp composeApp/src/wasmJsMain/resources/*.webmanifest "$SERVE_DIR"/ 2>/dev/null || true
-          python3 -m http.server 8080 --directory "$SERVE_DIR" &
+          node scripts/serve-wasm-http.mjs 8080 composeApp/build/web-pages-site &
           SERVER_PID=$!
           trap "kill $SERVER_PID" EXIT
-          sleep 2
-          maestro test -p web --headless --screen-size 390x844 maestro/web-diary-fab.yaml
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8080/ >/dev/null && break
+            sleep 2
+          done
+          maestro test -p web --headless --screen-size 390x844 \
+            maestro/web-diary-fab-local.yaml \
+            maestro/web-diary-fab-scan-local.yaml

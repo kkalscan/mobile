@@ -11,5 +11,6 @@ object KkalScanDimens {
     val bottomBarHeight = 72.dp
     val fabSize = 64.dp
     val fabFloatOffset = 76.dp
+    val fabEndPadding = 20.dp
     val thumbSize = 56.dp
 }

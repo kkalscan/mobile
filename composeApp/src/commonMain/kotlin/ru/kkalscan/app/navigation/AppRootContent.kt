@@ -24,6 +24,7 @@ import ru.kkalscan.app.components.AppTab
 import ru.kkalscan.app.components.KkalBottomBar
 import ru.kkalscan.app.components.KkalScreenScaffold
 import ru.kkalscan.app.platform.MaestroDevBridge
+import ru.kkalscan.app.platform.MaestroFabScanBridge
 import ru.kkalscan.app.platform.MaestroFabTapBridge
 import ru.kkalscan.app.platform.MaestroNavigationBridge
 import ru.kkalscan.app.platform.MaestroScreenHook
@@ -238,6 +239,16 @@ fun AppRootContent(
     )
 
     MaestroFabTapBridge()
+
+    MaestroFabScanBridge(
+        onFakeScanPhoto = {
+            if (!scanState.isLoading) {
+                KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
+                val bytes = devStubScanPhotoBytes() ?: byteArrayOf(1, 2, 3)
+                runScan(bytes)
+            }
+        },
+    )
 
     val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Journal || screen == AppScreen.Profile
 

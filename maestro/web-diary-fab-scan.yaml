@@ -8,20 +8,15 @@ url: https://kkalscan.github.io/mobile/?fake=1
 - extendedWaitUntil:
     visible: "diary-screen"
     timeout: 240000
-- assertVisible: "diary-fab-collapsed"
-- assertVisible: "diary-fab-actions-0"
-- assertVisible: "diary-fab-main-count-1"
 - tapOn:
     id: "maestro-tap-main-fab"
 - extendedWaitUntil:
     visible: "diary-fab-expanded"
     timeout: 10000
 - assertVisible: "diary-fab-actions-3"
-- assertVisible: "diary-fab-main-count-1"
 - tapOn:
-    id: "maestro-tap-main-fab"
+    id: "maestro-fab-scan-photo"
 - extendedWaitUntil:
-    visible: "diary-fab-collapsed"
-    timeout: 10000
-- assertVisible: "diary-fab-actions-0"
-- assertVisible: "diary-fab-main-count-1"
+    visible: "scan-result-dialog"
+    timeout: 30000
+- assertVisible: "scan-result-dialog"

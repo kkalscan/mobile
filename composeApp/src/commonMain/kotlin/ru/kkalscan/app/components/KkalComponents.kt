@@ -31,7 +31,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CameraAlt
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -220,7 +224,8 @@ fun KkalBottomBar(
             AnimatedVisibility(
                 visible = isFabExpanded,
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopEnd)
+                    .padding(end = KkalScanDimens.fabEndPadding)
                     .offset(y = -(KkalScanDimens.fabFloatOffset + 74.dp)),
                 enter = fadeIn() + slideInVertically { it / 3 },
                 exit = fadeOut() + slideOutVertically { it / 3 },
@@ -240,7 +245,7 @@ fun KkalBottomBar(
                     DiaryFabAction(
                         testTag = "diary-fab-add-workout",
                         contentDescription = "Добавить тренировку",
-                        label = "W",
+                        icon = Icons.Outlined.FitnessCenter,
                         onClick = {
                             if (!actionLoading) {
                                 isFabExpanded = false
@@ -251,7 +256,7 @@ fun KkalBottomBar(
                     DiaryFabAction(
                         testTag = "diary-fab-scan-photo",
                         contentDescription = "Скан фото",
-                        label = "S",
+                        icon = Icons.Outlined.CameraAlt,
                         onClick = {
                             if (!actionLoading) {
                                 isFabExpanded = false
@@ -269,7 +274,8 @@ fun KkalBottomBar(
                     }
                 },
                 modifier = Modifier
-                    .align(Alignment.TopCenter)
+                    .align(Alignment.TopEnd)
+                    .padding(end = KkalScanDimens.fabEndPadding)
                     .offset(y = -KkalScanDimens.fabFloatOffset)
                     .size(KkalScanDimens.fabSize)
                     .testTag("diary-main-fab")
@@ -284,12 +290,19 @@ fun KkalBottomBar(
                             color = KkalScanColors.OnPrimary,
                             strokeWidth = 3.dp,
                         )
+                    } else if (isFabExpanded) {
+                        Icon(
+                            imageVector = Icons.Outlined.Close,
+                            contentDescription = "Закрыть",
+                            tint = KkalScanColors.OnPrimary,
+                            modifier = Modifier.size(28.dp),
+                        )
                     } else {
-                        Text(
-                            if (isFabExpanded) "x" else "+",
-                            style = MaterialTheme.typography.headlineMedium,
-                            color = KkalScanColors.OnPrimary,
-                            fontWeight = FontWeight.Bold,
+                        Icon(
+                            imageVector = Icons.Outlined.Add,
+                            contentDescription = "Добавить",
+                            tint = KkalScanColors.OnPrimary,
+                            modifier = Modifier.size(28.dp),
                         )
                     }
                 }

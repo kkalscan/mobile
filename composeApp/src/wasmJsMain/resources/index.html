@@ -44,13 +44,14 @@
         }
         #maestro-fab-actions-hook { top: 64px; }
         #maestro-fab-main-hook { top: 92px; }
-        #maestro-open-scan, #maestro-open-profile, #maestro-open-journal, #maestro-scan-back, #maestro-stub-scan, #maestro-confirm-add, #maestro-grams-plus, #maestro-grams-minus, #maestro-portion-half, #maestro-portion-double, #maestro-open-food-search, #maestro-open-describe-food, #maestro-describe-food-demo, #maestro-food-search-demo, #maestro-food-search-add, #maestro-deeplink-profile, #maestro-deeplink-journal, #maestro-deeplink-diary, #maestro-feature-search-first, #maestro-tap-main-fab {
+        #maestro-open-scan, #maestro-open-profile, #maestro-open-journal, #maestro-scan-back, #maestro-stub-scan, #maestro-confirm-add, #maestro-grams-plus, #maestro-grams-minus, #maestro-portion-half, #maestro-portion-double, #maestro-open-food-search, #maestro-open-describe-food, #maestro-describe-food-demo, #maestro-food-search-demo, #maestro-food-search-add, #maestro-deeplink-profile, #maestro-deeplink-journal, #maestro-deeplink-diary, #maestro-feature-search-first, #maestro-tap-main-fab, #maestro-fab-scan-photo {
             position: fixed;
             opacity: 0.01;
             z-index: 10;
         }
         #maestro-open-scan { right: 20px; bottom: 130px; width: 56px; height: 56px; }
-        #maestro-tap-main-fab { left: 50%; bottom: 130px; width: 56px; height: 56px; transform: translateX(-50%); }
+        #maestro-tap-main-fab { right: 20px; left: auto; bottom: 130px; width: 56px; height: 56px; }
+        #maestro-fab-scan-photo { pointer-events: none; opacity: 0; z-index: 12; }
         #maestro-open-describe-food { left: 16px; bottom: 130px; width: 56px; height: 56px; }
         #maestro-stub-scan { right: 20px; bottom: 150px; width: 56px; height: 56px; }
         #maestro-grams-plus { right: 80px; bottom: 150px; width: 40px; height: 40px; }
@@ -77,6 +78,8 @@
 <div id="maestro-fab-actions-hook" role="status" aria-live="polite">diary-fab-actions-0</div>
 <div id="maestro-fab-main-hook" role="status" aria-live="polite">diary-fab-main-count-0</div>
 <button id="maestro-tap-main-fab" type="button" aria-label="tap-main-fab">main-fab</button>
+<input type="file" id="wasm-photo-input" accept="image/*" hidden>
+<label id="maestro-fab-scan-photo" for="wasm-photo-input" aria-label="scan-photo">scan-photo</label>
 <button id="maestro-open-scan" type="button" aria-label="open-scan-picker">scan</button>
 <button id="maestro-stub-scan" type="button" aria-label="stub-scan">stub-scan</button>
 <button id="maestro-grams-plus" type="button" aria-label="grams-plus">grams-plus</button>

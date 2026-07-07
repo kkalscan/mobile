@@ -1,0 +1,22 @@
+url: http://localhost:8080/?fake=1
+---
+- launchApp
+- extendedWaitUntil:
+    visible:
+      id: "maestro-hook"
+    timeout: 240000
+- extendedWaitUntil:
+    visible: "diary-screen"
+    timeout: 240000
+- tapOn:
+    id: "maestro-tap-main-fab"
+- extendedWaitUntil:
+    visible: "diary-fab-expanded"
+    timeout: 10000
+- assertVisible: "diary-fab-actions-3"
+- tapOn:
+    id: "maestro-fab-scan-photo"
+- extendedWaitUntil:
+    visible: "scan-result-dialog"
+    timeout: 30000
+- assertVisible: "scan-result-dialog"

@@ -8,4 +8,4 @@ actual fun rememberPhotoPicker(
     source: PhotoPickSource,
     onPhotoPicked: (ByteArray?) -> Unit,
 ): () -> Unit =
-    remember(onPhotoPicked) { createWasmPhotoPicker(onPhotoPicked) }
+    remember(onPhotoPicked) { bindWasmPhotoInput(onPhotoPicked) }

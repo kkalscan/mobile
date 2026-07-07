@@ -1,8 +1,7 @@
 package ru.kkalscan.app.components
 
 import androidx.compose.ui.test.assertCountEquals
-import androidx.compose.ui.test.assertDoesNotExist
-import androidx.compose.ui.test.assertExists
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -34,25 +33,25 @@ class DiaryFabUiTest {
             }
         }
 
-        composeTestRule.onNodeWithTag("diary-fab-describe-food").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("diary-fab-add-workout").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("diary-fab-scan-photo").assertDoesNotExist()
+        composeTestRule.onAllNodesWithTag("diary-fab-describe-food").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("diary-fab-add-workout").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("diary-fab-scan-photo").assertCountEquals(0)
         composeTestRule.onAllNodesWithTag("diary-main-fab").assertCountEquals(1)
 
         composeTestRule.onNodeWithTag("diary-main-fab").performClick()
         composeTestRule.waitForFabActions(visible = true)
 
-        composeTestRule.onNodeWithTag("diary-fab-describe-food").assertExists()
-        composeTestRule.onNodeWithTag("diary-fab-add-workout").assertExists()
-        composeTestRule.onNodeWithTag("diary-fab-scan-photo").assertExists()
+        composeTestRule.onNodeWithTag("diary-fab-describe-food").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("diary-fab-add-workout").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("diary-fab-scan-photo").assertIsDisplayed()
         composeTestRule.onAllNodesWithTag("diary-main-fab").assertCountEquals(1)
 
         composeTestRule.onNodeWithTag("diary-main-fab").performClick()
         composeTestRule.waitForFabActions(visible = false)
 
-        composeTestRule.onNodeWithTag("diary-fab-describe-food").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("diary-fab-add-workout").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("diary-fab-scan-photo").assertDoesNotExist()
+        composeTestRule.onAllNodesWithTag("diary-fab-describe-food").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("diary-fab-add-workout").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("diary-fab-scan-photo").assertCountEquals(0)
     }
 
     @Test
@@ -70,9 +69,30 @@ class DiaryFabUiTest {
         }
 
         composeTestRule.onAllNodesWithTag("diary-main-fab").assertCountEquals(1)
-        composeTestRule.onNodeWithTag("diary-fab-describe-food").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("diary-fab-add-workout").assertDoesNotExist()
-        composeTestRule.onNodeWithTag("diary-fab-scan-photo").assertDoesNotExist()
+        composeTestRule.onAllNodesWithTag("diary-fab-describe-food").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("diary-fab-add-workout").assertCountEquals(0)
+        composeTestRule.onAllNodesWithTag("diary-fab-scan-photo").assertCountEquals(0)
+    }
+
+    @Test
+    fun scanFab_invokesOnScanClick_whenExpanded() {
+        var scanClicked = false
+        composeTestRule.setContent {
+            KkalScanTheme {
+                KkalBottomBar(
+                    selectedTab = AppTab.Today,
+                    onTabSelected = {},
+                    onDescribeClick = {},
+                    onAddWorkoutClick = {},
+                    onScanClick = { scanClicked = true },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag("diary-main-fab").performClick()
+        composeTestRule.waitForFabActions(visible = true)
+        composeTestRule.onNodeWithTag("diary-fab-scan-photo").performClick()
+        assert(scanClicked)
     }
 
     @Test
@@ -89,7 +109,7 @@ class DiaryFabUiTest {
             }
         }
 
-        composeTestRule.onNodeWithTag("diary-main-fab").assertDoesNotExist()
+        composeTestRule.onAllNodesWithTag("diary-main-fab").assertCountEquals(0)
     }
 
     private fun ComposeContentTestRule.waitForFabActions(visible: Boolean) {
