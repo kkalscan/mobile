@@ -94,13 +94,6 @@ data class CreateWorkoutResponse(
 )
 
 @Serializable
-data class WorkoutParseResult(
-    val title: String,
-    @SerialName("burned_kcal") val burnedKcal: Int,
-    @SerialName("duration_minutes") val durationMinutes: Int? = null,
-)
-
-@Serializable
 data class ApiErrorBody(
     val error: String,
     val message: String,

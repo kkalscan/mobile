@@ -1,5 +1,6 @@
 package ru.kkalscan.presentation.diary
 
+import ru.kkalscan.domain.activity.CalorieBalance
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.WorkoutParseResult
 
@@ -12,8 +13,12 @@ data class WorkoutParseUiState(
 data class DiaryUiState(
     val isLoading: Boolean = false,
     val day: DiaryDay? = null,
+    val balance: CalorieBalance? = null,
+    val steps: Int? = null,
     val date: String? = null,
     val errorMessage: String? = null,
+    val healthConnectAvailable: Boolean = false,
+    val healthConnectPermissionsGranted: Boolean = false,
     val workoutParse: WorkoutParseUiState = WorkoutParseUiState(),
 )
 

@@ -5,6 +5,8 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.data.api.KkalScanApi
 import ru.kkalscan.data.createHttpClient
+import ru.kkalscan.data.health.IHealthConnectReader
+import ru.kkalscan.data.health.createHealthConnectReader
 import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.FeatureSearchRepository
@@ -21,12 +23,12 @@ import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
+import ru.kkalscan.presentation.diary.DiaryViewModel
+import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.features.FeatureSearchViewModel
 import ru.kkalscan.presentation.features.IFeatureSearchViewModel
 import ru.kkalscan.presentation.food.FoodSearchViewModel
 import ru.kkalscan.presentation.food.IFoodSearchViewModel
-import ru.kkalscan.presentation.diary.DiaryViewModel
-import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.journal.IJournalViewModel
 import ru.kkalscan.presentation.journal.JournalViewModel
 import ru.kkalscan.presentation.profile.IProfileViewModel
@@ -45,9 +47,10 @@ class AppDependencies(
     val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
+    val healthConnectReader: IHealthConnectReader = createHealthConnectReader(),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
-        DiaryViewModel(diaryRepository, scope)
+        DiaryViewModel(diaryRepository, healthConnectReader, scope)
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
         FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)
