@@ -31,6 +31,8 @@ import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
 import ru.kkalscan.app.platform.rememberHealthConnectPermissionRequest
 import ru.kkalscan.app.platform.rememberPhotoPicker
+import ru.kkalscan.health.HealthConnectOnboardingController
+import ru.kkalscan.health.createHealthConnectOnboardingStorage
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.describe.DescribeFoodSheet
 import ru.kkalscan.app.ui.diary.DiaryScreen
@@ -71,9 +73,19 @@ fun AppRootContent(
     var showAddWorkoutDialog by rememberSaveable { mutableStateOf(false) }
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
+    val diaryState by diaryViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
+    val healthConnectOnboarding = remember { HealthConnectOnboardingController(createHealthConnectOnboardingStorage()) }
     val requestHealthConnect = rememberHealthConnectPermissionRequest {
         scope.launch { diaryViewModel.refresh() }
+    }
+
+    LaunchedEffect(
+        diaryState.isLoading,
+        diaryState.healthConnectAvailable,
+        diaryState.healthConnectPermissionsGranted,
+    ) {
+        healthConnectOnboarding.tryAutoRequest(diaryState, requestHealthConnect)
     }
 
     LaunchedEffect(screen) {

@@ -31,6 +31,7 @@ import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.WorkoutEntry
+import ru.kkalscan.health.HealthConnectOnboardingPolicy
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -87,7 +88,7 @@ fun DiaryScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                 }
-                if (state.healthConnectAvailable && !state.healthConnectPermissionsGranted) {
+                if (HealthConnectOnboardingPolicy.shouldShowConnectButton(state)) {
                     OutlinedButton(onClick = onRequestHealthConnect, modifier = Modifier.fillMaxWidth().testTag("health-connect-request")) {
                         Text("Подключить Health Connect")
                     }

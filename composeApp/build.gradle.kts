@@ -47,6 +47,7 @@ kotlin {
         }
         val androidInstrumentedTest by getting {
             dependencies {
+                implementation(libs.androidx.activity.compose)
                 implementation(libs.androidx.compose.ui.test.junit4)
                 implementation(libs.androidx.test.ext.junit)
                 implementation(libs.androidx.test.runner)
@@ -97,4 +98,8 @@ android {
     buildFeatures {
         buildConfig = true
     }
+}
+
+dependencies {
+    debugImplementation("androidx.compose.ui:ui-test-manifest:1.7.8")
 }
