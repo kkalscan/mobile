@@ -72,10 +72,8 @@ fun AppRootContent(
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
-    val requestHealthConnect = rememberHealthConnectPermissionRequest { granted ->
-        if (granted) {
-            scope.launch { diaryViewModel.refresh() }
-        }
+    val requestHealthConnect = rememberHealthConnectPermissionRequest {
+        scope.launch { diaryViewModel.refresh() }
     }
 
     LaunchedEffect(screen) {
