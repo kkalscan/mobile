@@ -143,6 +143,9 @@ class HealthConnectOnboardingUiTest {
         override val state: StateFlow<DiaryUiState> = mutableState
 
         override suspend fun refresh() = Unit
+        override suspend fun refreshHealthConnectOnly() = Unit
+        override fun startHealthConnectPolling() = Unit
+        override fun stopHealthConnectPolling() = Unit
         override suspend fun onForeground() = Unit
         override suspend fun deleteEntry(entryId: String) = Unit
         override suspend fun parseWorkoutDescription(description: String) = Unit

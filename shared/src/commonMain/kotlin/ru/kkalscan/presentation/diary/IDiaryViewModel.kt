@@ -25,6 +25,9 @@ data class DiaryUiState(
 interface IDiaryViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<DiaryUiState>
     suspend fun refresh()
+    suspend fun refreshHealthConnectOnly()
+    fun startHealthConnectPolling()
+    fun stopHealthConnectPolling()
     suspend fun onForeground()
     suspend fun deleteEntry(entryId: String)
     suspend fun parseWorkoutDescription(description: String)

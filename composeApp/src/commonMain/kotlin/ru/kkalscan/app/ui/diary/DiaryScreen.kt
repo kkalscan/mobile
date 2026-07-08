@@ -14,6 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,6 +49,10 @@ fun DiaryScreen(
     onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
+    DisposableEffect(viewModel) {
+        viewModel.startHealthConnectPolling()
+        onDispose { viewModel.stopHealthConnectPolling() }
+    }
     val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val dateLabel = "${today.dayOfMonth}.${today.monthNumber.toString().padStart(2, '0')}.${today.year}"

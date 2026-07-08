@@ -1,12 +1,15 @@
 package ru.kkalscan.presentation.diary
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.kkalscan.data.health.IHealthConnectReader
 import ru.kkalscan.data.repository.IDiaryRepository
@@ -24,6 +27,8 @@ class DiaryViewModel(
     override val state: StateFlow<DiaryUiState> = _state.asStateFlow()
     /** Bumped on every local diary mutation so in-flight refresh() cannot overwrite newer state. */
     private var dataGeneration = 0
+    private var healthConnectPollingJob: Job? = null
+
     init { scope.launch { refresh() } }
 
     override suspend fun refresh() {
@@ -33,26 +38,80 @@ class DiaryViewModel(
         runCatching {
             coroutineScope {
                 val day = async { diaryRepository.getToday() }
-                val hcAvail = async { healthConnect.isAvailable() }
-                val hcPerm = async { healthConnect.hasPermissions() }
-                val hcKcal = async { healthConnect.readTodayActiveCalories() }
-                val hcSteps = async { healthConnect.readTodaySteps() }
+                val hc = async { readHealthConnectSnapshot() }
                 val d = day.await()
-                val kcal = hcKcal.await()
-                DiaryLoadResult(d, CalorieBalanceCalculator.compute(d, kcal), hcSteps.await(), hcAvail.await(), hcPerm.await())
+                val snapshot = hc.await()
+                DiaryLoadResult(d, snapshot)
             }
         }.onSuccess { r ->
             if (generation != dataGeneration) return@onSuccess
-            _state.update { it.copy(isLoading = false, day = r.day, balance = r.balance, steps = r.steps, date = date, healthConnectAvailable = r.healthConnectAvailable, healthConnectPermissionsGranted = r.healthConnectPermissionsGranted) }
+            applyHealthConnectSnapshot(r.day, r.snapshot, isLoading = false, date = date)
+            kkalLog(
+                LOG_TAG,
+                "refresh done date=$date eaten=${r.day.totalKcal} hcKcal=${r.snapshot.activeCalories} steps=${r.snapshot.steps} " +
+                    "hcAvail=${r.snapshot.available} hcPerm=${r.snapshot.permissionsGranted}",
+            )
         }.onFailure { e ->
             if (generation != dataGeneration) return@onFailure
             _state.update { it.copy(isLoading = false, date = date, errorMessage = e.userMessage()) }
+            kkalLog(LOG_TAG, "refresh fail ${e::class.simpleName}: ${e.message}")
         }
+    }
+
+    override suspend fun refreshHealthConnectOnly() {
+        val day = _state.value.day ?: run {
+            kkalLog(LOG_TAG, "health connect poll skipped: diary not loaded yet")
+            return
+        }
+        runCatching { readHealthConnectSnapshot() }
+            .onSuccess { snapshot ->
+                val prev = _state.value
+                applyHealthConnectSnapshot(day, snapshot, isLoading = prev.isLoading, date = prev.date ?: day.date)
+                val changed = prev.balance?.healthConnectKcal != snapshot.activeCalories ||
+                    prev.steps != snapshot.steps ||
+                    prev.healthConnectPermissionsGranted != snapshot.permissionsGranted
+                if (changed) {
+                    kkalLog(
+                        LOG_TAG,
+                        "health connect updated hcKcal=${snapshot.activeCalories} (was ${prev.balance?.healthConnectKcal}) " +
+                            "steps=${snapshot.steps} (was ${prev.steps}) perm=${snapshot.permissionsGranted}",
+                    )
+                }
+            }
+            .onFailure { e ->
+                kkalLog(LOG_TAG, "health connect poll fail ${e::class.simpleName}: ${e.message}")
+            }
+    }
+
+    override fun startHealthConnectPolling() {
+        if (healthConnectPollingJob?.isActive == true) return
+        healthConnectPollingJob = scope.launch {
+            kkalLog(LOG_TAG, "health connect polling started interval=${HEALTH_CONNECT_POLL_INTERVAL_MS}ms")
+            refreshHealthConnectOnly()
+            while (isActive) {
+                delay(HEALTH_CONNECT_POLL_INTERVAL_MS)
+                refreshHealthConnectOnly()
+            }
+        }
+    }
+
+    override fun stopHealthConnectPolling() {
+        if (healthConnectPollingJob != null) {
+            kkalLog(LOG_TAG, "health connect polling stopped")
+        }
+        healthConnectPollingJob?.cancel()
+        healthConnectPollingJob = null
     }
 
     override suspend fun onForeground() {
         val loaded = _state.value.date ?: return
-        if (loaded != diaryRepository.currentDate()) refresh()
+        if (loaded != diaryRepository.currentDate()) {
+            kkalLog(LOG_TAG, "onForeground date changed $loaded -> ${diaryRepository.currentDate()}, full refresh")
+            refresh()
+        } else {
+            kkalLog(LOG_TAG, "onForeground same day, health connect refresh only")
+            refreshHealthConnectOnly()
+        }
     }
 
     override suspend fun deleteEntry(entryId: String) {
@@ -63,7 +122,7 @@ class DiaryViewModel(
         _state.update { it.copy(errorMessage = null) }
         runCatching { diaryRepository.addWorkout(name, kcal) }
             .onSuccess {
-                kkalLog("Diary", "workout saved kcal=$kcal, refreshing day")
+                kkalLog(LOG_TAG, "workout saved kcal=$kcal, refreshing day")
                 refresh()
             }
             .onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
@@ -85,7 +144,7 @@ class DiaryViewModel(
         if (!saved) return false
         ++dataGeneration
         _state.update { it.copy(workoutParse = WorkoutParseUiState()) }
-        kkalLog("Diary", "workout confirmed ${preview.title} ${preview.burnedKcal} kcal, refreshing day")
+        kkalLog(LOG_TAG, "workout confirmed ${preview.title} ${preview.burnedKcal} kcal, refreshing day")
         refresh()
         return true
     }
@@ -98,10 +157,38 @@ class DiaryViewModel(
 
     override fun clearError() { _state.update { it.copy(errorMessage = null) } }
 
-    private suspend fun updateDayState(day: DiaryDay, clearWorkoutParse: Boolean = false) {
-        ++dataGeneration
-        val hcKcal = healthConnect.readTodayActiveCalories()
-        _state.update { it.copy(isLoading = false, day = day, balance = CalorieBalanceCalculator.compute(day, hcKcal), date = day.date, workoutParse = if (clearWorkoutParse) WorkoutParseUiState() else it.workoutParse) }
+    private suspend fun readHealthConnectSnapshot(): HealthConnectSnapshot {
+        return coroutineScope {
+            val avail = async { healthConnect.isAvailable() }
+            val perm = async { healthConnect.hasPermissions() }
+            val hcKcal = async { healthConnect.readTodayActiveCalories() }
+            val hcSteps = async { healthConnect.readTodaySteps() }
+            HealthConnectSnapshot(
+                available = avail.await(),
+                permissionsGranted = perm.await(),
+                activeCalories = hcKcal.await(),
+                steps = hcSteps.await(),
+            )
+        }
+    }
+
+    private fun applyHealthConnectSnapshot(
+        day: DiaryDay,
+        snapshot: HealthConnectSnapshot,
+        isLoading: Boolean,
+        date: String,
+    ) {
+        _state.update {
+            it.copy(
+                isLoading = isLoading,
+                day = day,
+                balance = CalorieBalanceCalculator.compute(day, snapshot.activeCalories),
+                steps = snapshot.steps,
+                date = date,
+                healthConnectAvailable = snapshot.available,
+                healthConnectPermissionsGranted = snapshot.permissionsGranted,
+            )
+        }
     }
 
     private fun Throwable.userMessage(isWorkoutParse: Boolean = false) = when (this) {
@@ -111,5 +198,17 @@ class DiaryViewModel(
         else -> message ?: "Неизвестная ошибка"
     }
 
-    private data class DiaryLoadResult(val day: DiaryDay, val balance: ru.kkalscan.domain.activity.CalorieBalance, val steps: Int?, val healthConnectAvailable: Boolean, val healthConnectPermissionsGranted: Boolean)
+    private data class DiaryLoadResult(val day: DiaryDay, val snapshot: HealthConnectSnapshot)
+
+    private data class HealthConnectSnapshot(
+        val available: Boolean,
+        val permissionsGranted: Boolean,
+        val activeCalories: Int,
+        val steps: Int?,
+    )
+
+    private companion object {
+        const val LOG_TAG = "Diary"
+        const val HEALTH_CONNECT_POLL_INTERVAL_MS = 60_000L
+    }
 }

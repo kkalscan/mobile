@@ -90,23 +90,31 @@ class DiaryViewModelTest {
         vm.state.value.day!!.entries shouldHaveSize 0
     }
 
-    /** Coming back the same day must not trigger a needless network reload. */
+    /** Coming back the same day reloads Health Connect only, not the diary network call. */
     @Test
-    fun onForeground_sameDay_doesNotRefetch() = runTest {
+    fun onForeground_sameDay_refreshesHealthConnectOnly() = runTest {
         val today = "2026-07-03"
         val api = StatefulDiaryApi(diaryDate = today)
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = createDiaryViewModelForTest(repo, this)
+        val healthConnect = TrackingHealthConnectReader(activeCalories = 100, steps = 5000)
+        val vm = createDiaryViewModelForTest(repo, this, healthConnect)
         advanceUntilIdle()
 
         val fetchesBefore = repo.getTodayCalls
+        healthConnect.readActiveCaloriesCalls shouldBe 1
+
+        healthConnect.activeCalories = 250
+        healthConnect.steps = 7000
         vm.onForeground()
         advanceUntilIdle()
 
         repo.getTodayCalls shouldBe fetchesBefore
+        healthConnect.readActiveCaloriesCalls shouldBe 2
+        vm.state.value.balance!!.healthConnectKcal shouldBe 250
+        vm.state.value.steps shouldBe 7000
     }
 }
 
@@ -121,4 +129,22 @@ private class CountingDiaryRepository(
         getTodayCalls++
         return delegate.getToday(timezoneOffsetMinutes)
     }
+}
+
+private class TrackingHealthConnectReader(
+    var activeCalories: Int,
+    var steps: Int?,
+    private val available: Boolean = true,
+    private val permissionsGranted: Boolean = true,
+) : ru.kkalscan.data.health.IHealthConnectReader {
+    var readActiveCaloriesCalls = 0
+        private set
+
+    override suspend fun isAvailable(): Boolean = available
+    override suspend fun hasPermissions(): Boolean = permissionsGranted
+    override suspend fun readTodayActiveCalories(): Int {
+        readActiveCaloriesCalls++
+        return activeCalories
+    }
+    override suspend fun readTodaySteps(): Int? = steps
 }
