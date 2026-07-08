@@ -2,6 +2,7 @@ package ru.kkalscan.presentation.diary
 
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -9,7 +10,9 @@ import ru.kkalscan.StatefulDiaryApi
 import ru.kkalscan.TestApiFixtures
 import ru.kkalscan.data.api.FakeKkalScanApi
 import ru.kkalscan.data.repository.DiaryRepository
+import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
+import ru.kkalscan.domain.model.DiaryDay
 import kotlin.test.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -53,5 +56,47 @@ class DiaryWorkoutFlowTest {
         vm.state.value.day!!.totalBurnedKcal shouldBe 300
         vm.state.value.day!!.workouts.single().name shouldBe "Бег"
         vm.state.value.workoutParse.preview shouldBe null
+    }
+
+    @Test
+    fun confirmParsedWorkout_staleInitRefresh_doesNotOverwriteWorkout() = runTest {
+        val releaseInitRefresh = CompletableDeferred<Unit>()
+        val api = StatefulDiaryApi(diaryDate = TestApiFixtures.TODAY)
+        val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
+        val repo = GatedGetTodayRepository(
+            DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY }),
+            releaseInitRefresh,
+        )
+        val vm = createDiaryViewModelForTest(repo, this)
+
+        vm.parseWorkoutDescription("бег 30 минут")
+        advanceUntilIdle()
+
+        vm.confirmParsedWorkout() shouldBe true
+
+        releaseInitRefresh.complete(Unit)
+        advanceUntilIdle()
+
+        vm.state.value.day!!.totalBurnedKcal shouldBe 300
+        vm.state.value.balance!!.workoutKcal shouldBe 300
+        vm.state.value.balance!!.burnedKcal shouldBe 300
+    }
+}
+
+/** Delays the first getToday() and returns the snapshot from when it started (stale after add). */
+private class GatedGetTodayRepository(
+    private val delegate: IDiaryRepository,
+    private val releaseFirstGetToday: CompletableDeferred<Unit>,
+) : IDiaryRepository by delegate {
+    private var gateUsed = false
+
+    override suspend fun getToday(timezoneOffsetMinutes: Int): DiaryDay {
+        if (!gateUsed) {
+            gateUsed = true
+            val staleDay = delegate.getToday(timezoneOffsetMinutes)
+            releaseFirstGetToday.await()
+            return staleDay
+        }
+        return delegate.getToday(timezoneOffsetMinutes)
     }
 }

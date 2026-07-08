@@ -79,6 +79,14 @@ fun DiaryScreen(
                     KkalCalorieBalanceCard(balance.eatenKcal, balance.burnedKcal, balance.deficitKcal, balance.healthConnectKcal, balance.workoutKcal, state.steps)
                     Spacer(Modifier.height(16.dp))
                 }
+                if (!day?.workouts.isNullOrEmpty()) {
+                    Text("Тренировки", style = MaterialTheme.typography.titleLarge)
+                    Spacer(Modifier.height(12.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        day!!.workouts.forEach { WorkoutEntryCard(it) }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
                 if (state.healthConnectAvailable && !state.healthConnectPermissionsGranted) {
                     OutlinedButton(onClick = onRequestHealthConnect, modifier = Modifier.fillMaxWidth().testTag("health-connect-request")) {
                         Text("Подключить Health Connect")
@@ -98,12 +106,6 @@ fun DiaryScreen(
                     KkalEmptyState(iconLabel = "AI", title = "Дневник пуст", message = "Сфоткайте тарелку — за пару секунд увидите калории и добавите в день")
                 } else {
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { day!!.entries.forEach { DiaryEntryCard(it) } }
-                }
-                if (!day?.workouts.isNullOrEmpty()) {
-                    Spacer(Modifier.height(24.dp))
-                    Text("Тренировки", style = MaterialTheme.typography.titleLarge)
-                    Spacer(Modifier.height(12.dp))
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) { day!!.workouts.forEach { WorkoutEntryCard(it) } }
                 }
                 Spacer(Modifier.height(120.dp))
             }

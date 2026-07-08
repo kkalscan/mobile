@@ -22,9 +22,12 @@ class DiaryViewModel(
 ) : IDiaryViewModel {
     private val _state = MutableStateFlow(DiaryUiState(isLoading = true))
     override val state: StateFlow<DiaryUiState> = _state.asStateFlow()
+    /** Bumped on every local diary mutation so in-flight refresh() cannot overwrite newer state. */
+    private var dataGeneration = 0
     init { scope.launch { refresh() } }
 
     override suspend fun refresh() {
+        val generation = ++dataGeneration
         val date = diaryRepository.currentDate()
         _state.update { it.copy(isLoading = true, errorMessage = null) }
         runCatching {
@@ -39,8 +42,10 @@ class DiaryViewModel(
                 DiaryLoadResult(d, CalorieBalanceCalculator.compute(d, kcal), hcSteps.await(), hcAvail.await(), hcPerm.await())
             }
         }.onSuccess { r ->
+            if (generation != dataGeneration) return@onSuccess
             _state.update { it.copy(isLoading = false, day = r.day, balance = r.balance, steps = r.steps, date = date, healthConnectAvailable = r.healthConnectAvailable, healthConnectPermissionsGranted = r.healthConnectPermissionsGranted) }
         }.onFailure { e ->
+            if (generation != dataGeneration) return@onFailure
             _state.update { it.copy(isLoading = false, date = date, errorMessage = e.userMessage()) }
         }
     }
@@ -56,7 +61,12 @@ class DiaryViewModel(
 
     override suspend fun addWorkout(name: String, kcal: Int) {
         _state.update { it.copy(errorMessage = null) }
-        runCatching { diaryRepository.addWorkout(name, kcal) }.onSuccess { updateDayState(it, true) }.onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
+        runCatching { diaryRepository.addWorkout(name, kcal) }
+            .onSuccess {
+                kkalLog("Diary", "workout saved kcal=$kcal, refreshing day")
+                refresh()
+            }
+            .onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
     }
 
     override suspend fun parseWorkoutDescription(description: String) {
@@ -69,10 +79,15 @@ class DiaryViewModel(
     override suspend fun confirmParsedWorkout(): Boolean {
         val preview = _state.value.workoutParse.preview ?: return false
         _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = true, errorMessage = null)) }
-        return runCatching { diaryRepository.addWorkout(preview.title, preview.burnedKcal) }
-            .onSuccess { updateDayState(it, true) }
+        val saved = runCatching { diaryRepository.addWorkout(preview.title, preview.burnedKcal) }
             .onFailure { e -> _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = false, errorMessage = e.userMessage())) } }
             .isSuccess
+        if (!saved) return false
+        ++dataGeneration
+        _state.update { it.copy(workoutParse = WorkoutParseUiState()) }
+        kkalLog("Diary", "workout confirmed ${preview.title} ${preview.burnedKcal} kcal, refreshing day")
+        refresh()
+        return true
     }
 
     override fun clearWorkoutParse() { _state.update { it.copy(workoutParse = WorkoutParseUiState()) } }
@@ -84,6 +99,7 @@ class DiaryViewModel(
     override fun clearError() { _state.update { it.copy(errorMessage = null) } }
 
     private suspend fun updateDayState(day: DiaryDay, clearWorkoutParse: Boolean = false) {
+        ++dataGeneration
         val hcKcal = healthConnect.readTodayActiveCalories()
         _state.update { it.copy(isLoading = false, day = day, balance = CalorieBalanceCalculator.compute(day, hcKcal), date = day.date, workoutParse = if (clearWorkoutParse) WorkoutParseUiState() else it.workoutParse) }
     }

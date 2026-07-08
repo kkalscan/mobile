@@ -482,8 +482,10 @@ fun AppRootContent(
                     scope.launch {
                         if (diaryViewModel.confirmParsedWorkout()) {
                             showAddWorkoutDialog = false
-                            refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
-                            diaryViewModel.clearWorkoutParse()
+                            coroutineScope {
+                                launch { journalViewModel.refresh() }
+                                launch { profileViewModel.refresh() }
+                            }
                         }
                     }
                 },
