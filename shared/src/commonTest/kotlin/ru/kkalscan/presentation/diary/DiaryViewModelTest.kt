@@ -26,7 +26,9 @@ class DiaryViewModelTest {
             { TestApiFixtures.TODAY },
         )
         val vm = createDiaryViewModelForTest(repo, this)
+        advanceUntilIdle()
         vm.refresh()
+        advanceUntilIdle()
 
         vm.state.value.isLoading shouldBe false
         vm.state.value.day.shouldNotBeNull()
