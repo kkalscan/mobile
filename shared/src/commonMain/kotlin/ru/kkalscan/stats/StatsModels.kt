@@ -13,13 +13,14 @@ enum class MetricKind {
 data class DayMetrics(
     val date: String,
     val kcal: Int,
+    val burnedKcal: Int,
     val protein: Double,
     val fat: Double,
     val carbs: Double,
     val fiber: Double,
     val entryCount: Int,
 ) {
-    val hasData: Boolean get() = entryCount > 0
+    val hasData: Boolean get() = entryCount > 0 || burnedKcal > 0
 }
 
 data class WeekStats(
@@ -28,6 +29,8 @@ data class WeekStats(
     val isPro: Boolean = false,
     val avgKcal: Int = 0,
     val totalKcal: Int = 0,
+    val avgBurnedKcal: Int = 0,
+    val totalBurnedKcal: Int = 0,
     val avgProtein: Double = 0.0,
     val avgFat: Double = 0.0,
     val avgCarbs: Double = 0.0,
@@ -41,6 +44,7 @@ object StatsAggregator {
         return DayMetrics(
             date = day.date,
             kcal = day.totalKcal,
+            burnedKcal = day.totalBurnedKcal,
             protein = dishes.sumOf { it.protein },
             fat = dishes.sumOf { it.fat },
             carbs = dishes.sumOf { it.carbs },
@@ -59,6 +63,8 @@ object StatsAggregator {
             isPro = days.any { it.isPro },
             avgKcal = if (withData.isEmpty()) 0 else withData.sumOf { it.kcal } / withData.size,
             totalKcal = metrics.sumOf { it.kcal },
+            avgBurnedKcal = if (withData.isEmpty()) 0 else withData.sumOf { it.burnedKcal } / withData.size,
+            totalBurnedKcal = metrics.sumOf { it.burnedKcal },
             avgProtein = if (withData.isEmpty()) 0.0 else withData.sumOf { it.protein } / count,
             avgFat = if (withData.isEmpty()) 0.0 else withData.sumOf { it.fat } / count,
             avgCarbs = if (withData.isEmpty()) 0.0 else withData.sumOf { it.carbs } / count,

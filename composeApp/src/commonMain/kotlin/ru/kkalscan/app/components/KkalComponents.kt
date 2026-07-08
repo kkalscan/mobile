@@ -624,8 +624,8 @@ fun KkalCalorieBalanceCard(eatenKcal: Int, burnedKcal: Int, deficitKcal: Int, he
             Text("БАЛАНС КАЛОРИЙ", style = MaterialTheme.typography.labelSmall, color = KkalScanColors.OnSurfaceVariant)
             Spacer(Modifier.height(16.dp))
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                BalanceMetric("Съедено", eatenKcal, KkalScanColors.Primary)
-                BalanceMetric("Потрачено", burnedKcal, KkalScanColors.Protein)
+                BalanceMetric("Поступление", eatenKcal, KkalScanColors.Primary)
+                BalanceMetric("Расход", burnedKcal, KkalScanColors.Protein)
             }
             Spacer(Modifier.height(16.dp))
             Row(verticalAlignment = Alignment.Bottom) {

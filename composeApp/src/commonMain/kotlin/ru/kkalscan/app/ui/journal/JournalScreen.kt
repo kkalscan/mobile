@@ -111,7 +111,12 @@ fun JournalScreen(
                 KkalHeroCard(
                     title = "СРЕДНЕЕ ЗА НЕДЕЛЮ",
                     kcal = week.avgKcal,
-                    subtitle = "${week.daysWithData} дней с данными · всего ${week.totalKcal} ккал",
+                    subtitle = buildString {
+                        append("${week.daysWithData} дней с данными · поступление ${week.totalKcal} ккал")
+                        if (week.totalBurnedKcal > 0) {
+                            append(" · расход ${week.totalBurnedKcal} ккал")
+                        }
+                    },
                     badge = null,
                     protein = week.avgProtein,
                     fat = week.avgFat,
@@ -123,7 +128,7 @@ fun JournalScreen(
                 ChartCard(
                     title = "Калории по дням",
                     subtitle = if (week.daysWithData > 0) {
-                        "Среднее ${week.avgKcal} ккал/день · только калории"
+                        "Поступление и расход энергии по дням"
                     } else {
                         "Нет записей — сфотографируйте еду"
                     },

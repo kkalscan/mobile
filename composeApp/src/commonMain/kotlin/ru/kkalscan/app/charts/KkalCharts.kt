@@ -75,36 +75,29 @@ fun KkalCaloriesBarChart(
     modifier: Modifier = Modifier,
     height: androidx.compose.ui.unit.Dp = 200.dp,
 ) {
-    val dataMax = days.maxOfOrNull { it.kcal } ?: 0
+    val dataMax = days.maxOfOrNull { maxOf(it.kcal, it.burnedKcal) } ?: 0
     val maxKcal = niceKcalMax(dataMax).toFloat()
     val yTicks = yTicksForMax(maxKcal.toInt())
     val labels = days.map { WeekDates.shortDayLabel(it.date, weekStart) }
+    val calorieSeries = listOf(
+        CalorieSeries("Поступление", { it.kcal }, KkalScanColors.Primary, intakeGradient = true),
+        CalorieSeries("Расход", { it.burnedKcal }, KkalScanColors.Protein, intakeGradient = false),
+    )
 
     Column(modifier) {
-        Row(Modifier.fillMaxWidth()) {
-            Spacer(Modifier.width(yAxisWidth))
-            days.forEach { day ->
-                Box(Modifier.weight(1f), contentAlignment = Alignment.BottomCenter) {
-                    if (day.kcal > 0) {
-                        Text(
-                            "${day.kcal}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = KkalScanColors.Primary,
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            calorieSeries.forEach { MacroLegendDot(it.label, it.color) }
         }
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth().height(height)) {
             YAxisLabels(ticks = yTicks, unit = "ккал")
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 Canvas(Modifier.fillMaxSize()) {
-                    val barCount = days.size.coerceAtLeast(1)
-                    val gap = size.width * 0.06f
-                    val barWidth = (size.width - gap * (barCount + 1)) / barCount
+                    val dayCount = days.size.coerceAtLeast(1)
+                    val groupGap = size.width * 0.05f
+                    val groupWidth = (size.width - groupGap * (dayCount + 1)) / dayCount
+                    val innerGap = groupWidth * 0.12f
+                    val barWidth = ((groupWidth - innerGap) / 2f).coerceAtLeast(4f)
                     val chartBottom = size.height * 0.96f
                     val chartTop = size.height * 0.04f
                     val chartHeight = chartBottom - chartTop
@@ -119,27 +112,39 @@ fun KkalCaloriesBarChart(
                         )
                     }
 
-                    days.forEachIndexed { index, day ->
-                        val left = gap + index * (barWidth + gap)
-                        val ratio = day.kcal / maxKcal
-                        val barHeight = chartHeight * ratio.coerceIn(0f, 1f)
-                        val top = chartBottom - barHeight
-                        val baseColor = if (day.hasData) KkalScanColors.Primary else KkalScanColors.Outline.copy(0.35f)
-                        val brush = if (day.hasData) {
-                            Brush.verticalGradient(
-                                colors = listOf(Color(0xFFFF9F5A), KkalScanColors.Primary, Color(0xFFE85D04)),
-                                startY = top,
-                                endY = chartBottom,
+                    days.forEachIndexed { dayIndex, day ->
+                        val groupLeft = groupGap + dayIndex * (groupWidth + groupGap)
+                        calorieSeries.forEachIndexed { seriesIndex, series ->
+                            val kcal = series.value(day).toFloat()
+                            val left = groupLeft + seriesIndex * (barWidth + innerGap)
+                            val barHeight = chartHeight * (kcal / maxKcal)
+                            val top = chartBottom - barHeight
+                            val hasValue = kcal > 0f
+                            val brush = when {
+                                !day.hasData -> Brush.verticalGradient(
+                                    listOf(KkalScanColors.Outline.copy(0.35f), KkalScanColors.Outline.copy(0.35f)),
+                                )
+                                series.intakeGradient && hasValue -> Brush.verticalGradient(
+                                    colors = listOf(Color(0xFFFF9F5A), KkalScanColors.Primary, Color(0xFFE85D04)),
+                                    startY = top,
+                                    endY = chartBottom,
+                                )
+                                hasValue -> Brush.verticalGradient(
+                                    colors = listOf(Color(0xFF5FD4A4), KkalScanColors.Protein, Color(0xFF0D8A57)),
+                                    startY = top,
+                                    endY = chartBottom,
+                                )
+                                else -> Brush.verticalGradient(
+                                    listOf(series.color.copy(0.35f), series.color.copy(0.35f)),
+                                )
+                            }
+                            drawRoundRect(
+                                brush = brush,
+                                topLeft = Offset(left, top.coerceAtMost(chartBottom - if (day.hasData) 6f else 4f)),
+                                size = Size(barWidth, barHeight.coerceAtLeast(if (day.hasData && hasValue) 6f else 4f)),
+                                cornerRadius = CornerRadius(barWidth / 3f, barWidth / 3f),
                             )
-                        } else {
-                            Brush.verticalGradient(listOf(baseColor, baseColor))
                         }
-                        drawRoundRect(
-                            brush = brush,
-                            topLeft = Offset(left, top.coerceAtMost(chartBottom - 6f)),
-                            size = Size(barWidth, barHeight.coerceAtLeast(if (day.hasData) 8f else 4f)),
-                            cornerRadius = CornerRadius(barWidth / 2.5f, barWidth / 2.5f),
-                        )
                     }
                 }
             }
@@ -417,6 +422,13 @@ private data class MacroSeries(
     val label: String,
     val value: (DayMetrics) -> Double,
     val color: Color,
+)
+
+private data class CalorieSeries(
+    val label: String,
+    val value: (DayMetrics) -> Int,
+    val color: Color,
+    val intakeGradient: Boolean,
 )
 
 @Composable
