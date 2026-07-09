@@ -116,6 +116,8 @@ class DiaryViewModelTest {
         )
         val vm = createDiaryViewModelForTest(repo, this, api)
         advanceUntilIdle()
+        vm.refresh()
+        advanceUntilIdle()
 
         vm.state.value.activitySource shouldBe ActivitySource.Emulator
         vm.state.value.balance!!.activityKcal shouldBe 750
