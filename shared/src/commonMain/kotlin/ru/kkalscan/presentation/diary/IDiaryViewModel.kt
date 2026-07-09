@@ -1,5 +1,6 @@
 package ru.kkalscan.presentation.diary
 
+import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.CalorieBalance
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.WorkoutParseResult
@@ -17,17 +18,21 @@ data class DiaryUiState(
     val steps: Int? = null,
     val date: String? = null,
     val errorMessage: String? = null,
-    val healthConnectAvailable: Boolean = false,
-    val healthConnectPermissionsGranted: Boolean = false,
+    val activitySource: ActivitySource = ActivitySource.None,
+    val stepSensorAvailable: Boolean = false,
+    val activityRecognitionGranted: Boolean = false,
     val workoutParse: WorkoutParseUiState = WorkoutParseUiState(),
-)
+) {
+    val showActivityPermissionButton: Boolean
+        get() = stepSensorAvailable && !activityRecognitionGranted
+}
 
 interface IDiaryViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<DiaryUiState>
     suspend fun refresh()
-    suspend fun refreshHealthConnectOnly()
-    fun startHealthConnectPolling()
-    fun stopHealthConnectPolling()
+    suspend fun refreshActivityOnly()
+    fun startActivityPolling()
+    fun stopActivityPolling()
     suspend fun onForeground()
     suspend fun deleteEntry(entryId: String)
     suspend fun parseWorkoutDescription(description: String)

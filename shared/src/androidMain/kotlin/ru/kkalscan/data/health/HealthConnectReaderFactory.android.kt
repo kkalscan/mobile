@@ -11,6 +11,7 @@ import androidx.health.connect.client.time.TimeRangeFilter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import ru.kkalscan.data.storage.AndroidDeviceIdContext
+import ru.kkalscan.health.HealthConnectFeature
 import ru.kkalscan.util.kkalLog
 import java.time.Instant
 import java.time.ZoneId
@@ -163,7 +164,11 @@ class AndroidHealthConnectReader(
 fun healthConnectReadPermissions(): Set<String> = readPermissions
 
 actual fun createHealthConnectReader(): IHealthConnectReader =
-    AndroidHealthConnectReader(AndroidDeviceIdContext.appContext)
+    if (HealthConnectFeature.ENABLED) {
+        AndroidHealthConnectReader(AndroidDeviceIdContext.appContext)
+    } else {
+        NoOpHealthConnectReader()
+    }
 
 fun healthConnectAvailable(context: Context): Boolean =
     HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE

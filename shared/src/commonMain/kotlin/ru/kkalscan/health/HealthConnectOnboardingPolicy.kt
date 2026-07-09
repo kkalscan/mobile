@@ -6,14 +6,11 @@ object HealthConnectOnboardingPolicy {
     fun shouldAutoRequest(
         state: DiaryUiState,
         initialPromptShown: Boolean,
-    ): Boolean =
+    ): Boolean = HealthConnectFeature.ENABLED &&
         !state.isLoading &&
-            state.healthConnectAvailable &&
-            !state.healthConnectPermissionsGranted &&
-            !initialPromptShown
+        !initialPromptShown
 
-    fun shouldShowConnectButton(state: DiaryUiState): Boolean =
-        state.healthConnectAvailable && !state.healthConnectPermissionsGranted
+    fun shouldShowConnectButton(state: DiaryUiState): Boolean = false
 }
 
 class HealthConnectOnboardingController(

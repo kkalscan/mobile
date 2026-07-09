@@ -13,7 +13,7 @@ class CalorieBalanceTest {
                 date = "2026-07-04",
                 totalKcal = 1840,
             ),
-            healthConnectKcal = 420,
+            activity = ResolvedActivity(ActivitySource.Emulator, 420, 10_500),
         )
         balance.eatenKcal shouldBe 1840
         balance.burnedKcal shouldBe 420
@@ -23,18 +23,19 @@ class CalorieBalanceTest {
     }
 
     @Test
-    fun deficit_includesWorkoutsAndHealthConnect() {
+    fun deficit_includesWorkoutsAndActivity() {
         val balance = CalorieBalanceCalculator.compute(
             day = DiaryDay(
                 date = "2026-07-04",
                 totalKcal = 1200,
                 totalBurnedKcal = 280,
             ),
-            healthConnectKcal = 350,
+            activity = ResolvedActivity(ActivitySource.DeviceSensor, 350, 8750),
         )
         balance.burnedKcal shouldBe 630
         balance.workoutKcal shouldBe 280
-        balance.healthConnectKcal shouldBe 350
+        balance.activityKcal shouldBe 350
+        balance.activitySource shouldBe ActivitySource.DeviceSensor
         balance.deficitKcal shouldBe -570
     }
 
@@ -46,7 +47,7 @@ class CalorieBalanceTest {
                 totalKcal = 800,
                 totalBurnedKcal = 420,
             ),
-            healthConnectKcal = 500,
+            activity = ResolvedActivity(ActivitySource.Emulator, 500, 12_500),
         )
         balance.deficitKcal shouldBe 120
         balance.isDeficit shouldBe true

@@ -67,6 +67,20 @@ object TestApiFixtures {
                 status = HttpStatusCode.Created,
                 headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
             )
+            path.contains("/activity/emulator") && request.method.value == "GET" -> respond(
+                content = """
+                    {
+                      "mode": "population_default",
+                      "estimated_active_kcal": 400,
+                      "estimated_steps": 10000,
+                      "avg_consumed_kcal_per_day": null,
+                      "diary_days_with_entries": 0,
+                      "lookback_days": 30
+                    }
+                """.trimIndent(),
+                status = HttpStatusCode.OK,
+                headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+            )
             path.contains("/diary") && request.method.value == "GET" -> respond(
                 content = """
                     {

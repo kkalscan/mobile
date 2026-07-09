@@ -32,7 +32,6 @@ import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.WorkoutEntry
-import ru.kkalscan.health.HealthConnectOnboardingPolicy
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -43,15 +42,15 @@ import kotlinx.datetime.toLocalDateTime
 fun DiaryScreen(
     viewModel: IDiaryViewModel,
     onScanClick: () -> Unit,
-    onRequestHealthConnect: () -> Unit,
+    onRequestActivityRecognition: () -> Unit,
     onRefresh: () -> Unit,
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
     DisposableEffect(viewModel) {
-        viewModel.startHealthConnectPolling()
-        onDispose { viewModel.stopHealthConnectPolling() }
+        viewModel.startActivityPolling()
+        onDispose { viewModel.stopActivityPolling() }
     }
     val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
@@ -82,7 +81,15 @@ fun DiaryScreen(
                 val balance = state.balance
                 val macros = day?.macroTotals()
                 if (balance != null) {
-                    KkalCalorieBalanceCard(balance.eatenKcal, balance.burnedKcal, balance.deficitKcal, balance.healthConnectKcal, balance.workoutKcal, state.steps)
+                    KkalCalorieBalanceCard(
+                        eatenKcal = balance.eatenKcal,
+                        burnedKcal = balance.burnedKcal,
+                        deficitKcal = balance.deficitKcal,
+                        activityKcal = balance.activityKcal,
+                        activitySource = balance.activitySource,
+                        workoutKcal = balance.workoutKcal,
+                        steps = state.steps,
+                    )
                     Spacer(Modifier.height(16.dp))
                 }
                 if (!day?.workouts.isNullOrEmpty()) {
@@ -93,9 +100,12 @@ fun DiaryScreen(
                     }
                     Spacer(Modifier.height(16.dp))
                 }
-                if (HealthConnectOnboardingPolicy.shouldShowConnectButton(state)) {
-                    OutlinedButton(onClick = onRequestHealthConnect, modifier = Modifier.fillMaxWidth().testTag("health-connect-request")) {
-                        Text("Подключить Health Connect")
+                if (state.showActivityPermissionButton) {
+                    OutlinedButton(
+                        onClick = onRequestActivityRecognition,
+                        modifier = Modifier.fillMaxWidth().testTag("activity-recognition-request"),
+                    ) {
+                        Text("Разрешить считать шаги")
                     }
                     Spacer(Modifier.height(16.dp))
                 }

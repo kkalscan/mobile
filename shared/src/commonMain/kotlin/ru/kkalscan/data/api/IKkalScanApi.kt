@@ -1,5 +1,6 @@
 package ru.kkalscan.data.api
 
+import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.FoodSearchResult
@@ -19,6 +20,7 @@ interface IKkalScanApi {
     suspend fun parseWorkout(deviceId: String, description: String): WorkoutParseResult
     suspend fun grantScanBonus(deviceId: String): ScanBonusResult
     suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay
+    suspend fun getActivityEmulator(deviceId: String, timezoneOffsetMinutes: Int): ActivityEmulator
     suspend fun addDiaryEntry(
         deviceId: String,
         mealType: MealType,

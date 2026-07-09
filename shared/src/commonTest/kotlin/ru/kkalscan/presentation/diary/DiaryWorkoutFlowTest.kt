@@ -23,7 +23,7 @@ class DiaryWorkoutFlowTest {
         val api = StatefulDiaryApi(diaryDate = TestApiFixtures.TODAY)
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY })
-        val vm = createDiaryViewModelForTest(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, api, storage)
         advanceUntilIdle()
 
         vm.addWorkout("Бег", 250)
@@ -39,7 +39,7 @@ class DiaryWorkoutFlowTest {
         val api = FakeKkalScanApi(todayProvider = { TestApiFixtures.TODAY })
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY })
-        val vm = createDiaryViewModelForTest(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, api, storage)
         advanceUntilIdle()
 
         vm.parseWorkoutDescription("бег 30 минут")
@@ -67,7 +67,7 @@ class DiaryWorkoutFlowTest {
             DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY }),
             releaseInitRefresh,
         )
-        val vm = createDiaryViewModelForTest(repo, this)
+        val vm = createDiaryViewModelForTest(repo, this, api, storage)
 
         vm.parseWorkoutDescription("бег 30 минут")
         advanceUntilIdle()
@@ -79,7 +79,7 @@ class DiaryWorkoutFlowTest {
 
         vm.state.value.day!!.totalBurnedKcal shouldBe 300
         vm.state.value.balance!!.workoutKcal shouldBe 300
-        vm.state.value.balance!!.burnedKcal shouldBe 300
+        vm.state.value.balance!!.burnedKcal shouldBe 700
     }
 }
 

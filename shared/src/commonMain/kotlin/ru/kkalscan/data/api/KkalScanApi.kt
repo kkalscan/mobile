@@ -21,6 +21,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.domain.error.KkalScanException
+import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FeatureSearchResult
@@ -84,6 +85,9 @@ class KkalScanApi(
 
     override suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay =
         apiGet("/diary?date=$date&timezone_offset_minutes=$timezoneOffsetMinutes", deviceId)
+
+    override suspend fun getActivityEmulator(deviceId: String, timezoneOffsetMinutes: Int): ActivityEmulator =
+        apiGet("/activity/emulator?timezone_offset_minutes=$timezoneOffsetMinutes", deviceId)
 
     override suspend fun addDiaryEntry(
         deviceId: String,

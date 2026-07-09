@@ -5,8 +5,6 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.data.api.KkalScanApi
 import ru.kkalscan.data.createHttpClient
-import ru.kkalscan.data.health.IHealthConnectReader
-import ru.kkalscan.data.health.createHealthConnectReader
 import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.FeatureSearchRepository
@@ -21,6 +19,9 @@ import ru.kkalscan.data.repository.IScanRepository
 import ru.kkalscan.data.repository.ISubscriptionRepository
 import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
+import ru.kkalscan.data.steps.createLocalStepCounter
+import ru.kkalscan.data.steps.createStepBaselineStorage
+import ru.kkalscan.data.steps.StepCounterStore
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
 import ru.kkalscan.presentation.diary.DiaryViewModel
@@ -47,10 +48,22 @@ class AppDependencies(
     val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
-    val healthConnectReader: IHealthConnectReader = createHealthConnectReader(),
+    private val localStepCounter: ru.kkalscan.data.steps.ILocalStepCounter = createLocalStepCounter(),
+    private val stepCounterStore: StepCounterStore = StepCounterStore(
+        localStepCounter,
+        createStepBaselineStorage(),
+        todayProvider = { diaryRepository.currentDate() },
+    ),
 ) {
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
-        DiaryViewModel(diaryRepository, healthConnectReader, scope)
+        DiaryViewModel(
+            diaryRepository = diaryRepository,
+            api = api,
+            deviceIdStorage = deviceIdStorage,
+            stepCounterStore = stepCounterStore,
+            localStepCounter = localStepCounter,
+            scope = scope,
+        )
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
         FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)

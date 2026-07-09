@@ -133,7 +133,7 @@ class DiaryPersistenceFlowTest {
         )
         val diaryRepo = repository(api, storage)
         val scanRepo = ScanRepository(api, storage)
-        val diaryVm = createDiaryViewModelForTest(diaryRepo, this)
+        val diaryVm = createDiaryViewModelForTest(diaryRepo, this, api, storage)
         val scanVm = ScanViewModel(scanRepo, diaryRepo, this)
         advanceUntilIdle()
 

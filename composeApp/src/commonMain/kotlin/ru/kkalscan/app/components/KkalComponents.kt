@@ -616,7 +616,16 @@ fun KkalFoodCard(
 
 
 @Composable
-fun KkalCalorieBalanceCard(eatenKcal: Int, burnedKcal: Int, deficitKcal: Int, healthConnectKcal: Int, workoutKcal: Int, steps: Int? = null, modifier: Modifier = Modifier) {
+fun KkalCalorieBalanceCard(
+    eatenKcal: Int,
+    burnedKcal: Int,
+    deficitKcal: Int,
+    activityKcal: Int,
+    activitySource: ru.kkalscan.domain.activity.ActivitySource,
+    workoutKcal: Int,
+    steps: Int? = null,
+    modifier: Modifier = Modifier,
+) {
     val deficitColor = when { deficitKcal > 0 -> KkalScanColors.Secondary; deficitKcal < 0 -> KkalScanColors.Error; else -> KkalScanColors.OnSurfaceVariant }
     val deficitLabel = when { deficitKcal > 0 -> "Дефицит"; deficitKcal < 0 -> "Профицит"; else -> "Баланс" }
     Surface(modifier.fillMaxWidth().testTag("calorie-balance-card").shadow(16.dp, RoundedCornerShape(KkalScanDimens.cardRadius), ambientColor = Color(0x14000000)), shape = RoundedCornerShape(KkalScanDimens.cardRadius), color = KkalScanColors.Surface, border = androidx.compose.foundation.BorderStroke(1.dp, KkalScanColors.Outline.copy(alpha = 0.6f))) {
@@ -636,8 +645,22 @@ fun KkalCalorieBalanceCard(eatenKcal: Int, burnedKcal: Int, deficitKcal: Int, he
                 Text(deficitLabel, style = MaterialTheme.typography.titleMedium, color = deficitColor, modifier = Modifier.padding(bottom = 8.dp))
             }
             Spacer(Modifier.height(12.dp))
-            val details = buildList { if (healthConnectKcal > 0) add("Health Connect: $healthConnectKcal ккал"); if (workoutKcal > 0) add("Тренировки: $workoutKcal ккал"); steps?.let { add("Шаги: $it") } }
-            Text(if (details.isNotEmpty()) details.joinToString(" · ") else "Подключите Health Connect или добавьте тренировку", style = MaterialTheme.typography.bodySmall, color = KkalScanColors.OnSurfaceVariant)
+            val details = buildList {
+                when (activitySource) {
+                    ru.kkalscan.domain.activity.ActivitySource.DeviceSensor ->
+                        if (activityKcal > 0) add("~$activityKcal ккал по шагам (телефон)")
+                    ru.kkalscan.domain.activity.ActivitySource.Emulator ->
+                        if (activityKcal > 0) add("~$activityKcal ккал (оценка)")
+                    ru.kkalscan.domain.activity.ActivitySource.None -> Unit
+                }
+                if (workoutKcal > 0) add("Тренировки: $workoutKcal ккал")
+                steps?.let { add("Шаги: $it") }
+            }
+            Text(
+                if (details.isNotEmpty()) details.joinToString(" · ") else "Разрешите доступ к активности или добавьте тренировку",
+                style = MaterialTheme.typography.bodySmall,
+                color = KkalScanColors.OnSurfaceVariant,
+            )
         }
     }
 }
