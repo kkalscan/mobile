@@ -2,6 +2,7 @@ package ru.kkalscan.presentation.diary
 
 import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.CalorieBalance
+import ru.kkalscan.domain.activity.StepSensorOnboardingPolicy
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.WorkoutParseResult
 
@@ -22,7 +23,10 @@ data class DiaryUiState(
     val stepSensorAvailable: Boolean = false,
     val activityRecognitionGranted: Boolean = false,
     val workoutParse: WorkoutParseUiState = WorkoutParseUiState(),
-)
+) {
+    val showActivityPermissionButton: Boolean
+        get() = StepSensorOnboardingPolicy.shouldShowPermissionButton(this)
+}
 
 interface IDiaryViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<DiaryUiState>

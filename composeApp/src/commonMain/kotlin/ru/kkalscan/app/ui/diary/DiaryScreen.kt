@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -41,6 +42,7 @@ import kotlinx.datetime.toLocalDateTime
 fun DiaryScreen(
     viewModel: IDiaryViewModel,
     onScanClick: () -> Unit,
+    onRequestActivityRecognition: () -> Unit,
     onRefresh: () -> Unit,
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = onScanClick,
@@ -95,6 +97,15 @@ fun DiaryScreen(
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         day!!.workouts.forEach { WorkoutEntryCard(it) }
+                    }
+                    Spacer(Modifier.height(16.dp))
+                }
+                if (state.showActivityPermissionButton) {
+                    OutlinedButton(
+                        onClick = onRequestActivityRecognition,
+                        modifier = Modifier.fillMaxWidth().testTag("activity-recognition-request"),
+                    ) {
+                        Text("Разрешить считать шаги")
                     }
                     Spacer(Modifier.height(16.dp))
                 }

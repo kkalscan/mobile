@@ -29,7 +29,10 @@ import ru.kkalscan.app.platform.MaestroFabTapBridge
 import ru.kkalscan.app.platform.MaestroNavigationBridge
 import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
+import ru.kkalscan.app.platform.rememberActivityRecognitionPermissionRequest
 import ru.kkalscan.app.platform.rememberPhotoPicker
+import ru.kkalscan.domain.activity.StepSensorOnboardingController
+import ru.kkalscan.domain.activity.createStepSensorOnboardingStorage
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.describe.DescribeFoodSheet
 import ru.kkalscan.app.ui.diary.DiaryScreen
@@ -72,6 +75,18 @@ fun AppRootContent(
     val scanState by scanViewModel.state.collectAsState()
     val diaryState by diaryViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
+    val stepSensorOnboarding = remember { StepSensorOnboardingController(createStepSensorOnboardingStorage()) }
+    val requestActivityRecognition = rememberActivityRecognitionPermissionRequest {
+        scope.launch { diaryViewModel.refresh() }
+    }
+
+    LaunchedEffect(
+        diaryState.isLoading,
+        diaryState.stepSensorAvailable,
+        diaryState.activityRecognitionGranted,
+    ) {
+        stepSensorOnboarding.tryAutoRequest(diaryState, requestActivityRecognition)
+    }
 
     LaunchedEffect(screen) {
         KkalAnalytics.reportFeatureOpen(screen.analyticsFeatureName())
@@ -299,6 +314,7 @@ fun AppRootContent(
                         KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
                         pickPhoto()
                     },
+                    onRequestActivityRecognition = requestActivityRecognition,
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = {

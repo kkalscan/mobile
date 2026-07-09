@@ -12,6 +12,7 @@ import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.domain.activity.ActivitySource
+import ru.kkalscan.presentation.diary.DiaryUiState
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
 import kotlin.test.Test
@@ -118,6 +119,19 @@ class DiaryViewModelTest {
 
         vm.state.value.activitySource shouldBe ActivitySource.Emulator
         vm.state.value.balance!!.activityKcal shouldBe 750
+    }
+
+    @Test
+    fun diaryUiState_exposesPermissionButtonFromPolicy() {
+        DiaryUiState(
+            stepSensorAvailable = true,
+            activityRecognitionGranted = false,
+        ).showActivityPermissionButton shouldBe true
+
+        DiaryUiState(
+            stepSensorAvailable = true,
+            activityRecognitionGranted = true,
+        ).showActivityPermissionButton shouldBe false
     }
 }
 

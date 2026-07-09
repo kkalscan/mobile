@@ -7,15 +7,16 @@ import kotlin.test.Test
 class ActivitySourceResolverTest {
 
     @Test
-    fun usesEmulatorWhenStepSensorDisabled() {
+    fun prefersSensorWhenPermissionAndSteps() {
         val result = ActivitySourceResolver.resolve(
             sensorSteps = 5000,
             sensorAvailable = true,
             sensorPermissionGranted = true,
             emulator = ActivityEmulator("population_default", 750, 18_750),
         )
-        result.source shouldBe ActivitySource.Emulator
-        result.activeKcal shouldBe 750
+        result.source shouldBe ActivitySource.DeviceSensor
+        result.activeKcal shouldBe 200
+        result.steps shouldBe 5000
     }
 
     @Test
