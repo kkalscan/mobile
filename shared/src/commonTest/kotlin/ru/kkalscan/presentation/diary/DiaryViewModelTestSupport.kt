@@ -3,6 +3,7 @@ package ru.kkalscan.presentation.diary
 import kotlinx.coroutines.CoroutineScope
 import ru.kkalscan.TestApiFixtures
 import ru.kkalscan.data.api.IKkalScanApi
+import ru.kkalscan.data.steps.IStepBaselineStorage
 import ru.kkalscan.data.steps.ILocalStepCounter
 import ru.kkalscan.data.steps.InMemoryStepBaselineStorage
 import ru.kkalscan.data.steps.StepCounterStore
@@ -18,13 +19,14 @@ fun createDiaryViewModelForTest(
         setDeviceId(TestApiFixtures.DEVICE_ID)
     },
     localStepCounter: ILocalStepCounter = FakeLocalStepCounter(),
+    stepBaselineStorage: IStepBaselineStorage = InMemoryStepBaselineStorage(),
 ): DiaryViewModel = DiaryViewModel(
     diaryRepository = diaryRepository,
     api = api,
     deviceIdStorage = deviceIdStorage,
     stepCounterStore = StepCounterStore(
         localStepCounter,
-        InMemoryStepBaselineStorage(),
+        stepBaselineStorage,
         todayProvider = { diaryRepository.currentDate() },
     ),
     localStepCounter = localStepCounter,

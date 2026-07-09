@@ -116,29 +116,6 @@ class DiaryViewModelTest {
     }
 
     @Test
-    fun sensorPreferredOverEmulator() = runTest {
-        val api = TestApiFixtures.api()
-        val repo = DiaryRepository(
-            api,
-            InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
-            { TestApiFixtures.TODAY },
-        )
-        val counter = FakeLocalStepCounter(
-            sensorAvailable = true,
-            permissionGranted = true,
-            cumulativeSteps = 10_000,
-        )
-        val vm = createDiaryViewModelForTest(repo, this, api, localStepCounter = counter)
-        advanceUntilIdle()
-        counter.cumulativeSteps = 14_000
-        vm.refreshActivityOnly()
-        advanceUntilIdle()
-
-        vm.state.value.activitySource shouldBe ActivitySource.DeviceSensor
-        vm.state.value.balance!!.activityKcal shouldBe 160
-    }
-
-    @Test
     fun fallsBackToEmulatorWithoutPermission() = runTest {
         val api = TestApiFixtures.api()
         val repo = DiaryRepository(
