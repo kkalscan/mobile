@@ -22,10 +22,7 @@ data class DiaryUiState(
     val stepSensorAvailable: Boolean = false,
     val activityRecognitionGranted: Boolean = false,
     val workoutParse: WorkoutParseUiState = WorkoutParseUiState(),
-) {
-    val showActivityPermissionButton: Boolean
-        get() = stepSensorAvailable && !activityRecognitionGranted
-}
+)
 
 interface IDiaryViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<DiaryUiState>

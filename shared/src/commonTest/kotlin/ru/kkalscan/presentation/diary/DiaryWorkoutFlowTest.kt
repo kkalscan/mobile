@@ -79,7 +79,7 @@ class DiaryWorkoutFlowTest {
 
         vm.state.value.day!!.totalBurnedKcal shouldBe 300
         vm.state.value.balance!!.workoutKcal shouldBe 300
-        vm.state.value.balance!!.burnedKcal shouldBe 700
+        vm.state.value.balance!!.burnedKcal shouldBe 300 + vm.state.value.balance!!.activityKcal
     }
 }
 

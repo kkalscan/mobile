@@ -4,6 +4,7 @@ import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.domain.features.FeatureSearchCatalog
 import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.FeatureSearchResult
+import ru.kkalscan.domain.activity.ActivityEmulatorTimeProration
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
@@ -147,17 +148,22 @@ class StatefulDiaryApi(
         val entries = entriesByDevice[deviceId].orEmpty()
         val consumed = entries.sumOf { it.totalKcal }
         if (consumed <= 0) {
+            val active = ActivityEmulatorTimeProration.prorateForDaylight(
+                ActivityEmulatorTimeProration.FULL_DAYLIGHT_ACTIVE_KCAL,
+                timezoneOffsetMinutes,
+            )
             return ActivityEmulator(
                 mode = "population_default",
-                estimatedActiveKcal = 400,
-                estimatedSteps = 10_000,
+                estimatedActiveKcal = active,
+                estimatedSteps = if (active <= 0) 0 else (active / 0.04).toInt(),
             )
         }
-        val active = (consumed - 1500).coerceIn(100, 800)
+        val fullDayActive = (consumed - 1500).coerceIn(100, 800)
+        val active = ActivityEmulatorTimeProration.prorateForDaylight(fullDayActive, timezoneOffsetMinutes)
         return ActivityEmulator(
             mode = "diary_based",
             estimatedActiveKcal = active,
-            estimatedSteps = (active / 0.04).toInt(),
+            estimatedSteps = if (active <= 0) 0 else (active / 0.04).toInt(),
             avgConsumedKcalPerDay = consumed,
             diaryDaysWithEntries = 1,
         )

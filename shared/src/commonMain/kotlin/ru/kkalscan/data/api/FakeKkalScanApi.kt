@@ -4,6 +4,7 @@ import ru.kkalscan.data.repository.currentDateIso
 import ru.kkalscan.domain.features.FeatureSearchCatalog
 import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.FeatureSearchResult
+import ru.kkalscan.domain.activity.ActivityEmulatorTimeProration
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FoodSearchResult
@@ -128,22 +129,34 @@ class FakeKkalScanApi(
         val daysWithFood = entriesByKey
             .filter { (key, entries) -> key.startsWith("$deviceId:") && entries.sumOf { it.totalKcal } > 0 }
         if (daysWithFood.isEmpty()) {
-            return ActivityEmulator(
-                mode = "population_default",
-                estimatedActiveKcal = 400,
-                estimatedSteps = 10_000,
-            )
+            return populationDefaultEmulator(timezoneOffsetMinutes)
         }
         val avg = daysWithFood.values.sumOf { entries -> entries.sumOf { it.totalKcal } } / daysWithFood.size
-        val active = (avg - 1500).coerceIn(100, 800)
+        val fullDayActive = (avg - 1500).coerceIn(100, 800)
+        val active = ActivityEmulatorTimeProration.prorateForDaylight(fullDayActive, timezoneOffsetMinutes)
         return ActivityEmulator(
             mode = "diary_based",
             estimatedActiveKcal = active,
-            estimatedSteps = (active / 0.04).toInt(),
+            estimatedSteps = stepsFromActiveKcal(active),
             avgConsumedKcalPerDay = avg,
             diaryDaysWithEntries = daysWithFood.size,
         )
     }
+
+    private fun populationDefaultEmulator(timezoneOffsetMinutes: Int): ActivityEmulator {
+        val active = ActivityEmulatorTimeProration.prorateForDaylight(
+            ActivityEmulatorTimeProration.FULL_DAYLIGHT_ACTIVE_KCAL,
+            timezoneOffsetMinutes,
+        )
+        return ActivityEmulator(
+            mode = "population_default",
+            estimatedActiveKcal = active,
+            estimatedSteps = stepsFromActiveKcal(active),
+        )
+    }
+
+    private fun stepsFromActiveKcal(activeKcal: Int): Int =
+        if (activeKcal <= 0) 0 else (activeKcal / 0.04).toInt()
 
     private fun buildDiaryDay(deviceId: String, date: String): DiaryDay {
         val entries = entriesByKey[key(deviceId, date)].orEmpty()

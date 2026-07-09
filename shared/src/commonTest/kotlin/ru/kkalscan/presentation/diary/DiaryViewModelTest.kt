@@ -36,7 +36,7 @@ class DiaryViewModelTest {
         vm.state.value.day.shouldNotBeNull()
         vm.state.value.day!!.totalKcal shouldBe 350
         vm.state.value.activitySource shouldBe ActivitySource.Emulator
-        vm.state.value.balance!!.activityKcal shouldBe 400
+        vm.state.value.balance!!.activityKcal shouldBe 750
     }
 
     @Test
@@ -94,46 +94,30 @@ class DiaryViewModelTest {
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val counter = FakeLocalStepCounter(
-            sensorAvailable = true,
-            permissionGranted = true,
-            cumulativeSteps = 5_000,
-        )
-        val vm = createDiaryViewModelForTest(repo, this, api, localStepCounter = counter)
+        val vm = createDiaryViewModelForTest(repo, this, api)
         advanceUntilIdle()
 
         val fetchesBefore = repo.getTodayCalls
-        val readsBefore = counter.readCalls
-
-        counter.cumulativeSteps = 7_000
         vm.onForeground()
         advanceUntilIdle()
 
         repo.getTodayCalls shouldBe fetchesBefore
-        counter.readCalls shouldBe readsBefore + 1
-        vm.state.value.activitySource shouldBe ActivitySource.DeviceSensor
-        vm.state.value.steps shouldBe 2000
+        vm.state.value.activitySource shouldBe ActivitySource.Emulator
     }
 
     @Test
-    fun fallsBackToEmulatorWithoutPermission() = runTest {
+    fun usesBackendEmulatorForActivity() = runTest {
         val api = TestApiFixtures.api()
         val repo = DiaryRepository(
             api,
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
             { TestApiFixtures.TODAY },
         )
-        val counter = FakeLocalStepCounter(
-            sensorAvailable = true,
-            permissionGranted = false,
-            cumulativeSteps = 10_000,
-        )
-        val vm = createDiaryViewModelForTest(repo, this, api, localStepCounter = counter)
+        val vm = createDiaryViewModelForTest(repo, this, api)
         advanceUntilIdle()
 
         vm.state.value.activitySource shouldBe ActivitySource.Emulator
-        vm.state.value.balance!!.activityKcal shouldBe 400
-        vm.state.value.showActivityPermissionButton shouldBe true
+        vm.state.value.balance!!.activityKcal shouldBe 750
     }
 }
 

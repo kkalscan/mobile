@@ -15,7 +15,7 @@ object ActivitySourceResolver {
         sensorPermissionGranted: Boolean,
         emulator: ActivityEmulator?,
     ): ResolvedActivity {
-        if (sensorAvailable && sensorPermissionGranted) {
+        if (StepSensorFeature.ENABLED && sensorAvailable && sensorPermissionGranted) {
             val steps = sensorSteps?.takeIf { it > 0 }
             if (steps != null) {
                 return ResolvedActivity(

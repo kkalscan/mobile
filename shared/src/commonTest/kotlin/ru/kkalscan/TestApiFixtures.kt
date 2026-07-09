@@ -71,8 +71,8 @@ object TestApiFixtures {
                 content = """
                     {
                       "mode": "population_default",
-                      "estimated_active_kcal": 400,
-                      "estimated_steps": 10000,
+                      "estimated_active_kcal": 750,
+                      "estimated_steps": 18750,
                       "avg_consumed_kcal_per_day": null,
                       "diary_days_with_entries": 0,
                       "lookback_days": 30
