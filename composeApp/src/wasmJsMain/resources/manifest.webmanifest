@@ -1,7 +1,7 @@
 {
   "name": "KkalScan — калории по фото",
   "short_name": "KkalScan",
-  "description": "Калории по фото и текстом. Health Connect, баланс ккал, тренировки, дневник питания.",
+  "description": "Калории по фото и текстом. Шаги с телефона, баланс ккал, тренировки, дневник питания.",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#F4F7FB",
