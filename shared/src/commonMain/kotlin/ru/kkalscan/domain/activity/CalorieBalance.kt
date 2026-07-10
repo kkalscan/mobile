@@ -27,12 +27,14 @@ object CalorieBalanceCalculator {
             workoutKcal > 0
 
         if (hasPersistedBurn) {
+            val persistedSteps = day.activitySteps?.takeIf { it > 0 }
             val activityKcal = when {
                 day.activityKcal > 0 -> day.activityKcal
+                persistedSteps != null -> StepCalorieEstimator.estimate(persistedSteps)
                 liveActivity.source == ActivitySource.DeviceSensor && liveActivity.activeKcal > 0 -> liveActivity.activeKcal
                 else -> 0
             }
-            val steps = day.activitySteps ?: if (liveActivity.source == ActivitySource.DeviceSensor) liveActivity.steps else null
+            val steps = persistedSteps ?: if (liveActivity.source == ActivitySource.DeviceSensor) liveActivity.steps else null
             val burnedKcal = maxOf(day.totalBurnedKcal, workoutKcal + activityKcal)
             val activitySource = when {
                 day.activityKcal > 0 -> activitySourceFromWire(day.activitySource)

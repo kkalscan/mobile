@@ -101,6 +101,24 @@ class CalorieBalanceTest {
     }
 
     @Test
+    fun persistedSteps_estimateKcalWhenActivityKcalMissing() {
+        val balance = CalorieBalanceCalculator.compute(
+            day = DiaryDay(
+                date = "2026-07-10",
+                totalKcal = 0,
+                totalBurnedKcal = 0,
+                activityKcal = 0,
+                activitySteps = 37_500,
+                activitySource = "device_sensor",
+            ),
+            liveActivity = ResolvedActivity(ActivitySource.Emulator, 0, null),
+        )
+        balance.burnedKcal shouldBe 1500
+        balance.activityKcal shouldBe 1500
+        balance.steps shouldBe 37_500
+    }
+
+    @Test
     fun liveActivity_fillsMissingServerStepsWhenWorkoutPersisted() {
         val balance = CalorieBalanceCalculator.compute(
             day = DiaryDay(
