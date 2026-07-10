@@ -20,6 +20,8 @@ import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.domain.model.WorkoutParseResult
+import ru.kkalscan.domain.activity.ActivitySource
+import ru.kkalscan.domain.activity.wireName
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -34,6 +36,7 @@ class FakeKkalScanApi(
 
     private val entriesByKey = mutableMapOf<String, MutableList<DiaryEntry>>()
     private val workoutsByKey = mutableMapOf<String, MutableList<WorkoutEntry>>()
+    private val activityByKey = mutableMapOf<String, ActivitySnapshot>()
     private val scansById = mutableMapOf<String, ScanResult>()
     private val weekSeedMarkers = mutableSetOf<String>()
     private val seedMutex = Mutex()
@@ -161,13 +164,19 @@ class FakeKkalScanApi(
     private fun buildDiaryDay(deviceId: String, date: String): DiaryDay {
         val entries = entriesByKey[key(deviceId, date)].orEmpty()
         val workouts = workoutsByKey[key(deviceId, date)].orEmpty()
+        val activity = activityByKey[key(deviceId, date)]
         val consumed = entries.sumOf { it.totalKcal }
-        val burned = workouts.sumOf { it.kcal }
+        val workoutBurned = workouts.sumOf { it.kcal }
+        val activityBurned = activity?.kcal ?: 0
+        val burned = workoutBurned + activityBurned
         return DiaryDay(
             date = date,
             totalKcal = consumed,
             totalBurnedKcal = burned,
             netKcal = consumed - burned,
+            activityKcal = activityBurned,
+            activitySteps = activity?.steps?.takeIf { it > 0 },
+            activitySource = activity?.source,
             scansLeft = scansLeft(deviceId),
             isPro = deviceId in proDevices,
             entries = entries,
@@ -216,6 +225,26 @@ class FakeKkalScanApi(
         workoutsByKey.filterKeys { it.startsWith("$deviceId|") }.values.forEach { list ->
             list.removeAll { it.id == workoutId }
         }
+    }
+
+    override suspend fun syncActivity(
+        deviceId: String,
+        steps: Int,
+        kcal: Int,
+        source: ActivitySource,
+        timezoneOffsetMinutes: Int,
+    ): DiaryDay {
+        val date = todayProvider()
+        val existing = activityByKey[key(deviceId, date)]
+        if (existing != null && kcal <= existing.kcal && steps <= existing.steps) {
+            return buildDiaryDay(deviceId, date)
+        }
+        activityByKey[key(deviceId, date)] = ActivitySnapshot(
+            steps = steps,
+            kcal = kcal,
+            source = source.wireName(),
+        )
+        return buildDiaryDay(deviceId, date)
     }
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
@@ -337,4 +366,10 @@ class FakeKkalScanApi(
         idCounter++
         return "$prefix-$idCounter"
     }
+
+    private data class ActivitySnapshot(
+        val steps: Int,
+        val kcal: Int,
+        val source: String,
+    )
 }

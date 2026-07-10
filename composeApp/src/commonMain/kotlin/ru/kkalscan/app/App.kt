@@ -30,7 +30,9 @@ fun App(componentContext: ComponentContext = remember {
     val deps = remember { createAppDependencies() }
     val deviceId = remember { deps.deviceIdStorage.getDeviceId() }
     val diaryViewModel = remember(deps, scope) { deps.diaryViewModel(scope) }
-    val journalViewModel = remember(deps, scope) { deps.journalViewModel(scope) }
+    val journalViewModel = remember(deps, scope, diaryViewModel) {
+        deps.journalViewModel(scope, todayPatchProvider = { diaryViewModel.journalDayPatch() })
+    }
     val scanViewModel = remember(deps, scope) { deps.scanViewModel(scope) }
     val profileViewModel = remember(deps, scope) { deps.profileViewModel(scope) }
 

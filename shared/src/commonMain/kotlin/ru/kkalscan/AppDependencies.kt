@@ -74,8 +74,11 @@ class AppDependencies(
     ): IFeatureSearchViewModel =
         FeatureSearchViewModel(featureSearchRepository, scope, onSearchCompleted)
 
-    fun journalViewModel(scope: kotlinx.coroutines.CoroutineScope): IJournalViewModel =
-        JournalViewModel(diaryRepository, insightRepository, scope)
+    fun journalViewModel(
+        scope: kotlinx.coroutines.CoroutineScope,
+        todayPatchProvider: () -> ru.kkalscan.domain.model.DiaryDay? = { null },
+    ): IJournalViewModel =
+        JournalViewModel(diaryRepository, insightRepository, scope, todayPatchProvider)
 
     fun scanViewModel(scope: kotlinx.coroutines.CoroutineScope): IScanViewModel =
         ScanViewModel(scanRepository, diaryRepository, scope)

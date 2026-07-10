@@ -20,6 +20,8 @@ import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.domain.model.WorkoutParseResult
+import ru.kkalscan.domain.activity.ActivitySource
+import ru.kkalscan.domain.activity.wireName
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
@@ -28,10 +30,12 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class StatefulDiaryApi(
     private val diaryDate: String = TestApiFixtures.TODAY,
+    private val todayProvider: () -> String = { diaryDate },
 ) : IKkalScanApi {
 
-    private val entriesByDevice = ConcurrentHashMap<String, MutableList<DiaryEntry>>()
-    private val workoutsByDevice = ConcurrentHashMap<String, MutableList<WorkoutEntry>>()
+    private val entriesByKey = ConcurrentHashMap<String, MutableList<DiaryEntry>>()
+    private val workoutsByKey = ConcurrentHashMap<String, MutableList<WorkoutEntry>>()
+    private val activityByKey = ConcurrentHashMap<String, ActivitySnapshot>()
     private val scansById = ConcurrentHashMap<String, ScanResult>()
     private var scanCounter = 0
 
@@ -120,23 +124,21 @@ class StatefulDiaryApi(
         ScanBonusResult(scansLeft = 5, bonusGranted = true)
 
     override suspend fun getDiary(deviceId: String, date: String, timezoneOffsetMinutes: Int): DiaryDay {
-        val entries = if (date == diaryDate) {
-            entriesByDevice[deviceId].orEmpty()
-        } else {
-            emptyList()
-        }
-        val workouts = if (date == diaryDate) {
-            workoutsByDevice[deviceId].orEmpty()
-        } else {
-            emptyList()
-        }
+        val entries = entriesByKey[key(deviceId, date)].orEmpty()
+        val workouts = workoutsByKey[key(deviceId, date)].orEmpty()
         val consumed = entries.sumOf { it.totalKcal }
-        val burned = workouts.sumOf { it.kcal }
+        val workoutBurned = workouts.sumOf { it.kcal }
+        val activity = activityByKey[key(deviceId, date)]
+        val activityBurned = activity?.kcal ?: 0
+        val burned = workoutBurned + activityBurned
         return DiaryDay(
             date = date,
             totalKcal = consumed,
             totalBurnedKcal = burned,
             netKcal = consumed - burned,
+            activityKcal = activityBurned,
+            activitySteps = activity?.steps?.takeIf { it > 0 },
+            activitySource = activity?.source,
             scansLeft = (3 - entries.size).coerceAtLeast(0),
             isPro = false,
             entries = entries,
@@ -145,7 +147,8 @@ class StatefulDiaryApi(
     }
 
     override suspend fun getActivityEmulator(deviceId: String, timezoneOffsetMinutes: Int): ActivityEmulator {
-        val entries = entriesByDevice[deviceId].orEmpty()
+        val date = todayProvider()
+        val entries = entriesByKey[key(deviceId, date)].orEmpty()
         val consumed = entries.sumOf { it.totalKcal }
         if (consumed <= 0) {
             val active = ActivityEmulatorTimeProration.prorateForDaylight(
@@ -176,36 +179,60 @@ class StatefulDiaryApi(
         dishes: List<Dish>?,
     ): CreateDiaryEntryResponse {
         val savedDishes = dishes ?: scanId?.let { scansById[it]?.dishes } ?: error("scan_id не найден")
+        val date = todayProvider()
         val entry = DiaryEntry(
             id = UUID.randomUUID().toString(),
-            createdAt = "${diaryDate}T12:00:00Z",
+            createdAt = "${date}T12:00:00Z",
             mealType = mealType,
             totalKcal = savedDishes.sumOf { it.kcal },
             dishes = savedDishes,
         )
-        entriesByDevice.computeIfAbsent(deviceId) { mutableListOf() }.add(entry)
-        val left = (3 - entriesByDevice[deviceId]!!.size).coerceAtLeast(0)
+        entriesByKey.computeIfAbsent(key(deviceId, date)) { mutableListOf() }.add(entry)
+        val left = (3 - entriesByKey[key(deviceId, date)]!!.size).coerceAtLeast(0)
         return CreateDiaryEntryResponse(entry = entry, scansLeft = left)
     }
 
     override suspend fun deleteDiaryEntry(deviceId: String, entryId: String) {
-        entriesByDevice[deviceId]?.removeAll { it.id == entryId }
+        entriesByKey.values.forEach { list -> list.removeAll { it.id == entryId } }
     }
 
     override suspend fun addWorkout(deviceId: String, name: String, kcal: Int): CreateWorkoutResponse {
+        val date = todayProvider()
         val workout = WorkoutEntry(
             id = UUID.randomUUID().toString(),
-            createdAt = "${diaryDate}T12:00:00Z",
+            createdAt = "${date}T12:00:00Z",
             name = name.trim(),
             kcal = kcal,
         )
-        workoutsByDevice.computeIfAbsent(deviceId) { mutableListOf() }.add(workout)
+        workoutsByKey.computeIfAbsent(key(deviceId, date)) { mutableListOf() }.add(workout)
         return CreateWorkoutResponse(workout = workout)
     }
 
     override suspend fun deleteWorkout(deviceId: String, workoutId: String) {
-        workoutsByDevice[deviceId]?.removeAll { it.id == workoutId }
+        workoutsByKey.values.forEach { list -> list.removeAll { it.id == workoutId } }
     }
+
+    override suspend fun syncActivity(
+        deviceId: String,
+        steps: Int,
+        kcal: Int,
+        source: ActivitySource,
+        timezoneOffsetMinutes: Int,
+    ): DiaryDay {
+        val date = todayProvider()
+        val existing = activityByKey[key(deviceId, date)]
+        if (existing != null && kcal <= existing.kcal && steps <= existing.steps) {
+            return getDiary(deviceId, date, timezoneOffsetMinutes)
+        }
+        activityByKey[key(deviceId, date)] = ActivitySnapshot(
+            steps = steps,
+            kcal = kcal,
+            source = source.wireName(),
+        )
+        return getDiary(deviceId, date, timezoneOffsetMinutes)
+    }
+
+    private fun key(deviceId: String, date: String) = "$deviceId|$date"
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         SubscriptionStatus(isPro = false, accountLinked = false)
@@ -258,4 +285,10 @@ class StatefulDiaryApi(
             proUntil = "${diaryDate}T12:00:00Z",
             message = "Спасибо! Pro на месяц активирован.",
         )
+
+    private data class ActivitySnapshot(
+        val steps: Int,
+        val kcal: Int,
+        val source: String,
+    )
 }

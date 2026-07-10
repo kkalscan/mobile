@@ -13,6 +13,8 @@ import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutParseResult
+import ru.kkalscan.domain.activity.ActivitySource
+import ru.kkalscan.domain.activity.wireName
 
 interface IKkalScanApi {
     suspend fun scanPhoto(deviceId: String, photoBytes: ByteArray, timezoneOffsetMinutes: Int): ScanResult
@@ -30,6 +32,13 @@ interface IKkalScanApi {
     suspend fun deleteDiaryEntry(deviceId: String, entryId: String)
     suspend fun addWorkout(deviceId: String, name: String, kcal: Int): CreateWorkoutResponse
     suspend fun deleteWorkout(deviceId: String, workoutId: String)
+    suspend fun syncActivity(
+        deviceId: String,
+        steps: Int,
+        kcal: Int,
+        source: ActivitySource,
+        timezoneOffsetMinutes: Int,
+    ): DiaryDay
     suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus
     suspend fun startProSubscription(deviceId: String, tariff: String = "pro_monthly_199"): ProSubscriptionStart
     suspend fun submitBugReport(

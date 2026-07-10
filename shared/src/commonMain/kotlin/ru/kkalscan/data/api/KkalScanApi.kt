@@ -8,6 +8,7 @@ import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
 import io.ktor.client.request.header
 import io.ktor.client.request.post
+import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
@@ -36,6 +37,8 @@ import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutParseResult
+import ru.kkalscan.domain.activity.ActivitySource
+import ru.kkalscan.domain.activity.wireName
 
 class KkalScanApi(
     private val httpClient: HttpClient,
@@ -128,6 +131,24 @@ class KkalScanApi(
             throw mapError(response.status.value, response.bodyAsText())
         }
     }
+
+    override suspend fun syncActivity(
+        deviceId: String,
+        steps: Int,
+        kcal: Int,
+        source: ActivitySource,
+        timezoneOffsetMinutes: Int,
+    ): DiaryDay =
+        putJson(
+            "/diary/activity",
+            ActivitySyncRequest(
+                device_id = deviceId,
+                steps = steps,
+                kcal = kcal,
+                source = source.wireName(),
+                timezone_offset_minutes = timezoneOffsetMinutes,
+            ),
+        )
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         apiGet("/subscription/status", deviceId)
@@ -222,6 +243,20 @@ class KkalScanApi(
             throw KkalScanException.Network(e.message ?: "Network error")
         }
 
+    private suspend inline fun <reified T, reified B> putJson(path: String, body: B): T =
+        try {
+            val response = httpClient.put("${config.apiBaseUrl}$path") {
+                contentType(ContentType.Application.Json)
+                setBody(body)
+            }
+            if (!response.status.isSuccess()) throw mapError(response.status.value, response.bodyAsText())
+            response.body()
+        } catch (e: KkalScanException) {
+            throw e
+        } catch (e: Exception) {
+            throw KkalScanException.Network(e.message ?: "Network error")
+        }
+
     private fun mapError(status: Int, body: String): KkalScanException {
         val parsed = runCatching { json.decodeFromString<ApiErrorBody>(body) }.getOrNull()
         if (parsed?.error == "limit_hit") return KkalScanException.LimitHit(parsed.scansLeft ?: 0)
@@ -266,5 +301,14 @@ class KkalScanApi(
         val device_id: String,
         val name: String,
         val kcal: Int,
+    )
+
+    @Serializable
+    private data class ActivitySyncRequest(
+        val device_id: String,
+        val steps: Int,
+        val kcal: Int,
+        val source: String,
+        val timezone_offset_minutes: Int,
     )
 }

@@ -88,6 +88,17 @@ fun AppRootContent(
         stepSensorOnboarding.tryAutoRequest(diaryState, requestActivityRecognition)
     }
 
+    LaunchedEffect(diaryViewModel) {
+        diaryViewModel.startActivityPolling()
+        diaryViewModel.onForeground()
+    }
+
+    // Refresh weekly journal when opening the tab or when today's burn updates while on it.
+    LaunchedEffect(selectedTab, diaryState.balance?.burnedKcal, diaryState.isLoading) {
+        if (selectedTab != AppTab.Journal || diaryState.isLoading) return@LaunchedEffect
+        journalViewModel.refresh()
+    }
+
     LaunchedEffect(screen) {
         KkalAnalytics.reportFeatureOpen(screen.analyticsFeatureName())
         if (screen == AppScreen.Paywall) {

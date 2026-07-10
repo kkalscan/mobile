@@ -14,7 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -32,6 +31,7 @@ import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.WorkoutEntry
+import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -48,10 +48,6 @@ fun DiaryScreen(
     onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
-    DisposableEffect(viewModel) {
-        viewModel.startActivityPolling()
-        onDispose { viewModel.stopActivityPolling() }
-    }
     val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
         ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val dateLabel = "${today.dayOfMonth}.${today.monthNumber.toString().padStart(2, '0')}.${today.year}"
@@ -92,11 +88,18 @@ fun DiaryScreen(
                     )
                     Spacer(Modifier.height(16.dp))
                 }
-                if (!day?.workouts.isNullOrEmpty()) {
-                    Text("Тренировки", style = MaterialTheme.typography.titleLarge)
+                if ((balance?.activityKcal ?: 0) > 0 || (balance?.workoutKcal ?: 0) > 0) {
+                    Text("Расход", style = MaterialTheme.typography.titleLarge)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        day!!.workouts.forEach { WorkoutEntryCard(it) }
+                        if ((balance?.activityKcal ?: 0) > 0) {
+                            ActivityEntryCard(
+                                kcal = balance!!.activityKcal,
+                                steps = state.steps,
+                                source = balance.activitySource,
+                            )
+                        }
+                        day?.workouts?.forEach { WorkoutEntryCard(it) }
                     }
                     Spacer(Modifier.height(16.dp))
                 }
@@ -131,6 +134,27 @@ fun DiaryScreen(
 
 @Composable private fun WorkoutEntryCard(entry: WorkoutEntry) {
     KkalFoodCard(entry.name, entry.kcal, "Сожжено", tipBadge = "Тренировка", iconLabel = "W")
+}
+
+@Composable private fun ActivityEntryCard(
+    kcal: Int,
+    steps: Int?,
+    source: ActivitySource,
+) {
+    val title = when (source) {
+        ActivitySource.DeviceSensor -> "Ходьба"
+        ActivitySource.Emulator -> "Активность"
+        ActivitySource.None -> "Активность"
+    }
+    val subtitle = buildList {
+        steps?.let { add("$it шагов") }
+        when (source) {
+            ActivitySource.DeviceSensor -> add("по данным телефона")
+            ActivitySource.Emulator -> add("оценка")
+            ActivitySource.None -> Unit
+        }
+    }.joinToString(" · ").ifBlank { "Сожжено за день" }
+    KkalFoodCard(title, kcal, subtitle, tipBadge = "Шаги", iconLabel = "S")
 }
 private data class MacroSummary(val protein: Double, val fat: Double, val carbs: Double, val fiber: Double)
 private fun DiaryDay.macroTotals() = MacroSummary(

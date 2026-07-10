@@ -1,5 +1,6 @@
 package ru.kkalscan.presentation.diary
 
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.CompletableDeferred
@@ -11,6 +12,7 @@ import ru.kkalscan.TestApiFixtures
 import ru.kkalscan.data.api.FakeKkalScanApi
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.IDiaryRepository
+import ru.kkalscan.data.steps.InMemoryStepBaselineStorage
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.domain.model.DiaryDay
 import kotlin.test.Test
@@ -20,7 +22,10 @@ class DiaryWorkoutFlowTest {
 
     @Test
     fun addWorkout_updatesBalanceOnDiary() = runTest {
-        val api = StatefulDiaryApi(diaryDate = TestApiFixtures.TODAY)
+        val api = StatefulDiaryApi(
+            diaryDate = TestApiFixtures.TODAY,
+            todayProvider = { TestApiFixtures.TODAY },
+        )
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY })
         val vm = createDiaryViewModelForTest(repo, this, api, storage)
@@ -29,9 +34,44 @@ class DiaryWorkoutFlowTest {
         vm.addWorkout("Бег", 250)
         advanceUntilIdle()
 
-        vm.state.value.day!!.totalBurnedKcal shouldBe 250
-        vm.state.value.day!!.netKcal shouldBe -250
-        vm.state.value.day!!.workouts.single().name shouldBe "Бег"
+        vm.state.value.day!!.workouts.single().kcal shouldBe 250
+        vm.state.value.balance!!.workoutKcal shouldBe 250
+        vm.state.value.day!!.totalBurnedKcal shouldBe 250 + vm.state.value.day!!.activityKcal
+    }
+
+    @Test
+    fun addWorkout_syncsStepsSoTotalBurnedMatchesActivityPlusWorkout() = runTest {
+        val api = StatefulDiaryApi(
+            diaryDate = TestApiFixtures.TODAY,
+            todayProvider = { TestApiFixtures.TODAY },
+        )
+        val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
+        val repo = DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY })
+        val baselineStorage = InMemoryStepBaselineStorage().apply {
+            setBaseline(TestApiFixtures.TODAY, 0L)
+        }
+        val stepCounter = FakeLocalStepCounter(
+            sensorAvailable = true,
+            permissionGranted = true,
+            cumulativeSteps = 10_000L,
+        )
+        val vm = createDiaryViewModelForTest(
+            repo,
+            this,
+            api,
+            storage,
+            localStepCounter = stepCounter,
+            stepBaselineStorage = baselineStorage,
+        )
+        advanceUntilIdle()
+
+        vm.addWorkout("Бег", 280)
+        advanceUntilIdle()
+
+        vm.state.value.day!!.activityKcal shouldBeGreaterThan 0
+        vm.state.value.day!!.totalBurnedKcal shouldBe
+            vm.state.value.day!!.activityKcal + vm.state.value.day!!.workouts.single().kcal
+        vm.state.value.balance!!.burnedKcal shouldBe vm.state.value.day!!.totalBurnedKcal
     }
 
     @Test
@@ -53,15 +93,19 @@ class DiaryWorkoutFlowTest {
         vm.confirmParsedWorkout() shouldBe true
         advanceUntilIdle()
 
-        vm.state.value.day!!.totalBurnedKcal shouldBe 300
         vm.state.value.day!!.workouts.single().name shouldBe "Бег"
+        vm.state.value.day!!.workouts.single().kcal shouldBe 300
+        vm.state.value.day!!.totalBurnedKcal shouldBe 300 + vm.state.value.day!!.activityKcal
         vm.state.value.workoutParse.preview shouldBe null
     }
 
     @Test
     fun confirmParsedWorkout_staleInitRefresh_doesNotOverwriteWorkout() = runTest {
         val releaseInitRefresh = CompletableDeferred<Unit>()
-        val api = StatefulDiaryApi(diaryDate = TestApiFixtures.TODAY)
+        val api = StatefulDiaryApi(
+            diaryDate = TestApiFixtures.TODAY,
+            todayProvider = { TestApiFixtures.TODAY },
+        )
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = GatedGetTodayRepository(
             DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY }),
@@ -77,9 +121,10 @@ class DiaryWorkoutFlowTest {
         releaseInitRefresh.complete(Unit)
         advanceUntilIdle()
 
-        vm.state.value.day!!.totalBurnedKcal shouldBe 300
+        vm.state.value.day!!.workouts.single().kcal shouldBe 300
         vm.state.value.balance!!.workoutKcal shouldBe 300
-        vm.state.value.balance!!.burnedKcal shouldBe 300 + vm.state.value.balance!!.activityKcal
+        vm.state.value.day!!.totalBurnedKcal shouldBe 300 + vm.state.value.day!!.activityKcal
+        vm.state.value.balance!!.burnedKcal shouldBe vm.state.value.day!!.totalBurnedKcal
     }
 }
 

@@ -42,4 +42,6 @@ interface IDiaryViewModel {
     suspend fun addWorkout(name: String, kcal: Int)
     suspend fun deleteWorkout(workoutId: String)
     fun clearError()
+    /** Effective today for journal when server activity lags behind live balance. */
+    fun journalDayPatch(): DiaryDay?
 }

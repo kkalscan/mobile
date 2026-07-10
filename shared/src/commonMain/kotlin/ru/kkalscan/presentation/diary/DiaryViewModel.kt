@@ -17,8 +17,11 @@ import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.steps.ILocalStepCounter
 import ru.kkalscan.data.steps.StepCounterStore
 import ru.kkalscan.data.storage.IDeviceIdStorage
+import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.ActivitySourceResolver
 import ru.kkalscan.domain.activity.CalorieBalanceCalculator
+import ru.kkalscan.domain.activity.activitySourceFromWire
+import ru.kkalscan.domain.activity.wireName
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.DiaryDay
@@ -53,11 +56,12 @@ class DiaryViewModel(
             }
         }.onSuccess { r ->
             if (generation != dataGeneration) return@onSuccess
-            applyActivitySnapshot(r.day, r.snapshot, isLoading = false, date = date)
+            val syncedDay = syncActivityIfNeeded(r.day, r.snapshot)
+            applyActivitySnapshot(syncedDay, r.snapshot, isLoading = false, date = date)
             kkalLog(
                 LOG_TAG,
-                "refresh done date=$date eaten=${r.day.totalKcal} source=${r.snapshot.resolved.source} " +
-                    "activity=${r.snapshot.resolved.activeKcal} steps=${r.snapshot.resolved.steps}",
+                "refresh done date=$date eaten=${syncedDay.totalKcal} source=${r.snapshot.resolved.source} " +
+                    "activity=${syncedDay.activityKcal} steps=${syncedDay.activitySteps}",
             )
         }.onFailure { e ->
             if (generation != dataGeneration) return@onFailure
@@ -74,12 +78,14 @@ class DiaryViewModel(
         runCatching { loadActivitySnapshot(fetchEmulator = false) }
             .onSuccess { snapshot ->
                 val prev = _state.value
-                applyActivitySnapshot(day, snapshot, isLoading = prev.isLoading, date = prev.date ?: day.date)
-                val balance = CalorieBalanceCalculator.compute(day, snapshot.resolved)
+                val syncedDay = syncActivityIfNeeded(day, snapshot)
+                applyActivitySnapshot(syncedDay, snapshot, isLoading = prev.isLoading, date = prev.date ?: syncedDay.date)
+                val balance = CalorieBalanceCalculator.compute(syncedDay, snapshot.resolved)
                 val changed = prev.balance?.activityKcal != balance.activityKcal ||
                     prev.balance?.activitySource != balance.activitySource ||
                     prev.steps != snapshot.resolved.steps ||
-                    prev.activityRecognitionGranted != snapshot.permissionGranted
+                    prev.activityRecognitionGranted != snapshot.permissionGranted ||
+                    prev.day?.totalBurnedKcal != syncedDay.totalBurnedKcal
                 if (changed) {
                     kkalLog(
                         LOG_TAG,
@@ -131,9 +137,10 @@ class DiaryViewModel(
     override suspend fun addWorkout(name: String, kcal: Int) {
         _state.update { it.copy(errorMessage = null) }
         runCatching { diaryRepository.addWorkout(name, kcal) }
-            .onSuccess {
-                kkalLog(LOG_TAG, "workout saved kcal=$kcal, refreshing day")
-                refresh()
+            .onSuccess { day ->
+                ++dataGeneration
+                kkalLog(LOG_TAG, "workout saved kcal=$kcal, syncing activity")
+                applyDayWithActivitySync(day)
             }
             .onFailure { e -> _state.update { it.copy(errorMessage = e.userMessage()) } }
     }
@@ -150,12 +157,12 @@ class DiaryViewModel(
         _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = true, errorMessage = null)) }
         val saved = runCatching { diaryRepository.addWorkout(preview.title, preview.burnedKcal) }
             .onFailure { e -> _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = false, errorMessage = e.userMessage())) } }
-            .isSuccess
-        if (!saved) return false
+        if (saved.isFailure) return false
         ++dataGeneration
         _state.update { it.copy(workoutParse = WorkoutParseUiState()) }
-        kkalLog(LOG_TAG, "workout confirmed ${preview.title} ${preview.burnedKcal} kcal, refreshing day")
-        refresh()
+        val day = saved.getOrThrow()
+        kkalLog(LOG_TAG, "workout confirmed ${preview.title} ${preview.burnedKcal} kcal, syncing activity")
+        applyDayWithActivitySync(day)
         return true
     }
 
@@ -166,6 +173,24 @@ class DiaryViewModel(
     }
 
     override fun clearError() { _state.update { it.copy(errorMessage = null) } }
+
+    override fun journalDayPatch(): DiaryDay? {
+        val s = _state.value
+        val day = s.day ?: return null
+        val balance = s.balance ?: return null
+        val date = s.date ?: day.date
+        if (date != day.date) return null
+        return day.copy(
+            totalBurnedKcal = balance.burnedKcal,
+            activityKcal = balance.activityKcal,
+            activitySteps = s.steps ?: day.activitySteps,
+            activitySource = when (balance.activitySource) {
+                ActivitySource.None -> day.activitySource
+                else -> balance.activitySource.wireName()
+            },
+            netKcal = day.totalKcal - balance.burnedKcal,
+        )
+    }
 
     private suspend fun loadActivitySnapshot(fetchEmulator: Boolean): ActivitySnapshot = coroutineScope {
         val sensorAvailable = async { localStepCounter.isSensorAvailable() }
@@ -204,13 +229,48 @@ class DiaryViewModel(
                 isLoading = isLoading,
                 day = day,
                 balance = CalorieBalanceCalculator.compute(day, snapshot.resolved),
-                steps = snapshot.resolved.steps,
+                steps = day.activitySteps ?: snapshot.resolved.steps,
                 date = date,
-                activitySource = snapshot.resolved.source,
+                activitySource = if (day.activitySteps != null || day.activityKcal > 0 || !day.activitySource.isNullOrBlank()) {
+                    activitySourceFromWire(day.activitySource)
+                } else {
+                    snapshot.resolved.source
+                },
                 stepSensorAvailable = snapshot.sensorAvailable,
                 activityRecognitionGranted = snapshot.permissionGranted,
             )
         }
+    }
+
+    private suspend fun applyDayWithActivitySync(day: DiaryDay) {
+        val date = diaryRepository.currentDate()
+        runCatching {
+            val snapshot = loadActivitySnapshot(fetchEmulator = false)
+            val syncedDay = syncActivityIfNeeded(day, snapshot)
+            applyActivitySnapshot(syncedDay, snapshot, isLoading = false, date = date)
+            kkalLog(
+                LOG_TAG,
+                "day synced burned=${syncedDay.totalBurnedKcal} activity=${syncedDay.activityKcal} " +
+                    "workouts=${syncedDay.workouts.sumOf { it.kcal }}",
+            )
+        }.onFailure { e ->
+            kkalLog(LOG_TAG, "applyDayWithActivitySync fail ${e::class.simpleName}: ${e.message}")
+            _state.update { it.copy(errorMessage = e.userMessage()) }
+        }
+    }
+
+    private suspend fun syncActivityIfNeeded(day: DiaryDay, snapshot: ActivitySnapshot): DiaryDay {
+        val local = snapshot.resolved
+        if (local.source != ActivitySource.DeviceSensor) return day
+        if (local.activeKcal <= 0) return day
+        val localSteps = local.steps ?: 0
+        val savedSteps = day.activitySteps ?: 0
+        if (local.activeKcal == day.activityKcal && localSteps == savedSteps) return day
+        return runCatching {
+            diaryRepository.syncActivity(localSteps, local.activeKcal, local.source)
+        }.onFailure { e ->
+            kkalLog(LOG_TAG, "activity sync fail ${e::class.simpleName}: ${e.message}")
+        }.getOrDefault(day)
     }
 
     private fun Throwable.userMessage(isWorkoutParse: Boolean = false) = when (this) {

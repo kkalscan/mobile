@@ -58,7 +58,10 @@ class DiaryViewModelTest {
     @Test
     fun onForeground_afterOvernightBackground_rollsDiaryOverToNewDay() = runTest {
         var today = "2026-07-03"
-        val api = StatefulDiaryApi(diaryDate = "2026-07-03")
+        val api = StatefulDiaryApi(
+            diaryDate = "2026-07-03",
+            todayProvider = { today },
+        )
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
@@ -90,7 +93,10 @@ class DiaryViewModelTest {
     @Test
     fun onForeground_sameDay_refreshesActivityOnly() = runTest {
         val today = "2026-07-03"
-        val api = StatefulDiaryApi(diaryDate = today)
+        val api = StatefulDiaryApi(
+            diaryDate = today,
+            todayProvider = { today },
+        )
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),

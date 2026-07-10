@@ -13,6 +13,8 @@ import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.IInsightRepository
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.insights.DietitianInsight
+import ru.kkalscan.domain.model.DiaryDay
+import ru.kkalscan.stats.JournalDayMerger
 import ru.kkalscan.stats.StatsAggregator
 import ru.kkalscan.stats.WeekDates
 import ru.kkalscan.stats.WeekStats
@@ -47,6 +49,7 @@ class JournalViewModel(
     private val diaryRepository: IDiaryRepository,
     private val insightRepository: IInsightRepository,
     private val scope: CoroutineScope,
+    private val todayPatchProvider: () -> DiaryDay? = { null },
 ) : IJournalViewModel {
 
     private val _state = MutableStateFlow(JournalUiState())
@@ -61,10 +64,11 @@ class JournalViewModel(
         _state.update { it.copy(isLoading = true, errorMessage = null) }
         runCatching { diaryRepository.getWeek(weekStart) }
             .onSuccess { days ->
+                val merged = JournalDayMerger.mergeWeekWithTodayPatch(days, todayPatchProvider())
                 _state.update {
                     it.copy(
                         isLoading = false,
-                        week = StatsAggregator.weekStats(days, weekStart),
+                        week = StatsAggregator.weekStats(merged, weekStart),
                     )
                 }
             }

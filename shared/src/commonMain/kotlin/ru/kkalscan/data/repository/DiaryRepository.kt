@@ -7,6 +7,7 @@ import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.WorkoutParseResult
+import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.stats.WeekDates
 import ru.kkalscan.util.kkalLog
 import ru.kkalscan.util.maskDeviceId
@@ -20,6 +21,7 @@ interface IDiaryRepository {
     suspend fun addFromScan(scanId: String, mealType: MealType, dishes: List<ru.kkalscan.domain.model.Dish>): DiaryDay
     suspend fun addFromDishes(dishes: List<ru.kkalscan.domain.model.Dish>, mealType: MealType): DiaryDay
     suspend fun addWorkout(name: String, kcal: Int): DiaryDay
+    suspend fun syncActivity(steps: Int, kcal: Int, source: ActivitySource): DiaryDay
     suspend fun parseWorkout(description: String): WorkoutParseResult
     suspend fun deleteEntry(entryId: String)
     suspend fun deleteWorkout(workoutId: String)
@@ -74,6 +76,17 @@ class DiaryRepository(
         val deviceId = deviceIdStorage.getDeviceId()
         api.addWorkout(deviceId, name, kcal)
         return api.getDiary(deviceId, todayProvider(), currentTimezoneOffsetMinutes())
+    }
+
+    override suspend fun syncActivity(steps: Int, kcal: Int, source: ActivitySource): DiaryDay {
+        val deviceId = deviceIdStorage.getDeviceId()
+        val date = todayProvider()
+        val day = api.syncActivity(deviceId, steps, kcal, source, currentTimezoneOffsetMinutes())
+        kkalLog(
+            "Diary",
+            "syncActivity device=${maskDeviceId(deviceId)} date=$date steps=$steps kcal=$kcal source=$source",
+        )
+        return day
     }
 
     override suspend fun parseWorkout(description: String): WorkoutParseResult {
