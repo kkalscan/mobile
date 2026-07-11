@@ -108,23 +108,6 @@ fun JournalScreen(
             }
 
             week != null -> {
-                KkalHeroCard(
-                    title = "СРЕДНЕЕ ЗА НЕДЕЛЮ",
-                    kcal = week.avgKcal,
-                    subtitle = buildString {
-                        append("${week.daysWithData} дней с данными · поступление ${week.totalKcal} ккал")
-                        if (week.totalBurnedKcal > 0) {
-                            append(" · расход ${week.totalBurnedKcal} ккал")
-                        }
-                    },
-                    badge = null,
-                    protein = week.avgProtein,
-                    fat = week.avgFat,
-                    carbs = week.avgCarbs,
-                    fiber = week.avgFiber,
-                    watermark = "07",
-                )
-                Spacer(Modifier.height(20.dp))
                 ChartCard(
                     title = "Калории по дням",
                     subtitle = if (week.daysWithData > 0) {
@@ -191,6 +174,23 @@ fun JournalScreen(
                         )
                     }
                 }
+                Spacer(Modifier.height(16.dp))
+                KkalHeroCard(
+                    title = "СРЕДНЕЕ ЗА НЕДЕЛЮ",
+                    kcal = week.avgKcal,
+                    subtitle = buildString {
+                        append("${week.daysWithData} дней с данными · поступление ${week.totalKcal} ккал")
+                        if (week.totalBurnedKcal > 0) {
+                            append(" · расход ${week.totalBurnedKcal} ккал")
+                        }
+                    },
+                    badge = null,
+                    protein = week.avgProtein,
+                    fat = week.avgFat,
+                    carbs = week.avgCarbs,
+                    fiber = week.avgFiber,
+                    watermark = "07",
+                )
                 Spacer(Modifier.height(24.dp))
                 state.insightError?.let { msg ->
                     Text(msg, color = KkalScanColors.Error, style = MaterialTheme.typography.bodyMedium)
