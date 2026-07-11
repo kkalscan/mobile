@@ -21,6 +21,7 @@ import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.domain.activity.ActivitySource
+import ru.kkalscan.domain.activity.StepCalorieEstimator
 import ru.kkalscan.domain.activity.wireName
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
@@ -159,7 +160,7 @@ class FakeKkalScanApi(
     }
 
     private fun stepsFromActiveKcal(activeKcal: Int): Int =
-        if (activeKcal <= 0) 0 else (activeKcal / ru.kkalscan.domain.activity.StepCalorieEstimator.KCAL_PER_STEP).toInt()
+        StepCalorieEstimator.stepsForKcal(activeKcal)
 
     private fun buildDiaryDay(deviceId: String, date: String): DiaryDay {
         val entries = entriesByKey[key(deviceId, date)].orEmpty()

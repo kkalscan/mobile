@@ -81,6 +81,8 @@ fun DiaryScreen(
                         eatenKcal = balance.eatenKcal,
                         burnedKcal = balance.burnedKcal,
                         deficitKcal = balance.deficitKcal,
+                        restingKcal = balance.restingKcal,
+                        bmrKcal = balance.bmrKcal,
                         activityKcal = balance.activityKcal,
                         activitySource = balance.activitySource,
                         workoutKcal = balance.workoutKcal,

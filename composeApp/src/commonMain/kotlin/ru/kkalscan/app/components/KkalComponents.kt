@@ -620,6 +620,8 @@ fun KkalCalorieBalanceCard(
     eatenKcal: Int,
     burnedKcal: Int,
     deficitKcal: Int,
+    restingKcal: Int,
+    bmrKcal: Int,
     activityKcal: Int,
     activitySource: ru.kkalscan.domain.activity.ActivitySource,
     workoutKcal: Int,
@@ -646,18 +648,19 @@ fun KkalCalorieBalanceCard(
             }
             Spacer(Modifier.height(12.dp))
             val details = buildList {
+                if (restingKcal > 0) add("Базовый метаболизм: $restingKcal ккал (BMR $bmrKcal/день)")
                 when (activitySource) {
                     ru.kkalscan.domain.activity.ActivitySource.DeviceSensor ->
-                        if (activityKcal > 0) add("~$activityKcal ккал по шагам (телефон)")
+                        if (activityKcal > 0) add("Ходьба: ~$activityKcal ккал")
                     ru.kkalscan.domain.activity.ActivitySource.Emulator ->
-                        if (activityKcal > 0) add("~$activityKcal ккал (оценка)")
+                        if (activityKcal > 0) add("Активность: ~$activityKcal ккал")
                     ru.kkalscan.domain.activity.ActivitySource.None -> Unit
                 }
                 if (workoutKcal > 0) add("Тренировки: $workoutKcal ккал")
                 steps?.let { add("Шаги: $it") }
             }
             Text(
-                if (details.isNotEmpty()) details.joinToString(" · ") else "Разрешите доступ к активности или добавьте тренировку",
+                if (details.isNotEmpty()) details.joinToString(" · ") else "Укажите вес и рост в профиле для расчёта расхода",
                 style = MaterialTheme.typography.bodySmall,
                 color = KkalScanColors.OnSurfaceVariant,
             )

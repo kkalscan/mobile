@@ -14,7 +14,9 @@ import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,7 +41,9 @@ import ru.kkalscan.app.platform.PhotoPickSource
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
+import ru.kkalscan.domain.activity.EnergyProfile
 import ru.kkalscan.presentation.profile.IProfileViewModel
+import ru.kkalscan.presentation.profile.dailyBmrKcal
 
 @Composable
 fun ProfileScreen(
@@ -47,6 +51,7 @@ fun ProfileScreen(
     onRefresh: () -> Unit,
     onBuyPro: () -> Unit,
     onSubmitBugReport: (email: String, description: String, screenshots: List<ByteArray>) -> Unit,
+    onProfileSaved: () -> Unit = {},
     scanErrorMessage: String? = null,
     onRetryScan: () -> Unit = {},
 ) {
@@ -125,6 +130,17 @@ fun ProfileScreen(
                     )
                 }
                 Spacer(Modifier.height(20.dp))
+                EnergyProfileCard(
+                    profile = state.energyProfile,
+                    dailyBmrKcal = state.dailyBmrKcal(),
+                    saved = state.profileSaved,
+                    onSave = {
+                        viewModel.saveEnergyProfile(it)
+                        onProfileSaved()
+                    },
+                    onClearSaved = { viewModel.clearProfileSaved() },
+                )
+                Spacer(Modifier.height(12.dp))
                 if (status?.isPro != true) {
                     KkalTipCard(
                         number = "",

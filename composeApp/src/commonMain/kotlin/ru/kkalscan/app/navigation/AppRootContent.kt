@@ -367,6 +367,7 @@ fun AppRootContent(
                             profileViewModel.submitBugReport(email, description, screenshots)
                         }
                     },
+                    onProfileSaved = { scope.launch { diaryViewModel.refresh() } },
                     scanErrorMessage = scanState.errorMessage,
                     onRetryScan = {
                         KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)

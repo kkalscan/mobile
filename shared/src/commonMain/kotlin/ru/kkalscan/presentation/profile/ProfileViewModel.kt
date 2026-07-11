@@ -6,9 +6,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import ru.kkalscan.data.profile.IEnergyProfileStorage
 import ru.kkalscan.data.repository.IBugReportRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.ISubscriptionRepository
+import ru.kkalscan.domain.activity.BmrCalculator
+import ru.kkalscan.domain.activity.EnergyProfile
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ProSubscriptionStart
 
@@ -16,6 +19,7 @@ class ProfileViewModel(
     private val subscriptionRepository: ISubscriptionRepository,
     private val diaryRepository: IDiaryRepository,
     private val bugReportRepository: IBugReportRepository,
+    private val energyProfileStorage: IEnergyProfileStorage,
     private val scope: CoroutineScope,
 ) : IProfileViewModel {
 
@@ -33,11 +37,13 @@ class ProfileViewModel(
             val day = diaryRepository.getToday()
             status to day.scansLeft
         }.onSuccess { (status, scansLeft) ->
+            val profile = energyProfileStorage.getProfile() ?: EnergyProfile()
             _state.update {
                 it.copy(
                     isLoading = false,
                     status = status,
                     scansLeft = scansLeft,
+                    energyProfile = profile,
                 )
             }
         }.onFailure { e ->
@@ -96,7 +102,25 @@ class ProfileViewModel(
         }
     }
 
+    override fun saveEnergyProfile(profile: EnergyProfile): Boolean {
+        val normalized = profile.normalized()
+        energyProfileStorage.saveProfile(normalized)
+        _state.update {
+            it.copy(
+                energyProfile = normalized,
+                profileSaved = true,
+            )
+        }
+        return true
+    }
+
+    override fun clearProfileSaved() {
+        _state.update { it.copy(profileSaved = false) }
+    }
+
     override fun clearBugReportFeedback() {
         _state.update { it.copy(bugReportSuccess = null, bugReportError = null) }
     }
 }
+
+fun ProfileUiState.dailyBmrKcal(): Int = BmrCalculator.dailyBmr(energyProfile)

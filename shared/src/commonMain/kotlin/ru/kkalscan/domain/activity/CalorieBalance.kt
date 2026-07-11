@@ -5,6 +5,8 @@ import ru.kkalscan.domain.model.DiaryDay
 data class CalorieBalance(
     val eatenKcal: Int,
     val burnedKcal: Int,
+    val restingKcal: Int,
+    val bmrKcal: Int,
     val activityKcal: Int,
     val activitySource: ActivitySource,
     val workoutKcal: Int,
@@ -17,51 +19,47 @@ data class CalorieBalance(
 }
 
 object CalorieBalanceCalculator {
-    fun compute(day: DiaryDay, liveActivity: ResolvedActivity = ResolvedActivity(ActivitySource.None, 0, null)): CalorieBalance {
+    fun compute(
+        day: DiaryDay,
+        liveActivity: ResolvedActivity = ResolvedActivity(ActivitySource.None, 0, null),
+        profile: EnergyProfile = EnergyProfile(),
+        dayFraction: Double = 1.0,
+    ): CalorieBalance {
+        val p = profile.normalized()
         val eatenKcal = day.totalKcal
         val workoutKcal = day.workouts.sumOf { it.kcal }
-        val hasPersistedBurn = day.totalBurnedKcal > 0 ||
-            day.activityKcal > 0 ||
-            day.activitySteps != null ||
-            !day.activitySource.isNullOrBlank() ||
-            workoutKcal > 0
+        val bmrKcal = BmrCalculator.dailyBmr(p)
+        val restingKcal = BmrCalculator.proratedBmr(p, dayFraction)
 
-        if (hasPersistedBurn) {
-            val persistedSteps = day.activitySteps?.takeIf { it > 0 }
-            val activityKcal = when {
-                day.activityKcal > 0 -> day.activityKcal
-                persistedSteps != null -> StepCalorieEstimator.estimate(persistedSteps)
-                liveActivity.source == ActivitySource.DeviceSensor && liveActivity.activeKcal > 0 -> liveActivity.activeKcal
-                else -> 0
-            }
-            val steps = persistedSteps ?: if (liveActivity.source == ActivitySource.DeviceSensor) liveActivity.steps else null
-            val burnedKcal = maxOf(day.totalBurnedKcal, workoutKcal + activityKcal)
-            val activitySource = when {
-                day.activityKcal > 0 -> activitySourceFromWire(day.activitySource)
-                liveActivity.source == ActivitySource.DeviceSensor && liveActivity.activeKcal > 0 -> liveActivity.source
-                else -> activitySourceFromWire(day.activitySource)
-            }
-            return CalorieBalance(
-                eatenKcal = eatenKcal,
-                burnedKcal = burnedKcal,
-                activityKcal = activityKcal,
-                activitySource = activitySource,
-                workoutKcal = workoutKcal,
-                deficitKcal = burnedKcal - eatenKcal,
-                steps = steps,
-            )
+        val persistedSteps = day.activitySteps?.takeIf { it > 0 }
+        val steps = persistedSteps ?: if (liveActivity.source == ActivitySource.DeviceSensor) liveActivity.steps else null
+        val activityKcal = when {
+            persistedSteps != null -> StepCalorieEstimator.estimate(persistedSteps, p)
+            liveActivity.activeKcal > 0 -> liveActivity.activeKcal
+            day.activityKcal > 0 -> day.activityKcal
+            else -> 0
+        }
+        val activitySource = when {
+            persistedSteps != null ->
+                if (liveActivity.source == ActivitySource.DeviceSensor) liveActivity.source
+                else activitySourceFromWire(day.activitySource).takeIf { it != ActivitySource.None }
+                    ?: ActivitySource.DeviceSensor
+            liveActivity.activeKcal > 0 -> liveActivity.source
+            day.activityKcal > 0 -> activitySourceFromWire(day.activitySource)
+            else -> ActivitySource.None
         }
 
-        val activityKcal = liveActivity.activeKcal
-        val burnedKcal = workoutKcal + activityKcal
+        val burnedKcal = restingKcal + activityKcal + workoutKcal
         return CalorieBalance(
             eatenKcal = eatenKcal,
             burnedKcal = burnedKcal,
+            restingKcal = restingKcal,
+            bmrKcal = bmrKcal,
             activityKcal = activityKcal,
-            activitySource = liveActivity.source,
+            activitySource = activitySource,
             workoutKcal = workoutKcal,
             deficitKcal = burnedKcal - eatenKcal,
-            steps = liveActivity.steps,
+            steps = steps,
         )
     }
 }

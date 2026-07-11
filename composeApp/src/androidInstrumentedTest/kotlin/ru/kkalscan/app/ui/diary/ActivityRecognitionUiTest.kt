@@ -96,6 +96,8 @@ class ActivityRecognitionUiTest {
     private fun sampleBalance() = CalorieBalance(
         eatenKcal = 0,
         burnedKcal = 750,
+        restingKcal = 0,
+        bmrKcal = 0,
         activityKcal = 750,
         activitySource = ActivitySource.Emulator,
         workoutKcal = 0,

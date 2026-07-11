@@ -5,6 +5,7 @@ import ru.kkalscan.domain.features.FeatureSearchCatalog
 import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.activity.ActivityEmulatorTimeProration
+import ru.kkalscan.domain.activity.StepCalorieEstimator
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
@@ -158,7 +159,7 @@ class StatefulDiaryApi(
             return ActivityEmulator(
                 mode = "population_default",
                 estimatedActiveKcal = active,
-                estimatedSteps = if (active <= 0) 0 else (active / ru.kkalscan.domain.activity.StepCalorieEstimator.KCAL_PER_STEP).toInt(),
+                estimatedSteps = StepCalorieEstimator.stepsForKcal(active),
             )
         }
         val fullDayActive = (consumed - 1500).coerceIn(100, 800)
@@ -166,7 +167,7 @@ class StatefulDiaryApi(
         return ActivityEmulator(
             mode = "diary_based",
             estimatedActiveKcal = active,
-            estimatedSteps = if (active <= 0) 0 else (active / ru.kkalscan.domain.activity.StepCalorieEstimator.KCAL_PER_STEP).toInt(),
+            estimatedSteps = ru.kkalscan.domain.activity.StepCalorieEstimator.stepsForKcal(active),
             avgConsumedKcalPerDay = consumed,
             diaryDaysWithEntries = 1,
         )

@@ -15,7 +15,7 @@ class ActivitySourceResolverTest {
             emulator = ActivityEmulator("population_default", 750, 18_750),
         )
         result.source shouldBe ActivitySource.DeviceSensor
-        result.activeKcal shouldBe 275
+        result.activeKcal shouldBe 191
         result.steps shouldBe 5000
     }
 

@@ -71,7 +71,10 @@ class DiaryWorkoutFlowTest {
         vm.state.value.day!!.activityKcal shouldBeGreaterThan 0
         vm.state.value.day!!.totalBurnedKcal shouldBe
             vm.state.value.day!!.activityKcal + vm.state.value.day!!.workouts.single().kcal
-        vm.state.value.balance!!.burnedKcal shouldBe vm.state.value.day!!.totalBurnedKcal
+        vm.state.value.balance!!.burnedKcal shouldBe
+            vm.state.value.balance!!.restingKcal +
+                vm.state.value.balance!!.activityKcal +
+                vm.state.value.balance!!.workoutKcal
     }
 
     @Test
@@ -124,7 +127,10 @@ class DiaryWorkoutFlowTest {
         vm.state.value.day!!.workouts.single().kcal shouldBe 300
         vm.state.value.balance!!.workoutKcal shouldBe 300
         vm.state.value.day!!.totalBurnedKcal shouldBe 300 + vm.state.value.day!!.activityKcal
-        vm.state.value.balance!!.burnedKcal shouldBe vm.state.value.day!!.totalBurnedKcal
+        vm.state.value.balance!!.burnedKcal shouldBe
+            vm.state.value.balance!!.restingKcal +
+                vm.state.value.balance!!.activityKcal +
+                vm.state.value.balance!!.workoutKcal
     }
 }
 

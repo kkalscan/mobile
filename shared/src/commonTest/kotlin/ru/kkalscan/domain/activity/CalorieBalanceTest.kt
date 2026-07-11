@@ -7,20 +7,21 @@ import kotlin.test.Test
 
 class CalorieBalanceTest {
 
+    private val profile110 = EnergyProfile(weightKg = 110.0, heightCm = 180.0, ageYears = 40)
+
     @Test
-    fun deficit_isBurnedMinusEaten() {
+    fun includesBmrAndWalking() {
         val balance = CalorieBalanceCalculator.compute(
-            day = DiaryDay(
-                date = "2026-07-04",
-                totalKcal = 1840,
-            ),
-            liveActivity = ResolvedActivity(ActivitySource.Emulator, 420, 10_500),
+            day = DiaryDay(date = "2026-07-11", totalKcal = 1800),
+            liveActivity = ResolvedActivity(ActivitySource.DeviceSensor, 1143, 19_000),
+            profile = profile110,
+            dayFraction = 1.0,
         )
-        balance.eatenKcal shouldBe 1840
-        balance.burnedKcal shouldBe 420
-        balance.deficitKcal shouldBe -1420
-        balance.isSurplus shouldBe true
-        balance.isDeficit shouldBe false
+        balance.bmrKcal shouldBe 2030
+        balance.restingKcal shouldBe 2030
+        balance.activityKcal shouldBe 1143
+        balance.burnedKcal shouldBe 3173
+        balance.deficitKcal shouldBe 1373
     }
 
     @Test
@@ -29,8 +30,6 @@ class CalorieBalanceTest {
             day = DiaryDay(
                 date = "2026-07-04",
                 totalKcal = 1200,
-                totalBurnedKcal = 630,
-                activityKcal = 350,
                 activitySteps = 8750,
                 activitySource = "device_sensor",
                 workouts = listOf(
@@ -42,80 +41,31 @@ class CalorieBalanceTest {
                     ),
                 ),
             ),
+            profile = EnergyProfile(weightKg = 70.0),
+            dayFraction = 1.0,
         )
-        balance.burnedKcal shouldBe 630
         balance.workoutKcal shouldBe 280
-        balance.activityKcal shouldBe 350
-        balance.activitySource shouldBe ActivitySource.DeviceSensor
-        balance.deficitKcal shouldBe -570
+        balance.activityKcal shouldBe 335
+        balance.burnedKcal shouldBe balance.restingKcal + 335 + 280
     }
 
     @Test
-    fun positiveDeficit_whenBurnedExceedsEaten() {
-        val balance = CalorieBalanceCalculator.compute(
-            day = DiaryDay(
-                date = "2026-07-04",
-                totalKcal = 800,
-                totalBurnedKcal = 920,
-                activityKcal = 500,
-                activitySteps = 12_500,
-                activitySource = "emulator",
-                workouts = listOf(
-                    WorkoutEntry(
-                        id = "w1",
-                        createdAt = "2026-07-04T12:00:00Z",
-                        name = "Йога",
-                        kcal = 420,
-                    ),
-                ),
-            ),
-        )
-        balance.deficitKcal shouldBe 120
-        balance.isDeficit shouldBe true
-    }
-
-    @Test
-    fun serverBurn_winsOverHigherLiveActivity() {
+    fun recalculatesStepsFromProfile_notStaleServerKcal() {
         val balance = CalorieBalanceCalculator.compute(
             day = DiaryDay(
                 date = "2026-07-04",
                 totalKcal = 452,
                 totalBurnedKcal = 1102,
-                activityKcal = 822,
-                activitySteps = 20_556,
+                activityKcal = 756,
+                activitySteps = 19_000,
                 activitySource = "device_sensor",
-                workouts = listOf(
-                    WorkoutEntry(
-                        id = "w1",
-                        createdAt = "2026-07-04T12:00:00Z",
-                        name = "Бег",
-                        kcal = 280,
-                    ),
-                ),
             ),
             liveActivity = ResolvedActivity(ActivitySource.DeviceSensor, 900, 22_000),
+            profile = profile110,
+            dayFraction = 1.0,
         )
-        balance.burnedKcal shouldBe 1102
-        balance.activityKcal shouldBe 822
-        balance.workoutKcal shouldBe 280
-    }
-
-    @Test
-    fun persistedSteps_estimateKcalWhenActivityKcalMissing() {
-        val balance = CalorieBalanceCalculator.compute(
-            day = DiaryDay(
-                date = "2026-07-10",
-                totalKcal = 0,
-                totalBurnedKcal = 0,
-                activityKcal = 0,
-                activitySteps = 37_500,
-                activitySource = "device_sensor",
-            ),
-            liveActivity = ResolvedActivity(ActivitySource.Emulator, 0, null),
-        )
-        balance.burnedKcal shouldBe 2062
-        balance.activityKcal shouldBe 2062
-        balance.steps shouldBe 37_500
+        balance.activityKcal shouldBe 1143
+        balance.burnedKcal shouldBe 2030 + 1143
     }
 
     @Test
@@ -124,8 +74,6 @@ class CalorieBalanceTest {
             day = DiaryDay(
                 date = "2026-07-10",
                 totalKcal = 452,
-                totalBurnedKcal = 280,
-                activityKcal = 0,
                 workouts = listOf(
                     WorkoutEntry(
                         id = "w1",
@@ -135,10 +83,13 @@ class CalorieBalanceTest {
                     ),
                 ),
             ),
-            liveActivity = ResolvedActivity(ActivitySource.DeviceSensor, 1130, 20_556),
+            liveActivity = ResolvedActivity(ActivitySource.DeviceSensor, 1143, 19_000),
+            profile = profile110,
+            dayFraction = 0.5,
         )
-        balance.burnedKcal shouldBe 1410
-        balance.activityKcal shouldBe 1130
-        balance.steps shouldBe 20_556
+        balance.activityKcal shouldBe 1143
+        balance.workoutKcal shouldBe 280
+        balance.restingKcal shouldBe 1015
+        balance.burnedKcal shouldBe 1015 + 1143 + 280
     }
 }

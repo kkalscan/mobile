@@ -46,6 +46,8 @@ class DiaryActivitySyncTest {
         (vm.state.value.day!!.activitySteps ?: 0) shouldBeGreaterThan 0
         vm.state.value.day!!.totalBurnedKcal shouldBe vm.state.value.day!!.activityKcal
         vm.state.value.activitySource shouldBe ActivitySource.DeviceSensor
-        vm.state.value.balance!!.burnedKcal shouldBe vm.state.value.day!!.totalBurnedKcal
+        vm.state.value.balance!!.restingKcal shouldBeGreaterThan 0
+        vm.state.value.balance!!.burnedKcal shouldBe
+            vm.state.value.balance!!.restingKcal + vm.state.value.balance!!.activityKcal
     }
 }

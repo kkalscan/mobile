@@ -19,6 +19,8 @@ import ru.kkalscan.data.repository.IScanRepository
 import ru.kkalscan.data.repository.ISubscriptionRepository
 import ru.kkalscan.data.repository.ScanRepository
 import ru.kkalscan.data.repository.SubscriptionRepository
+import ru.kkalscan.data.profile.createEnergyProfileStorage
+import ru.kkalscan.data.profile.IEnergyProfileStorage
 import ru.kkalscan.data.steps.createLocalStepCounter
 import ru.kkalscan.data.steps.createStepBaselineStorage
 import ru.kkalscan.data.steps.StepCounterStore
@@ -48,6 +50,7 @@ class AppDependencies(
     val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
+    val energyProfileStorage: IEnergyProfileStorage = createEnergyProfileStorage(),
     private val localStepCounter: ru.kkalscan.data.steps.ILocalStepCounter = createLocalStepCounter(),
     private val stepCounterStore: StepCounterStore = StepCounterStore(
         localStepCounter,
@@ -62,6 +65,7 @@ class AppDependencies(
             deviceIdStorage = deviceIdStorage,
             stepCounterStore = stepCounterStore,
             localStepCounter = localStepCounter,
+            energyProfileStorage = energyProfileStorage,
             scope = scope,
         )
 
@@ -84,5 +88,5 @@ class AppDependencies(
         ScanViewModel(scanRepository, diaryRepository, scope)
 
     fun profileViewModel(scope: kotlinx.coroutines.CoroutineScope): IProfileViewModel =
-        ProfileViewModel(subscriptionRepository, diaryRepository, bugReportRepository, scope)
+        ProfileViewModel(subscriptionRepository, diaryRepository, bugReportRepository, energyProfileStorage, scope)
 }

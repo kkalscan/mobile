@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import ru.kkalscan.data.api.IKkalScanApi
+import ru.kkalscan.data.profile.IEnergyProfileStorage
 import ru.kkalscan.data.repository.currentTimezoneOffsetMinutes
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.steps.ILocalStepCounter
@@ -20,6 +21,8 @@ import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.ActivitySourceResolver
 import ru.kkalscan.domain.activity.CalorieBalanceCalculator
+import ru.kkalscan.domain.activity.DayProgress
+import ru.kkalscan.domain.activity.EnergyProfile
 import ru.kkalscan.domain.activity.activitySourceFromWire
 import ru.kkalscan.domain.activity.wireName
 import ru.kkalscan.domain.error.KkalScanException
@@ -33,6 +36,7 @@ class DiaryViewModel(
     private val deviceIdStorage: IDeviceIdStorage,
     private val stepCounterStore: StepCounterStore,
     private val localStepCounter: ILocalStepCounter,
+    private val energyProfileStorage: IEnergyProfileStorage,
     private val scope: CoroutineScope,
 ) : IDiaryViewModel {
     private val _state = MutableStateFlow(DiaryUiState(isLoading = true))
@@ -80,7 +84,12 @@ class DiaryViewModel(
                 val prev = _state.value
                 val syncedDay = syncActivityIfNeeded(day, snapshot)
                 applyActivitySnapshot(syncedDay, snapshot, isLoading = prev.isLoading, date = prev.date ?: syncedDay.date)
-                val balance = CalorieBalanceCalculator.compute(syncedDay, snapshot.resolved)
+                val balance = CalorieBalanceCalculator.compute(
+                    syncedDay,
+                    snapshot.resolved,
+                    energyProfile(),
+                    DayProgress.fractionNow(),
+                )
                 val changed = prev.balance?.activityKcal != balance.activityKcal ||
                     prev.balance?.activitySource != balance.activitySource ||
                     prev.steps != snapshot.resolved.steps ||
@@ -210,6 +219,7 @@ class DiaryViewModel(
             sensorAvailable = sensorAvailable.await(),
             sensorPermissionGranted = permissionGranted.await(),
             emulator = emulator?.await() ?: cachedEmulator,
+            profile = energyProfile(),
         )
         ActivitySnapshot(
             resolved = resolved,
@@ -228,7 +238,12 @@ class DiaryViewModel(
             it.copy(
                 isLoading = isLoading,
                 day = day,
-                balance = CalorieBalanceCalculator.compute(day, snapshot.resolved),
+                balance = CalorieBalanceCalculator.compute(
+                    day,
+                    snapshot.resolved,
+                    energyProfile(),
+                    DayProgress.fractionNow(),
+                ),
                 steps = day.activitySteps ?: snapshot.resolved.steps,
                 date = date,
                 activitySource = if (day.activitySteps != null || day.activityKcal > 0 || !day.activitySource.isNullOrBlank()) {
@@ -272,6 +287,9 @@ class DiaryViewModel(
             kkalLog(LOG_TAG, "activity sync fail ${e::class.simpleName}: ${e.message}")
         }.getOrDefault(day)
     }
+
+    private fun energyProfile(): EnergyProfile =
+        energyProfileStorage.getProfile() ?: EnergyProfile()
 
     private fun Throwable.userMessage(isWorkoutParse: Boolean = false) = when (this) {
         is KkalScanException.Network -> "Нет сети. Проверьте подключение."
