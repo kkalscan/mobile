@@ -113,8 +113,8 @@ class CalorieBalanceTest {
             ),
             liveActivity = ResolvedActivity(ActivitySource.Emulator, 0, null),
         )
-        balance.burnedKcal shouldBe 1500
-        balance.activityKcal shouldBe 1500
+        balance.burnedKcal shouldBe 2062
+        balance.activityKcal shouldBe 2062
         balance.steps shouldBe 37_500
     }
 
@@ -135,10 +135,10 @@ class CalorieBalanceTest {
                     ),
                 ),
             ),
-            liveActivity = ResolvedActivity(ActivitySource.DeviceSensor, 822, 20_556),
+            liveActivity = ResolvedActivity(ActivitySource.DeviceSensor, 1130, 20_556),
         )
-        balance.burnedKcal shouldBe 1102
-        balance.activityKcal shouldBe 822
+        balance.burnedKcal shouldBe 1410
+        balance.activityKcal shouldBe 1130
         balance.steps shouldBe 20_556
     }
 }

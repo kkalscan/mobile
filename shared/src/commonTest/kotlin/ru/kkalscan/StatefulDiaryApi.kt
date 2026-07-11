@@ -158,7 +158,7 @@ class StatefulDiaryApi(
             return ActivityEmulator(
                 mode = "population_default",
                 estimatedActiveKcal = active,
-                estimatedSteps = if (active <= 0) 0 else (active / 0.04).toInt(),
+                estimatedSteps = if (active <= 0) 0 else (active / ru.kkalscan.domain.activity.StepCalorieEstimator.KCAL_PER_STEP).toInt(),
             )
         }
         val fullDayActive = (consumed - 1500).coerceIn(100, 800)
@@ -166,7 +166,7 @@ class StatefulDiaryApi(
         return ActivityEmulator(
             mode = "diary_based",
             estimatedActiveKcal = active,
-            estimatedSteps = if (active <= 0) 0 else (active / 0.04).toInt(),
+            estimatedSteps = if (active <= 0) 0 else (active / ru.kkalscan.domain.activity.StepCalorieEstimator.KCAL_PER_STEP).toInt(),
             avgConsumedKcalPerDay = consumed,
             diaryDaysWithEntries = 1,
         )

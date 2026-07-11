@@ -159,7 +159,7 @@ class FakeKkalScanApi(
     }
 
     private fun stepsFromActiveKcal(activeKcal: Int): Int =
-        if (activeKcal <= 0) 0 else (activeKcal / 0.04).toInt()
+        if (activeKcal <= 0) 0 else (activeKcal / ru.kkalscan.domain.activity.StepCalorieEstimator.KCAL_PER_STEP).toInt()
 
     private fun buildDiaryDay(deviceId: String, date: String): DiaryDay {
         val entries = entriesByKey[key(deviceId, date)].orEmpty()
