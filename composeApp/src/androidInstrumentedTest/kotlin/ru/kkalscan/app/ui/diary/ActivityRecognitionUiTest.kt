@@ -121,5 +121,6 @@ class ActivityRecognitionUiTest {
         override suspend fun addWorkout(name: String, kcal: Int) = Unit
         override suspend fun deleteWorkout(workoutId: String) = Unit
         override fun clearError() = Unit
+        override fun journalDayPatch(): ru.kkalscan.domain.model.DiaryDay? = null
     }
 }
