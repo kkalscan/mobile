@@ -621,12 +621,6 @@ fun KkalCalorieBalanceCard(
     eatenKcal: Int,
     burnedKcal: Int,
     deficitKcal: Int,
-    restingKcal: Int,
-    bmrKcal: Int,
-    activityKcal: Int,
-    activitySource: ru.kkalscan.domain.activity.ActivitySource,
-    workoutKcal: Int,
-    steps: Int? = null,
     modifier: Modifier = Modifier,
 ) {
     val deficitColor = when { deficitKcal > 0 -> KkalScanColors.Secondary; deficitKcal < 0 -> KkalScanColors.Error; else -> KkalScanColors.OnSurfaceVariant }
@@ -647,24 +641,6 @@ fun KkalCalorieBalanceCard(
                 Spacer(Modifier.width(8.dp))
                 Text(deficitLabel, style = MaterialTheme.typography.titleMedium, color = deficitColor, modifier = Modifier.padding(bottom = 8.dp))
             }
-            Spacer(Modifier.height(12.dp))
-            val details = buildList {
-                if (restingKcal > 0) add("Базовый метаболизм: $restingKcal ккал (BMR $bmrKcal/день)")
-                when (activitySource) {
-                    ru.kkalscan.domain.activity.ActivitySource.DeviceSensor ->
-                        if (activityKcal > 0) add("Ходьба: ~$activityKcal ккал")
-                    ru.kkalscan.domain.activity.ActivitySource.Emulator ->
-                        if (activityKcal > 0) add("Активность: ~$activityKcal ккал")
-                    ru.kkalscan.domain.activity.ActivitySource.None -> Unit
-                }
-                if (workoutKcal > 0) add("Тренировки: $workoutKcal ккал")
-                steps?.let { add("Шаги: $it") }
-            }
-            Text(
-                if (details.isNotEmpty()) details.joinToString(" · ") else "Укажите вес и рост в профиле для расчёта расхода",
-                style = MaterialTheme.typography.bodySmall,
-                color = KkalScanColors.OnSurfaceVariant,
-            )
         }
     }
 }

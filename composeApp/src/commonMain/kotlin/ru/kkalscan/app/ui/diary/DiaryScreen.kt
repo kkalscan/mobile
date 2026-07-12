@@ -81,27 +81,32 @@ fun DiaryScreen(
                         eatenKcal = balance.eatenKcal,
                         burnedKcal = balance.burnedKcal,
                         deficitKcal = balance.deficitKcal,
-                        restingKcal = balance.restingKcal,
-                        bmrKcal = balance.bmrKcal,
-                        activityKcal = balance.activityKcal,
-                        activitySource = balance.activitySource,
-                        workoutKcal = balance.workoutKcal,
-                        steps = state.steps,
                     )
                     Spacer(Modifier.height(16.dp))
                 }
-                if ((balance?.activityKcal ?: 0) > 0 || (balance?.workoutKcal ?: 0) > 0) {
-                    Text("Расход", style = MaterialTheme.typography.titleLarge)
+                val showBurnSection = balance != null && (
+                    balance.restingKcal > 0 ||
+                        balance.activityKcal > 0 ||
+                        balance.workoutKcal > 0
+                    )
+                if (showBurnSection) {
+                    Text("Расход за сегодня", style = MaterialTheme.typography.titleLarge)
                     Spacer(Modifier.height(12.dp))
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        if ((balance?.activityKcal ?: 0) > 0) {
-                            ActivityEntryCard(
-                                kcal = balance!!.activityKcal,
+                        day?.workouts?.forEach { WorkoutEntryCard(it) }
+                        if (balance!!.activityKcal > 0) {
+                            StepsEntryCard(
+                                kcal = balance.activityKcal,
                                 steps = state.steps,
                                 source = balance.activitySource,
                             )
                         }
-                        day?.workouts?.forEach { WorkoutEntryCard(it) }
+                        if (balance.restingKcal > 0) {
+                            MetabolismEntryCard(
+                                restingKcal = balance.restingKcal,
+                                bmrKcal = balance.bmrKcal,
+                            )
+                        }
                     }
                     Spacer(Modifier.height(16.dp))
                 }
@@ -138,16 +143,11 @@ fun DiaryScreen(
     KkalFoodCard(entry.name, entry.kcal, "Сожжено", tipBadge = "Тренировка", iconLabel = "W")
 }
 
-@Composable private fun ActivityEntryCard(
+@Composable private fun StepsEntryCard(
     kcal: Int,
     steps: Int?,
     source: ActivitySource,
 ) {
-    val title = when (source) {
-        ActivitySource.DeviceSensor -> "Ходьба"
-        ActivitySource.Emulator -> "Активность"
-        ActivitySource.None -> "Активность"
-    }
     val subtitle = buildList {
         steps?.takeIf { it > 0 }?.let { add("$it шагов") }
         when (source) {
@@ -155,8 +155,21 @@ fun DiaryScreen(
             ActivitySource.Emulator -> add("оценка")
             ActivitySource.None -> Unit
         }
-    }.joinToString(" · ").ifBlank { "Сожжено за день" }
-    KkalFoodCard(title, kcal, subtitle, tipBadge = "Шаги", iconLabel = "S")
+    }.joinToString(" · ").ifBlank { "Активность за день" }
+    KkalFoodCard("Шаги", kcal, subtitle, tipBadge = "Активность", iconLabel = "S")
+}
+
+@Composable private fun MetabolismEntryCard(
+    restingKcal: Int,
+    bmrKcal: Int,
+) {
+    KkalFoodCard(
+        title = "Основной обмен",
+        kcal = restingKcal,
+        subtitle = "BMR $bmrKcal ккал/день · с начала суток",
+        tipBadge = "BMR",
+        iconLabel = "B",
+    )
 }
 private data class MacroSummary(val protein: Double, val fat: Double, val carbs: Double, val fiber: Double)
 private fun DiaryDay.macroTotals() = MacroSummary(
