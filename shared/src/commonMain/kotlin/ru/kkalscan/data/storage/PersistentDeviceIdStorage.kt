@@ -8,6 +8,7 @@ private val uuidRegex = Regex("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-
 class PersistentDeviceIdStorage(
     private val readStored: () -> String?,
     private val writeStored: (String) -> Unit,
+    private val generateId: () -> String = { randomDeviceId() },
 ) : IDeviceIdStorage {
 
     private var cached: String? = null
@@ -19,7 +20,7 @@ class PersistentDeviceIdStorage(
             kkalLog("DeviceId", "restored ${maskDeviceId(it)}")
             return it
         }
-        return randomDeviceId().also { id ->
+        return generateId().also { id ->
             cached = id
             writeStored(id)
             kkalLog("DeviceId", "created ${maskDeviceId(id)}")
