@@ -18,14 +18,12 @@ object ActivitySourceResolver {
     ): ResolvedActivity {
         val p = profile.normalized()
         if (StepSensorFeature.ENABLED && sensorAvailable && sensorPermissionGranted) {
-            val steps = sensorSteps?.takeIf { it > 0 }
-            if (steps != null) {
-                return ResolvedActivity(
-                    source = ActivitySource.DeviceSensor,
-                    activeKcal = StepCalorieEstimator.estimate(steps, p),
-                    steps = steps,
-                )
-            }
+            val steps = sensorSteps?.coerceAtLeast(0) ?: 0
+            return ResolvedActivity(
+                source = ActivitySource.DeviceSensor,
+                activeKcal = StepCalorieEstimator.estimate(steps, p),
+                steps = steps.takeIf { it > 0 },
+            )
         }
         if (emulator != null) {
             return ResolvedActivity(

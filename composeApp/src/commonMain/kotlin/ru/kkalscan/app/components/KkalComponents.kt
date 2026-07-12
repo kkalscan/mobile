@@ -597,12 +597,13 @@ fun KkalFoodCard(
                     style = MaterialTheme.typography.headlineMedium,
                     color = KkalScanColors.Primary,
                 )
+                subtitle?.takeIf { it.isNotBlank() }?.let {
+                    Spacer(Modifier.height(4.dp))
+                    Text(it, style = MaterialTheme.typography.bodyMedium, color = KkalScanColors.OnSurfaceVariant)
+                }
                 tipBadge?.let {
                     Spacer(Modifier.height(8.dp))
                     ScanBadge(text = it)
-                } ?: subtitle?.let {
-                    Spacer(Modifier.height(4.dp))
-                    Text(it, style = MaterialTheme.typography.bodyMedium, color = KkalScanColors.OnSurfaceVariant)
                 }
                 if (macros != null || fiber != null) {
                     Spacer(Modifier.height(8.dp))

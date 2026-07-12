@@ -149,7 +149,7 @@ fun DiaryScreen(
         ActivitySource.None -> "Активность"
     }
     val subtitle = buildList {
-        steps?.let { add("$it шагов") }
+        steps?.takeIf { it > 0 }?.let { add("$it шагов") }
         when (source) {
             ActivitySource.DeviceSensor -> add("по данным телефона")
             ActivitySource.Emulator -> add("оценка")
