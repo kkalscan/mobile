@@ -23,6 +23,7 @@ fun createDiaryViewModelForTest(
     localStepCounter: ILocalStepCounter = FakeLocalStepCounter(),
     stepBaselineStorage: IStepBaselineStorage = InMemoryStepBaselineStorage(),
     energyProfileStorage: IEnergyProfileStorage = InMemoryEnergyProfileStorage(),
+    refreshOnInit: Boolean = true,
 ): DiaryViewModel = DiaryViewModel(
     diaryRepository = diaryRepository,
     api = api,
@@ -35,6 +36,40 @@ fun createDiaryViewModelForTest(
     localStepCounter = localStepCounter,
     energyProfileStorage = energyProfileStorage,
     scope = scope,
+    refreshOnInit = refreshOnInit,
+)
+
+/** Prefer [kotlinx.coroutines.test.TestScope.backgroundScope] so diary Flow collectors do not fail runTest. */
+fun kotlinx.coroutines.test.TestScope.createDiaryViewModel(
+    diaryRepository: IDiaryRepository,
+    api: IKkalScanApi = TestApiFixtures.api(),
+    deviceIdStorage: IDeviceIdStorage = InMemoryDeviceIdStorage().apply {
+        setDeviceId(TestApiFixtures.DEVICE_ID)
+    },
+    localStepCounter: ILocalStepCounter = FakeLocalStepCounter(),
+    stepBaselineStorage: IStepBaselineStorage = InMemoryStepBaselineStorage(),
+    energyProfileStorage: IEnergyProfileStorage = InMemoryEnergyProfileStorage(),
+    refreshOnInit: Boolean = false,
+): DiaryViewModel = createDiaryViewModelForTest(
+    diaryRepository = diaryRepository,
+    scope = backgroundScope,
+    api = api,
+    deviceIdStorage = deviceIdStorage,
+    localStepCounter = localStepCounter,
+    stepBaselineStorage = stepBaselineStorage,
+    energyProfileStorage = energyProfileStorage,
+    refreshOnInit = refreshOnInit,
+)
+
+/** Offline Flow tests: controlled refresh on the test scheduler with explicit teardown. */
+fun kotlinx.coroutines.test.TestScope.createOfflineDiaryViewModel(
+    diaryRepository: IDiaryRepository,
+    api: IKkalScanApi = TestApiFixtures.api(),
+): DiaryViewModel = createDiaryViewModelForTest(
+    diaryRepository = diaryRepository,
+    scope = this,
+    api = api,
+    refreshOnInit = false,
 )
 
 class FakeLocalStepCounter(

@@ -2,6 +2,8 @@ plugins {
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
     alias(libs.plugins.androidLibrary)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.androidx.room3)
 }
 
 kotlin {
@@ -29,6 +31,7 @@ kotlin {
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ktor.client.logging)
             implementation(libs.decompose)
+            implementation(libs.androidx.room3.runtime)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
@@ -39,12 +42,14 @@ kotlin {
         }
         jvmMain.dependencies {
             implementation(libs.ktor.client.cio)
+            implementation(libs.androidx.sqlite.bundled)
         }
         jvmTest.dependencies {
             implementation(libs.ktor.client.cio)
         }
         androidMain.dependencies {
             implementation(libs.ktor.client.cio)
+            implementation(libs.androidx.sqlite.bundled)
             implementation("androidx.health.connect:connect-client:1.1.0-rc02")
         }
         wasmJsMain.dependencies {
@@ -52,6 +57,16 @@ kotlin {
             implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")
         }
     }
+}
+
+dependencies {
+    add("kspAndroid", libs.androidx.room3.compiler)
+    add("kspJvm", libs.androidx.room3.compiler)
+    add("kspWasmJs", libs.androidx.room3.compiler)
+}
+
+room3 {
+    schemaDirectory("$projectDir/schemas")
 }
 
 android {

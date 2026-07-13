@@ -3,6 +3,7 @@ package ru.kkalscan.presentation.diary
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +30,6 @@ import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.util.kkalLog
-
 class DiaryViewModel(
     private val diaryRepository: IDiaryRepository,
     private val api: IKkalScanApi,
@@ -38,40 +38,72 @@ class DiaryViewModel(
     private val localStepCounter: ILocalStepCounter,
     private val energyProfileStorage: IEnergyProfileStorage,
     private val scope: CoroutineScope,
+    private val refreshOnInit: Boolean = true,
 ) : IDiaryViewModel {
     private val _state = MutableStateFlow(DiaryUiState(isLoading = true))
     override val state: StateFlow<DiaryUiState> = _state.asStateFlow()
     /** Bumped on every local diary mutation so in-flight refresh() cannot overwrite newer state. */
     private var dataGeneration = 0
+    private var diaryObserveJob: Job? = null
+    private var refreshJob: Job? = null
     private var activityPollingJob: Job? = null
     private var cachedEmulator: ActivityEmulator? = null
+    private var lastActivitySnapshot: ActivitySnapshot? = null
 
-    init { scope.launch { refresh() } }
+    init { if (refreshOnInit) scope.launch { refresh() } }
 
     override suspend fun refresh() {
+        refreshJob?.cancelAndJoin()
+        coroutineScope {
+            refreshJob = coroutineContext[Job]
+            refreshBody()
+        }
+    }
+
+    private suspend fun refreshBody() {
         val generation = ++dataGeneration
         val date = diaryRepository.currentDate()
-        _state.update { it.copy(isLoading = true, errorMessage = null) }
-        runCatching {
-            coroutineScope {
-                val day = async { diaryRepository.getToday() }
-                val activity = async { loadActivitySnapshot(fetchEmulator = true) }
-                DiaryLoadResult(day.await(), activity.await())
+        diaryObserveJob?.cancel()
+        val firstEmission = kotlinx.coroutines.CompletableDeferred<Unit>()
+        diaryObserveJob = scope.launch {
+            var signaled = false
+            diaryRepository.observeToday().collect { resource ->
+                if (generation != dataGeneration) return@collect
+                val day = resource.day
+                if (day == null) {
+                    _state.update {
+                        it.copy(
+                            isLoading = resource.isRefreshing,
+                            date = date,
+                            errorMessage = resource.error?.userMessage(),
+                        )
+                    }
+                } else {
+                    val snapshot = if (!signaled || lastActivitySnapshot == null) {
+                        loadActivitySnapshot(fetchEmulator = true).also { lastActivitySnapshot = it }
+                    } else {
+                        lastActivitySnapshot!!
+                    }
+                    val syncedDay = syncActivityIfNeeded(day, snapshot)
+                    applyActivitySnapshot(
+                        syncedDay,
+                        snapshot,
+                        isLoading = resource.isRefreshing && _state.value.day == null,
+                        date = date,
+                    )
+                    kkalLog(
+                        LOG_TAG,
+                        "diary emit date=$date eaten=${syncedDay.totalKcal} refreshing=${resource.isRefreshing} " +
+                            "source=${snapshot.resolved.source}",
+                    )
+                }
+                if (!signaled && (resource.day != null || !resource.isRefreshing)) {
+                    signaled = true
+                    firstEmission.complete(Unit)
+                }
             }
-        }.onSuccess { r ->
-            if (generation != dataGeneration) return@onSuccess
-            val syncedDay = syncActivityIfNeeded(r.day, r.snapshot)
-            applyActivitySnapshot(syncedDay, r.snapshot, isLoading = false, date = date)
-            kkalLog(
-                LOG_TAG,
-                "refresh done date=$date eaten=${syncedDay.totalKcal} source=${r.snapshot.resolved.source} " +
-                    "activity=${syncedDay.activityKcal} steps=${syncedDay.activitySteps}",
-            )
-        }.onFailure { e ->
-            if (generation != dataGeneration) return@onFailure
-            _state.update { it.copy(isLoading = false, date = date, errorMessage = e.userMessage()) }
-            kkalLog(LOG_TAG, "refresh fail ${e::class.simpleName}: ${e.message}")
         }
+        firstEmission.await()
     }
 
     override suspend fun refreshActivityOnly() {
@@ -182,6 +214,16 @@ class DiaryViewModel(
     }
 
     override fun clearError() { _state.update { it.copy(errorMessage = null) } }
+
+    /** Stops diary Flow collectors; used from unit tests to avoid leaking jobs in [runTest]. */
+    internal fun tearDownForTest() {
+        refreshJob?.cancel()
+        refreshJob = null
+        diaryObserveJob?.cancel()
+        diaryObserveJob = null
+        activityPollingJob?.cancel()
+        activityPollingJob = null
+    }
 
     override fun journalDayPatch(): DiaryDay? {
         val s = _state.value
@@ -297,8 +339,6 @@ class DiaryViewModel(
         is KkalScanException.Api -> message ?: if (isWorkoutParse) "Не удалось понять описание тренировки" else "Ошибка сервера"
         else -> message ?: "Неизвестная ошибка"
     }
-
-    private data class DiaryLoadResult(val day: DiaryDay, val snapshot: ActivitySnapshot)
 
     private data class ActivitySnapshot(
         val resolved: ru.kkalscan.domain.activity.ResolvedActivity,

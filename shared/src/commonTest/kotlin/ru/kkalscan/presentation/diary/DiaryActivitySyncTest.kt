@@ -32,14 +32,14 @@ class DiaryActivitySyncTest {
             permissionGranted = true,
             cumulativeSteps = 8750L,
         )
-        val vm = createDiaryViewModelForTest(
+        val vm = createDiaryViewModel(
             repo,
-            this,
             api,
             storage,
             localStepCounter = stepCounter,
             stepBaselineStorage = baselineStorage,
         )
+        vm.refresh()
         advanceUntilIdle()
 
         vm.state.value.day!!.activityKcal shouldBeGreaterThan 0

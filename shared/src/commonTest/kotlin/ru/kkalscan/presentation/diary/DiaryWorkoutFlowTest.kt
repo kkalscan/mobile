@@ -28,7 +28,7 @@ class DiaryWorkoutFlowTest {
         )
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY })
-        val vm = createDiaryViewModelForTest(repo, this, api, storage)
+        val vm = createDiaryViewModel(repo, api, storage)
         advanceUntilIdle()
 
         vm.addWorkout("Бег", 250)
@@ -55,9 +55,8 @@ class DiaryWorkoutFlowTest {
             permissionGranted = true,
             cumulativeSteps = 10_000L,
         )
-        val vm = createDiaryViewModelForTest(
+        val vm = createDiaryViewModel(
             repo,
-            this,
             api,
             storage,
             localStepCounter = stepCounter,
@@ -82,7 +81,7 @@ class DiaryWorkoutFlowTest {
         val api = FakeKkalScanApi(todayProvider = { TestApiFixtures.TODAY })
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val repo = DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY })
-        val vm = createDiaryViewModelForTest(repo, this, api, storage)
+        val vm = createDiaryViewModel(repo, api, storage)
         advanceUntilIdle()
 
         vm.parseWorkoutDescription("бег 30 минут")
@@ -114,7 +113,7 @@ class DiaryWorkoutFlowTest {
             DiaryRepository(api, storage, todayProvider = { TestApiFixtures.TODAY }),
             releaseInitRefresh,
         )
-        val vm = createDiaryViewModelForTest(repo, this, api, storage)
+        val vm = createDiaryViewModel(repo, api, storage)
 
         vm.parseWorkoutDescription("бег 30 минут")
         advanceUntilIdle()

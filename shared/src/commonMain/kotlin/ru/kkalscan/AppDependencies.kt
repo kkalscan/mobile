@@ -5,6 +5,8 @@ import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.data.api.KkalScanApi
 import ru.kkalscan.data.createHttpClient
+import ru.kkalscan.data.local.IDiaryLocalStore
+import ru.kkalscan.data.local.createDiaryLocalStore
 import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.FeatureSearchRepository
@@ -43,7 +45,8 @@ class AppDependencies(
     val apiConfig: IApiConfig = DefaultApiConfig,
     val deviceIdStorage: IDeviceIdStorage = createDeviceIdStorage(),
     val api: IKkalScanApi = KkalScanApi(createHttpClient(), apiConfig),
-    val diaryRepository: IDiaryRepository = DiaryRepository(api, deviceIdStorage),
+    val diaryLocalStore: IDiaryLocalStore = createDiaryLocalStore(),
+    val diaryRepository: IDiaryRepository = DiaryRepository(api, deviceIdStorage, diaryLocalStore),
     val scanRepository: IScanRepository = ScanRepository(api, deviceIdStorage),
     val subscriptionRepository: ISubscriptionRepository = SubscriptionRepository(api, deviceIdStorage),
     val insightRepository: IInsightRepository = InsightRepository(deviceIdStorage),

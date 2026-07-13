@@ -10,7 +10,7 @@ import ru.kkalscan.TestApiFixtures
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.data.storage.PersistentDeviceIdStorage
 import ru.kkalscan.domain.model.MealType
-import ru.kkalscan.presentation.diary.createDiaryViewModelForTest
+import ru.kkalscan.presentation.diary.createDiaryViewModel
 import ru.kkalscan.presentation.scan.ScanViewModel
 import kotlin.test.Test
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -133,8 +133,9 @@ class DiaryPersistenceFlowTest {
         )
         val diaryRepo = repository(api, storage)
         val scanRepo = ScanRepository(api, storage)
-        val diaryVm = createDiaryViewModelForTest(diaryRepo, this, api, storage)
+        val diaryVm = createDiaryViewModel(diaryRepo, api, storage)
         val scanVm = ScanViewModel(scanRepo, diaryRepo, this)
+        diaryVm.refresh()
         advanceUntilIdle()
 
         diaryVm.state.value.day!!.entries shouldHaveSize 0

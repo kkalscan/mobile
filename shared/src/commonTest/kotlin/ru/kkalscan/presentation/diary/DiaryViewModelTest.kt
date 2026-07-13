@@ -12,7 +12,6 @@ import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.domain.activity.ActivitySource
-import ru.kkalscan.presentation.diary.DiaryUiState
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
 import kotlin.test.Test
@@ -26,9 +25,9 @@ class DiaryViewModelTest {
         val repo = DiaryRepository(
             api,
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
-            { TestApiFixtures.TODAY },
+            todayProvider = { TestApiFixtures.TODAY },
         )
-        val vm = createDiaryViewModelForTest(repo, this, api)
+        val vm = createDiaryViewModel(repo, api)
         advanceUntilIdle()
         vm.refresh()
         advanceUntilIdle()
@@ -46,11 +45,14 @@ class DiaryViewModelTest {
         val repo = DiaryRepository(
             api,
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
-            { TestApiFixtures.TODAY },
+            todayProvider = { TestApiFixtures.TODAY },
         )
-        val vm = createDiaryViewModelForTest(repo, this, api)
+        val vm = createDiaryViewModel(repo, api)
+        advanceUntilIdle()
         vm.refresh()
+        advanceUntilIdle()
         vm.deleteEntry("entry-1")
+        advanceUntilIdle()
 
         vm.state.value.errorMessage shouldBe null
     }
@@ -66,7 +68,7 @@ class DiaryViewModelTest {
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = createDiaryViewModelForTest(repo, this, api)
+        val vm = createDiaryViewModel(repo, api)
         advanceUntilIdle()
 
         val scan = api.scanPhoto(storage.getDeviceId(), byteArrayOf(1), 0)
@@ -101,7 +103,8 @@ class DiaryViewModelTest {
         val repo = CountingDiaryRepository(
             DiaryRepository(api, storage, todayProvider = { today }),
         )
-        val vm = createDiaryViewModelForTest(repo, this, api)
+        val vm = createDiaryViewModel(repo, api)
+        vm.refresh()
         advanceUntilIdle()
 
         val fetchesBefore = repo.getTodayCalls
@@ -118,9 +121,9 @@ class DiaryViewModelTest {
         val repo = DiaryRepository(
             api,
             InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) },
-            { TestApiFixtures.TODAY },
+            todayProvider = { TestApiFixtures.TODAY },
         )
-        val vm = createDiaryViewModelForTest(repo, this, api)
+        val vm = createDiaryViewModel(repo, api)
         advanceUntilIdle()
         vm.refresh()
         advanceUntilIdle()
@@ -148,6 +151,11 @@ private class CountingDiaryRepository(
 ) : IDiaryRepository by delegate {
     var getTodayCalls = 0
         private set
+
+    override fun observeToday(timezoneOffsetMinutes: Int) = run {
+        getTodayCalls++
+        delegate.observeToday(timezoneOffsetMinutes)
+    }
 
     override suspend fun getToday(timezoneOffsetMinutes: Int): DiaryDay {
         getTodayCalls++

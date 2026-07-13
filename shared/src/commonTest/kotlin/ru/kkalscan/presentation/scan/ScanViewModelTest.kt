@@ -23,7 +23,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -40,7 +40,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -59,7 +59,7 @@ class ScanViewModelTest {
         val today = TestApiFixtures.TODAY
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val api = StatefulDiaryApi(diaryDate = today)
-        val diaryRepo = DiaryRepository(api, storage, { today })
+        val diaryRepo = DiaryRepository(api, storage, todayProvider = { today })
         val vm = ScanViewModel(ScanRepository(api, storage), diaryRepo, this)
 
         vm.describeText("тарелка борща")
@@ -79,7 +79,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -96,7 +96,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -113,7 +113,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -131,7 +131,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -148,7 +148,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 
@@ -165,7 +165,7 @@ class ScanViewModelTest {
         val storage = InMemoryDeviceIdStorage().apply { setDeviceId(TestApiFixtures.DEVICE_ID) }
         val vm = ScanViewModel(
             ScanRepository(TestApiFixtures.api(), storage),
-            DiaryRepository(TestApiFixtures.api(), storage, { TestApiFixtures.TODAY }),
+            DiaryRepository(TestApiFixtures.api(), storage, todayProvider = { TestApiFixtures.TODAY }),
             this,
         )
 

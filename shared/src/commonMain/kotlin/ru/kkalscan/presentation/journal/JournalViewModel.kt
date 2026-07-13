@@ -1,9 +1,13 @@
 package ru.kkalscan.presentation.journal
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DatePeriod
@@ -50,33 +54,62 @@ class JournalViewModel(
     private val insightRepository: IInsightRepository,
     private val scope: CoroutineScope,
     private val todayPatchProvider: () -> DiaryDay? = { null },
+    private val refreshOnInit: Boolean = true,
 ) : IJournalViewModel {
 
     private val _state = MutableStateFlow(JournalUiState())
     override val state: StateFlow<JournalUiState> = _state.asStateFlow()
+    private var weekObserveJob: Job? = null
+    private var refreshJob: Job? = null
 
     init {
-        scope.launch { refresh() }
+        if (refreshOnInit) scope.launch { refresh() }
     }
 
     override suspend fun refresh() {
+        refreshJob?.cancelAndJoin()
+        coroutineScope {
+            refreshJob = coroutineContext[Job]
+            refreshBody()
+        }
+    }
+
+    private suspend fun refreshBody() {
         val weekStart = _state.value.weekStart
+        weekObserveJob?.cancel()
         _state.update { it.copy(isLoading = true, errorMessage = null) }
-        runCatching { diaryRepository.getWeek(weekStart) }
-            .onSuccess { days ->
-                val merged = JournalDayMerger.mergeWeekWithTodayPatch(days, todayPatchProvider())
-                _state.update {
-                    it.copy(
-                        isLoading = false,
-                        week = StatsAggregator.weekStats(merged, weekStart),
-                    )
+        val firstReady = kotlinx.coroutines.CompletableDeferred<Unit>()
+        weekObserveJob = scope.launch {
+            val dates = WeekDates.weekFrom(WeekDates.parse(weekStart))
+            val flows = dates.map { date -> diaryRepository.observeDay(date) }
+            var signaled = false
+            combine(flows) { resources -> resources.toList() }.collect { resources ->
+                val days = resources.mapNotNull { it.day }
+                val refreshing = resources.any { it.isRefreshing }
+                val firstError = resources.firstOrNull { it.error != null && it.day == null }?.error
+                if (days.size == dates.size) {
+                    val merged = JournalDayMerger.mergeWeekWithTodayPatch(days, todayPatchProvider())
+                    _state.update {
+                        it.copy(
+                            isLoading = false,
+                            week = StatsAggregator.weekStats(merged, weekStart),
+                            errorMessage = null,
+                        )
+                    }
+                } else if (!refreshing && firstError != null) {
+                    _state.update {
+                        it.copy(isLoading = false, errorMessage = firstError.userMessage())
+                    }
+                } else {
+                    _state.update { it.copy(isLoading = days.isEmpty() && refreshing) }
+                }
+                if (!signaled && (days.size == dates.size || (!refreshing && firstError != null))) {
+                    signaled = true
+                    firstReady.complete(Unit)
                 }
             }
-            .onFailure { e ->
-                _state.update {
-                    it.copy(isLoading = false, errorMessage = e.userMessage())
-                }
-            }
+        }
+        firstReady.await()
     }
 
     override fun previousWeek() {
@@ -119,6 +152,14 @@ class JournalViewModel(
 
     override fun clearInsightError() {
         _state.update { it.copy(insightError = null) }
+    }
+
+    /** Stops week Flow collectors; used from unit tests to avoid leaking jobs in [runTest]. */
+    internal fun tearDownForTest() {
+        refreshJob?.cancel()
+        refreshJob = null
+        weekObserveJob?.cancel()
+        weekObserveJob = null
     }
 
     private fun Throwable.userMessage(): String = when (this) {
