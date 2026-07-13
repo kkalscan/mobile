@@ -11,6 +11,9 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.DirectionsWalk
+import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.LocalFireDepartment
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -19,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -29,6 +33,61 @@ enum class KkalNavIconType {
     Today,
     Journal,
     Profile,
+}
+
+enum class KkalActivityIconKind {
+    Metabolism,
+    Steps,
+    Workout,
+}
+
+private data class ActivityIconStyle(
+    val icon: ImageVector,
+    val gradient: List<Color>,
+    val tint: Color,
+    val contentDescription: String,
+)
+
+private fun activityIconStyle(kind: KkalActivityIconKind): ActivityIconStyle = when (kind) {
+    KkalActivityIconKind.Metabolism -> ActivityIconStyle(
+        icon = Icons.Outlined.LocalFireDepartment,
+        gradient = listOf(KkalScanColors.PrimaryContainer, KkalScanColors.PrimaryContainer.copy(alpha = 0.55f)),
+        tint = KkalScanColors.Primary,
+        contentDescription = "Основной обмен",
+    )
+    KkalActivityIconKind.Steps -> ActivityIconStyle(
+        icon = Icons.Outlined.DirectionsWalk,
+        gradient = listOf(KkalScanColors.SecondaryContainer, KkalScanColors.SecondaryContainer.copy(alpha = 0.55f)),
+        tint = KkalScanColors.Secondary,
+        contentDescription = "Шаги",
+    )
+    KkalActivityIconKind.Workout -> ActivityIconStyle(
+        icon = Icons.Outlined.FitnessCenter,
+        gradient = listOf(KkalScanColors.ProContainer, KkalScanColors.ProContainer.copy(alpha = 0.55f)),
+        tint = KkalScanColors.Pro,
+        contentDescription = "Тренировка",
+    )
+}
+
+@Composable
+fun KkalActivityIconBadge(
+    kind: KkalActivityIconKind,
+    modifier: Modifier = Modifier,
+) {
+    val style = activityIconStyle(kind)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(Brush.linearGradient(style.gradient)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            imageVector = style.icon,
+            contentDescription = style.contentDescription,
+            tint = style.tint,
+            modifier = Modifier.size(26.dp),
+        )
+    }
 }
 
 @Composable

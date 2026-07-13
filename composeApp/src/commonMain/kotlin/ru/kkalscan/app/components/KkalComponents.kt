@@ -574,6 +574,7 @@ fun KkalFoodCard(
     macros: Triple<Double, Double, Double>? = null,
     fiber: Double? = null,
     iconLabel: String = "K",
+    activityIcon: KkalActivityIconKind? = null,
 ) {
     Surface(
         modifier = Modifier
@@ -587,7 +588,11 @@ fun KkalFoodCard(
             Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            KkalIconBadge(label = iconLabel, modifier = Modifier.size(KkalScanDimens.thumbSize))
+            if (activityIcon != null) {
+                KkalActivityIconBadge(activityIcon, modifier = Modifier.size(KkalScanDimens.thumbSize))
+            } else {
+                KkalIconBadge(label = iconLabel, modifier = Modifier.size(KkalScanDimens.thumbSize))
+            }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
                 Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)

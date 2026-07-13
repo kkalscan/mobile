@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.DiaryEntryCard
+import ru.kkalscan.app.components.KkalActivityIconKind
 import ru.kkalscan.app.components.KkalCalorieBalanceCard
 import ru.kkalscan.app.components.KkalEmptyState
 import ru.kkalscan.app.components.KkalErrorBanner
@@ -140,7 +141,13 @@ fun DiaryScreen(
 }
 
 @Composable private fun WorkoutEntryCard(entry: WorkoutEntry) {
-    KkalFoodCard(entry.name, entry.kcal, "Сожжено", tipBadge = "Тренировка", iconLabel = "W")
+    KkalFoodCard(
+        title = entry.name,
+        kcal = entry.kcal,
+        subtitle = "Сожжено",
+        tipBadge = "Тренировка",
+        activityIcon = KkalActivityIconKind.Workout,
+    )
 }
 
 @Composable private fun StepsEntryCard(
@@ -156,7 +163,13 @@ fun DiaryScreen(
             ActivitySource.None -> Unit
         }
     }.joinToString(" · ").ifBlank { "Активность за день" }
-    KkalFoodCard("Шаги", kcal, subtitle, tipBadge = "Активность", iconLabel = "S")
+    KkalFoodCard(
+        title = "Шаги",
+        kcal = kcal,
+        subtitle = subtitle,
+        tipBadge = "Активность",
+        activityIcon = KkalActivityIconKind.Steps,
+    )
 }
 
 @Composable private fun MetabolismEntryCard(
@@ -168,7 +181,7 @@ fun DiaryScreen(
         kcal = restingKcal,
         subtitle = "BMR $bmrKcal ккал/день · с начала суток",
         tipBadge = "BMR",
-        iconLabel = "B",
+        activityIcon = KkalActivityIconKind.Metabolism,
     )
 }
 private data class MacroSummary(val protein: Double, val fat: Double, val carbs: Double, val fiber: Double)
