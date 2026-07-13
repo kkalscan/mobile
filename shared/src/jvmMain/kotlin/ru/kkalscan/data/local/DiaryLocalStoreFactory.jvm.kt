@@ -6,13 +6,19 @@ import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 
-actual fun createDiaryLocalStore(): IDiaryLocalStore {
+private val database: KkalScanDatabase by lazy {
     val dbFile = File(System.getProperty("java.io.tmpdir"), "kkalscan.db")
-    val database = Room.databaseBuilder<KkalScanDatabase>(
+    Room.databaseBuilder<KkalScanDatabase>(
         name = dbFile.absolutePath,
     )
         .setDriver(BundledSQLiteDriver())
         .setQueryCoroutineContext(Dispatchers.IO)
+        .addMigrations(MIGRATION_1_2)
         .build()
-    return createRoomDiaryLocalStore(database)
 }
+
+actual fun createDiaryLocalStore(): IDiaryLocalStore =
+    createRoomDiaryLocalStore(database)
+
+actual fun createProfileLocalStore(): IProfileLocalStore =
+    createRoomProfileLocalStore(database)

@@ -5,10 +5,11 @@ import androidx.room3.Database
 import androidx.room3.RoomDatabase
 import androidx.room3.RoomDatabaseConstructor
 
-@Database(entities = [DiaryDayEntity::class], version = 1, exportSchema = false)
+@Database(entities = [DiaryDayEntity::class, ProfileSubscriptionEntity::class], version = 2, exportSchema = false)
 @ConstructedBy(KkalScanDatabaseConstructor::class)
 abstract class KkalScanDatabase : RoomDatabase() {
     abstract fun diaryDao(): DiaryDao
+    abstract fun profileDao(): ProfileDao
 }
 
 @Suppress("KotlinNoActualForExpect")
