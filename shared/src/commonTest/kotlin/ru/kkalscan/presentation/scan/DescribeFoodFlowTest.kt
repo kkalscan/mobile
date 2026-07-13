@@ -56,6 +56,7 @@ class DescribeFoodFlowTest {
         val diaryRepo = DiaryRepository(api, storage, todayProvider = { today })
         val scanVm = ScanViewModel(scanRepo, diaryRepo, this)
         val diaryVm = createDiaryViewModel(diaryRepo, api, storage)
+        diaryVm.refresh()
         advanceUntilIdle()
 
         diaryVm.state.value.day!!.entries shouldHaveSize 0
