@@ -33,8 +33,10 @@ import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
+import ru.kkalscan.domain.model.PromoApplyResult
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
+import ru.kkalscan.domain.model.SubscriptionOffers
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.domain.activity.ActivitySource
@@ -152,6 +154,12 @@ class KkalScanApi(
 
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         apiGet("/subscription/status", deviceId)
+
+    override suspend fun getSubscriptionOffers(deviceId: String): SubscriptionOffers =
+        apiGet("/subscription/offers?device_id=${deviceId.encodeURLParameter()}", deviceId)
+
+    override suspend fun applyPromo(deviceId: String, promoCode: String): PromoApplyResult =
+        postJson("/promo/apply", PromoApplyRequest(device_id = deviceId, promo_code = promoCode))
 
     override suspend fun startProSubscription(deviceId: String, tariff: String): ProSubscriptionStart =
         postJson("/payments/pro/start", ProSubscriptionStartRequest(deviceId, tariff))
@@ -280,6 +288,12 @@ class KkalScanApi(
     private data class ProSubscriptionStartRequest(
         val device_id: String,
         val tariff: String = "pro_monthly_199",
+    )
+
+    @Serializable
+    private data class PromoApplyRequest(
+        val device_id: String,
+        val promo_code: String,
     )
 
     @Serializable

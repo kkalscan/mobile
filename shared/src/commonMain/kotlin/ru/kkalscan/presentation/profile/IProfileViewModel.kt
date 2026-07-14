@@ -3,6 +3,7 @@ package ru.kkalscan.presentation.profile
 import ru.kkalscan.domain.activity.EnergyProfile
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.ProSubscriptionStart
+import ru.kkalscan.domain.model.SubscriptionOffer
 import ru.kkalscan.domain.model.SubscriptionStatus
 
 data class ProfileUiState(
@@ -14,6 +15,12 @@ data class ProfileUiState(
     /** UI should clear focus from weight/height/age fields, then call [IProfileViewModel.consumeClearEnergyFieldFocus]. */
     val clearEnergyFieldFocus: Boolean = false,
     val errorMessage: String? = null,
+    val offers: List<SubscriptionOffer> = emptyList(),
+    val offersLoading: Boolean = false,
+    val promoApplying: Boolean = false,
+    val promoError: String? = null,
+    val boundPromoCode: String? = null,
+    val boundDiscountPercent: Int = 0,
     val bugReportSubmitting: Boolean = false,
     val bugReportSuccess: BugReportResult? = null,
     val bugReportError: String? = null,
@@ -22,10 +29,13 @@ data class ProfileUiState(
 interface IProfileViewModel {
     val state: kotlinx.coroutines.flow.StateFlow<ProfileUiState>
     suspend fun refresh()
-    suspend fun startProSubscription(): ProSubscriptionStart
+    suspend fun loadOffers()
+    suspend fun applyPromo(promoCode: String)
+    suspend fun startProSubscription(tariff: String): ProSubscriptionStart
     suspend fun submitBugReport(email: String, description: String, screenshots: List<ByteArray>)
     fun saveEnergyProfile(profile: EnergyProfile): Boolean
     fun clearProfileSaved()
     fun consumeClearEnergyFieldFocus()
     fun clearBugReportFeedback()
+    fun clearPromoError()
 }

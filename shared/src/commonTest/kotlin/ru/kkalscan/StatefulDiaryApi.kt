@@ -16,8 +16,11 @@ import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
+import ru.kkalscan.domain.model.PromoApplyResult
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
+import ru.kkalscan.domain.model.SubscriptionOffer
+import ru.kkalscan.domain.model.SubscriptionOffers
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.domain.model.WorkoutParseResult
@@ -238,6 +241,27 @@ class StatefulDiaryApi(
     override suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus =
         SubscriptionStatus(isPro = false, accountLinked = false)
 
+    override suspend fun getSubscriptionOffers(deviceId: String): SubscriptionOffers {
+        val bound = promoByDevice[deviceId]
+        val discount = bound?.discountPercent ?: 0
+        return SubscriptionOffers(
+            offers = listOf(
+                offer("pro_monthly_199", "KkalScan Pro — месяц", 200, discount, bound?.promoCode),
+                offer("pro_lifetime_5000", "KkalScan Pro — навсегда", 5000, discount, bound?.promoCode),
+            ),
+        )
+    }
+
+    override suspend fun applyPromo(deviceId: String, promoCode: String): PromoApplyResult {
+        val promo = if (promoCode.trim().equals("Lida", ignoreCase = true)) {
+            PromoApplyResult(promoCode = "Lida", discountPercent = 50)
+        } else {
+            throw ru.kkalscan.domain.error.KkalScanException.Api("Неверный промокод")
+        }
+        promoByDevice[deviceId] = promo
+        return promo
+    }
+
     override suspend fun startProSubscription(deviceId: String, tariff: String): ProSubscriptionStart =
         ProSubscriptionStart(
             isPro = true,
@@ -246,6 +270,27 @@ class StatefulDiaryApi(
             paymentRequired = false,
             message = "Pro активирован",
         )
+
+    private fun offer(
+        tariff: String,
+        title: String,
+        priceRub: Int,
+        discount: Int,
+        promoCode: String?,
+    ): SubscriptionOffer {
+        val amountRub = priceRub - (priceRub * discount / 100)
+        return SubscriptionOffer(
+            tariff = tariff,
+            title = title,
+            priceRub = priceRub,
+            amountRub = amountRub,
+            amountKopecks = amountRub * 100,
+            discountPercent = discount,
+            promoCode = promoCode?.takeIf { discount > 0 },
+        )
+    }
+
+    private val promoByDevice = ConcurrentHashMap<String, PromoApplyResult>()
 
     override suspend fun searchFood(
         deviceId: String,

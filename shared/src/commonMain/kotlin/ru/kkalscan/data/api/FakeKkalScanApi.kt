@@ -15,8 +15,11 @@ import ru.kkalscan.domain.model.DiaryEntry
 import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
+import ru.kkalscan.domain.model.PromoApplyResult
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
+import ru.kkalscan.domain.model.SubscriptionOffer
+import ru.kkalscan.domain.model.SubscriptionOffers
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutEntry
 import ru.kkalscan.domain.model.WorkoutParseResult
@@ -38,6 +41,10 @@ class FakeKkalScanApi(
     private val entriesByKey = mutableMapOf<String, MutableList<DiaryEntry>>()
     private val workoutsByKey = mutableMapOf<String, MutableList<WorkoutEntry>>()
     private val activityByKey = mutableMapOf<String, ActivitySnapshot>()
+    private val promoByDevice = mutableMapOf<String, PromoApplyResult>()
+    private val seededPromos = mapOf(
+        "lida" to PromoApplyResult(promoCode = "Lida", discountPercent = 50),
+    )
     private val scansById = mutableMapOf<String, ScanResult>()
     private val weekSeedMarkers = mutableSetOf<String>()
     private val seedMutex = Mutex()
@@ -254,6 +261,36 @@ class FakeKkalScanApi(
             accountLinked = false,
         )
 
+    override suspend fun getSubscriptionOffers(deviceId: String): SubscriptionOffers {
+        val bound = promoByDevice[deviceId]
+        val discount = bound?.discountPercent ?: 0
+        return SubscriptionOffers(
+            offers = listOf(
+                fakeOffer(
+                    tariff = "pro_monthly_199",
+                    title = "KkalScan Pro — месяц",
+                    priceRub = 200,
+                    discount = discount,
+                    promoCode = bound?.promoCode,
+                ),
+                fakeOffer(
+                    tariff = "pro_lifetime_5000",
+                    title = "KkalScan Pro — навсегда",
+                    priceRub = 5000,
+                    discount = discount,
+                    promoCode = bound?.promoCode,
+                ),
+            ),
+        )
+    }
+
+    override suspend fun applyPromo(deviceId: String, promoCode: String): PromoApplyResult {
+        val promo = seededPromos[promoCode.trim().lowercase()]
+            ?: throw ru.kkalscan.domain.error.KkalScanException.Api("Неверный промокод")
+        promoByDevice[deviceId] = promo
+        return promo
+    }
+
     override suspend fun startProSubscription(deviceId: String, tariff: String): ProSubscriptionStart {
         proDevices.add(deviceId)
         return ProSubscriptionStart(
@@ -262,6 +299,25 @@ class FakeKkalScanApi(
             tariff = tariff,
             paymentRequired = false,
             message = "Pro активирован",
+        )
+    }
+
+    private fun fakeOffer(
+        tariff: String,
+        title: String,
+        priceRub: Int,
+        discount: Int,
+        promoCode: String?,
+    ): SubscriptionOffer {
+        val amountRub = priceRub - (priceRub * discount / 100)
+        return SubscriptionOffer(
+            tariff = tariff,
+            title = title,
+            priceRub = priceRub,
+            amountRub = amountRub,
+            amountKopecks = amountRub * 100,
+            discountPercent = discount,
+            promoCode = promoCode?.takeIf { discount > 0 },
         )
     }
 

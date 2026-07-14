@@ -9,7 +9,7 @@ import ru.kkalscan.domain.model.SubscriptionStatus
 
 interface ISubscriptionRepository {
     suspend fun getStatus(): SubscriptionStatus
-    suspend fun startPro(): ProSubscriptionStart
+    suspend fun startPro(tariff: String = "pro_monthly_199"): ProSubscriptionStart
 }
 
 class SubscriptionRepository(
@@ -28,9 +28,9 @@ class SubscriptionRepository(
             ?: error("Subscription status missing after refresh")
     }
 
-    override suspend fun startPro(): ProSubscriptionStart {
+    override suspend fun startPro(tariff: String): ProSubscriptionStart {
         val deviceId = deviceIdStorage.getDeviceId()
-        return api.startProSubscription(deviceId)
+        return api.startProSubscription(deviceId, tariff)
     }
 
     private suspend fun refreshFromNetwork() {

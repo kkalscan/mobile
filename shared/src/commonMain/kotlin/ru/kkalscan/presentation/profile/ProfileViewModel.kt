@@ -79,8 +79,61 @@ class ProfileViewModel(
         firstEmission.await()
     }
 
-    override suspend fun startProSubscription(): ProSubscriptionStart =
-        profileRepository.startPro()
+    override suspend fun startProSubscription(tariff: String): ProSubscriptionStart =
+        profileRepository.startPro(tariff)
+
+    override suspend fun loadOffers() {
+        _state.update { it.copy(offersLoading = true, promoError = null) }
+        runCatching {
+            profileRepository.getOffers()
+        }.onSuccess { result ->
+            val first = result.offers.firstOrNull()
+            _state.update {
+                it.copy(
+                    offersLoading = false,
+                    offers = result.offers,
+                    boundPromoCode = first?.promoCode,
+                    boundDiscountPercent = first?.discountPercent ?: 0,
+                )
+            }
+        }.onFailure { e ->
+            _state.update {
+                it.copy(
+                    offersLoading = false,
+                    promoError = e.userMessage(),
+                )
+            }
+        }
+    }
+
+    override suspend fun applyPromo(promoCode: String) {
+        _state.update { it.copy(promoApplying = true, promoError = null) }
+        runCatching {
+            profileRepository.applyPromo(promoCode)
+            profileRepository.getOffers()
+        }.onSuccess { offers ->
+            val first = offers.offers.firstOrNull()
+            _state.update {
+                it.copy(
+                    promoApplying = false,
+                    offers = offers.offers,
+                    boundPromoCode = first?.promoCode,
+                    boundDiscountPercent = first?.discountPercent ?: 0,
+                )
+            }
+        }.onFailure { e ->
+            _state.update {
+                it.copy(
+                    promoApplying = false,
+                    promoError = e.userMessage(),
+                )
+            }
+        }
+    }
+
+    override fun clearPromoError() {
+        _state.update { it.copy(promoError = null) }
+    }
 
     override suspend fun submitBugReport(
         email: String,

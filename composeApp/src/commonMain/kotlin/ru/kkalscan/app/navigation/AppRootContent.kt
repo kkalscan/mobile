@@ -107,11 +107,11 @@ fun AppRootContent(
         }
     }
 
-    val startProPayment: () -> Unit = {
+    val startProPayment: (String) -> Unit = { tariff ->
         KkalAnalytics.reportAction(AnalyticsEvents.PRO_CLICK)
         scope.launch {
             runCatching {
-                profileViewModel.startProSubscription()
+                profileViewModel.startProSubscription(tariff)
             }.onSuccess { result ->
                 val paymentUrl = result.paymentUrl
                 if (result.paymentRequired && !paymentUrl.isNullOrBlank()) {
@@ -399,6 +399,7 @@ fun AppRootContent(
             AppScreen.Paywall -> {
                 MaestroScreenHook("paywall-screen feature-search-bar")
                 PaywallScreen(
+                    viewModel = profileViewModel,
                     scansLeft = scanState.scansLeft,
                     onWatchAd = {
                         KkalAnalytics.reportAction(AnalyticsEvents.AD_BONUS_CLICK)

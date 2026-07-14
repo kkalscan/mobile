@@ -135,3 +135,25 @@ data class ProSubscriptionStart(
     @SerialName("payment_id") val paymentId: String? = null,
     val message: String? = null,
 )
+
+@Serializable
+data class SubscriptionOffer(
+    val tariff: String,
+    val title: String,
+    @SerialName("price_rub") val priceRub: Int,
+    @SerialName("amount_rub") val amountRub: Int,
+    @SerialName("amount_kopecks") val amountKopecks: Int,
+    @SerialName("discount_percent") val discountPercent: Int = 0,
+    @SerialName("promo_code") val promoCode: String? = null,
+)
+
+@Serializable
+data class SubscriptionOffers(
+    val offers: List<SubscriptionOffer>,
+)
+
+@Serializable
+data class PromoApplyResult(
+    @SerialName("promo_code") val promoCode: String,
+    @SerialName("discount_percent") val discountPercent: Int,
+)

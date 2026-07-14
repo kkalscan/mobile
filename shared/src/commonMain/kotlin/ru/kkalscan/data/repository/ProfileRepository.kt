@@ -12,6 +12,8 @@ import ru.kkalscan.data.local.InMemoryProfileLocalStore
 import ru.kkalscan.data.local.ProfileResource
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.domain.model.ProSubscriptionStart
+import ru.kkalscan.domain.model.PromoApplyResult
+import ru.kkalscan.domain.model.SubscriptionOffers
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.util.kkalLog
 import ru.kkalscan.util.maskDeviceId
@@ -19,7 +21,9 @@ import ru.kkalscan.util.maskDeviceId
 interface IProfileRepository {
     fun observeProfile(timezoneOffsetMinutes: Int = currentTimezoneOffsetMinutes()): Flow<ProfileResource>
     suspend fun getStatus(): SubscriptionStatus
-    suspend fun startPro(): ProSubscriptionStart
+    suspend fun getOffers(): SubscriptionOffers
+    suspend fun applyPromo(promoCode: String): PromoApplyResult
+    suspend fun startPro(tariff: String): ProSubscriptionStart
 }
 
 class ProfileRepository(
@@ -77,9 +81,32 @@ class ProfileRepository(
             ?: error("Subscription status missing after refresh")
     }
 
-    override suspend fun startPro(): ProSubscriptionStart {
+    override suspend fun getOffers(): SubscriptionOffers {
         val deviceId = deviceIdStorage.getDeviceId()
-        return api.startProSubscription(deviceId)
+        val offers = api.getSubscriptionOffers(deviceId)
+        kkalLog(
+            "Profile",
+            "getOffers device=${maskDeviceId(deviceId)} count=${offers.offers.size} " +
+                "discount=${offers.offers.firstOrNull()?.discountPercent ?: 0}",
+        )
+        return offers
+    }
+
+    override suspend fun applyPromo(promoCode: String): PromoApplyResult {
+        val deviceId = deviceIdStorage.getDeviceId()
+        val result = api.applyPromo(deviceId, promoCode)
+        kkalLog(
+            "Profile",
+            "applyPromo device=${maskDeviceId(deviceId)} code=${result.promoCode} " +
+                "discount=${result.discountPercent}",
+        )
+        return result
+    }
+
+    override suspend fun startPro(tariff: String): ProSubscriptionStart {
+        val deviceId = deviceIdStorage.getDeviceId()
+        kkalLog("Profile", "startPro device=${maskDeviceId(deviceId)} tariff=$tariff")
+        return api.startProSubscription(deviceId, tariff)
     }
 
     private suspend fun refreshSubscriptionFromNetwork() {

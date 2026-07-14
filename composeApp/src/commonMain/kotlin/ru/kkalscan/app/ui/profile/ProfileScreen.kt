@@ -18,16 +18,19 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import ru.kkalscan.analytics.AnalyticsEvents
 import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.platform.appVersionInfo
@@ -41,6 +44,8 @@ import ru.kkalscan.app.platform.PhotoPickSource
 import ru.kkalscan.app.platform.rememberPhotoPicker
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
+import ru.kkalscan.app.ui.paywall.OfferButtons
+import ru.kkalscan.app.ui.paywall.PromoCodeSection
 import ru.kkalscan.domain.activity.EnergyProfile
 import ru.kkalscan.presentation.profile.IProfileViewModel
 import ru.kkalscan.presentation.profile.dailyBmrKcal
@@ -49,7 +54,7 @@ import ru.kkalscan.presentation.profile.dailyBmrKcal
 fun ProfileScreen(
     viewModel: IProfileViewModel,
     onRefresh: () -> Unit,
-    onBuyPro: () -> Unit,
+    onBuyPro: (tariff: String) -> Unit,
     onSubmitBugReport: (email: String, description: String, screenshots: List<ByteArray>) -> Unit,
     onProfileSaved: () -> Unit = {},
     scanErrorMessage: String? = null,
@@ -58,6 +63,14 @@ fun ProfileScreen(
     val state by viewModel.state.collectAsState()
     var showBugReportDialog by remember { mutableStateOf(false) }
     var pendingScreenshots by remember { mutableStateOf(listOf<ByteArray>()) }
+    var promoInput by remember { mutableStateOf("") }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(state.status?.isPro) {
+        if (state.status?.isPro != true) {
+            viewModel.loadOffers()
+        }
+    }
 
     val pickScreenshot = rememberPhotoPicker(PhotoPickSource.Gallery) { bytes ->
         if (bytes != null && pendingScreenshots.size < 3) {
@@ -147,16 +160,28 @@ fun ProfileScreen(
                     KkalTipCard(
                         number = "",
                         badgeIcon = Icons.Outlined.Star,
-                        title = "KkalScan Pro — 199 ₽/мес",
+                        title = "KkalScan Pro",
                         body = "Безлимитные сканы каждый день и сохранение истории в облаке",
                     )
                     Spacer(Modifier.height(12.dp))
-                    KkalPrimaryButton(
-                        text = "Оформить Pro",
-                        onClick = onBuyPro,
-                        containerColor = KkalScanColors.Pro,
+                    PromoCodeSection(
+                        promoInput = promoInput,
+                        onPromoInputChange = {
+                            promoInput = it
+                            viewModel.clearPromoError()
+                        },
+                        applying = state.promoApplying,
+                        error = state.promoError,
+                        boundPromoCode = state.boundPromoCode,
+                        boundDiscountPercent = state.boundDiscountPercent,
+                        onApply = { scope.launch { viewModel.applyPromo(promoInput) } },
                     )
                     Spacer(Modifier.height(12.dp))
+                    OfferButtons(
+                        offers = state.offers,
+                        loading = state.offersLoading,
+                        onBuyPro = onBuyPro,
+                    )
                 }
                 KkalTipCard(
                     number = "",

@@ -9,8 +9,10 @@ import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
+import ru.kkalscan.domain.model.PromoApplyResult
 import ru.kkalscan.domain.model.ScanBonusResult
 import ru.kkalscan.domain.model.ScanResult
+import ru.kkalscan.domain.model.SubscriptionOffers
 import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.domain.activity.ActivitySource
@@ -40,6 +42,8 @@ interface IKkalScanApi {
         timezoneOffsetMinutes: Int,
     ): DiaryDay
     suspend fun getSubscriptionStatus(deviceId: String): SubscriptionStatus
+    suspend fun getSubscriptionOffers(deviceId: String): SubscriptionOffers
+    suspend fun applyPromo(deviceId: String, promoCode: String): PromoApplyResult
     suspend fun startProSubscription(deviceId: String, tariff: String = "pro_monthly_199"): ProSubscriptionStart
     suspend fun submitBugReport(
         deviceId: String,
