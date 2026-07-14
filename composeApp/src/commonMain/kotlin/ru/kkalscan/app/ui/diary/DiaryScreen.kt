@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -28,6 +27,7 @@ import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalFoodCard
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPageHeader
+import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryDay
@@ -112,12 +112,11 @@ fun DiaryScreen(
                     Spacer(Modifier.height(16.dp))
                 }
                 if (state.showActivityPermissionButton) {
-                    OutlinedButton(
+                    KkalPrimaryButton(
+                        text = "Разрешить считать шаги",
                         onClick = onRequestActivityRecognition,
-                        modifier = Modifier.fillMaxWidth().testTag("activity-recognition-request"),
-                    ) {
-                        Text("Разрешить считать шаги")
-                    }
+                        modifier = Modifier.testTag("activity-recognition-request"),
+                    )
                     Spacer(Modifier.height(16.dp))
                 }
                 KkalHeroCard(
