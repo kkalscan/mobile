@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.components.KkalFoodCard
+import ru.kkalscan.app.components.toMealIconKind
 import ru.kkalscan.app.components.KkalHeroCard
 import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.KkalPageHeader
@@ -74,6 +75,7 @@ fun ResultScreen(
                 subtitle = "${dish.grams} г",
                 macros = Triple(dish.protein, dish.fat, dish.carbs),
                 fiber = dish.fiber,
+                mealIcon = state.selectedMealType.toMealIconKind(),
             )
             Spacer(Modifier.height(12.dp))
         }

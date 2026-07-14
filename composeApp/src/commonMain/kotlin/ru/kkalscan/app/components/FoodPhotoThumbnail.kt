@@ -18,9 +18,10 @@ expect fun decodeImageBitmap(bytes: ByteArray): ImageBitmap?
 @Composable
 fun FoodPhotoThumbnail(
     photoBytes: ByteArray?,
-    fallbackLabel: String,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    fallbackLabel: String = "K",
+    mealIcon: KkalMealIconKind? = null,
 ) {
     val bitmap = remember(photoBytes) {
         photoBytes?.let { decodeImageBitmap(it) }
@@ -34,6 +35,8 @@ fun FoodPhotoThumbnail(
                 .background(KkalScanColors.Outline.copy(alpha = 0.15f)),
             contentScale = ContentScale.Crop,
         )
+    } else if (mealIcon != null) {
+        KkalMealIconBadge(kind = mealIcon, modifier = modifier)
     } else {
         KkalIconBadge(label = fallbackLabel, modifier = modifier)
     }

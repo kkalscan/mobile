@@ -575,6 +575,7 @@ fun KkalFoodCard(
     fiber: Double? = null,
     iconLabel: String = "K",
     activityIcon: KkalActivityIconKind? = null,
+    mealIcon: KkalMealIconKind? = null,
 ) {
     Surface(
         modifier = Modifier
@@ -588,10 +589,10 @@ fun KkalFoodCard(
             Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            if (activityIcon != null) {
-                KkalActivityIconBadge(activityIcon, modifier = Modifier.size(KkalScanDimens.thumbSize))
-            } else {
-                KkalIconBadge(label = iconLabel, modifier = Modifier.size(KkalScanDimens.thumbSize))
+            when {
+                activityIcon != null -> KkalActivityIconBadge(activityIcon, modifier = Modifier.size(KkalScanDimens.thumbSize))
+                mealIcon != null -> KkalMealIconBadge(mealIcon, modifier = Modifier.size(KkalScanDimens.thumbSize))
+                else -> KkalIconBadge(label = iconLabel, modifier = Modifier.size(KkalScanDimens.thumbSize))
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
@@ -663,12 +664,9 @@ fun DiaryEntryCard(entry: DiaryEntry) {
         tipBadge = entry.mealType.label(),
         macros = dish?.let { Triple(it.protein, it.fat, it.carbs) },
         fiber = dish?.fiber,
-        iconLabel = dishIconLabel(dish?.name),
+        mealIcon = entry.mealType.toMealIconKind(),
     )
 }
-
-private fun dishIconLabel(name: String?): String =
-    name?.firstOrNull()?.uppercaseChar()?.toString() ?: "K"
 
 @Composable
 fun KkalPrimaryButton(

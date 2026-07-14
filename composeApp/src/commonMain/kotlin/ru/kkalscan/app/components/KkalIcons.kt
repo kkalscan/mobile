@@ -11,9 +11,13 @@ import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.CalendarToday
+import androidx.compose.material.icons.outlined.Cookie
 import androidx.compose.material.icons.outlined.DirectionsWalk
+import androidx.compose.material.icons.outlined.DinnerDining
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.FreeBreakfast
 import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.LunchDining
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +32,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ru.kkalscan.app.theme.KkalScanColors
+import ru.kkalscan.domain.model.MealType
 
 enum class KkalNavIconType {
     Today,
@@ -41,40 +46,83 @@ enum class KkalActivityIconKind {
     Workout,
 }
 
-private data class ActivityIconStyle(
+enum class KkalMealIconKind {
+    Breakfast,
+    Lunch,
+    Dinner,
+    Snack,
+}
+
+fun MealType.toMealIconKind(): KkalMealIconKind = when (this) {
+    MealType.breakfast -> KkalMealIconKind.Breakfast
+    MealType.lunch -> KkalMealIconKind.Lunch
+    MealType.dinner -> KkalMealIconKind.Dinner
+    MealType.snack -> KkalMealIconKind.Snack
+}
+
+private data class ThemedIconStyle(
     val icon: ImageVector,
     val gradient: List<Color>,
     val tint: Color,
     val contentDescription: String,
 )
 
-private fun activityIconStyle(kind: KkalActivityIconKind): ActivityIconStyle = when (kind) {
-    KkalActivityIconKind.Metabolism -> ActivityIconStyle(
+private fun containerGradient(container: Color): List<Color> =
+    listOf(container, container.copy(alpha = 0.55f))
+
+private fun activityIconStyle(kind: KkalActivityIconKind): ThemedIconStyle = when (kind) {
+    KkalActivityIconKind.Metabolism -> ThemedIconStyle(
         icon = Icons.Outlined.LocalFireDepartment,
-        gradient = listOf(KkalScanColors.PrimaryContainer, KkalScanColors.PrimaryContainer.copy(alpha = 0.55f)),
+        gradient = containerGradient(KkalScanColors.PrimaryContainer),
         tint = KkalScanColors.Primary,
         contentDescription = "Основной обмен",
     )
-    KkalActivityIconKind.Steps -> ActivityIconStyle(
+    KkalActivityIconKind.Steps -> ThemedIconStyle(
         icon = Icons.Outlined.DirectionsWalk,
-        gradient = listOf(KkalScanColors.SecondaryContainer, KkalScanColors.SecondaryContainer.copy(alpha = 0.55f)),
+        gradient = containerGradient(KkalScanColors.SecondaryContainer),
         tint = KkalScanColors.Secondary,
         contentDescription = "Шаги",
     )
-    KkalActivityIconKind.Workout -> ActivityIconStyle(
+    KkalActivityIconKind.Workout -> ThemedIconStyle(
         icon = Icons.Outlined.FitnessCenter,
-        gradient = listOf(KkalScanColors.ProContainer, KkalScanColors.ProContainer.copy(alpha = 0.55f)),
+        gradient = containerGradient(KkalScanColors.ProContainer),
         tint = KkalScanColors.Pro,
         contentDescription = "Тренировка",
     )
 }
 
+private fun mealIconStyle(kind: KkalMealIconKind): ThemedIconStyle = when (kind) {
+    KkalMealIconKind.Breakfast -> ThemedIconStyle(
+        icon = Icons.Outlined.FreeBreakfast,
+        gradient = containerGradient(KkalScanColors.TertiaryContainer),
+        tint = Color(0xFFD4A800),
+        contentDescription = "Завтрак",
+    )
+    KkalMealIconKind.Lunch -> ThemedIconStyle(
+        icon = Icons.Outlined.LunchDining,
+        gradient = containerGradient(KkalScanColors.PrimaryContainer),
+        tint = KkalScanColors.Primary,
+        contentDescription = "Обед",
+    )
+    KkalMealIconKind.Dinner -> ThemedIconStyle(
+        icon = Icons.Outlined.DinnerDining,
+        gradient = containerGradient(Color(0xFFE4ECFC)),
+        tint = KkalScanColors.Protein,
+        contentDescription = "Ужин",
+    )
+    KkalMealIconKind.Snack -> ThemedIconStyle(
+        icon = Icons.Outlined.Cookie,
+        gradient = containerGradient(KkalScanColors.CarbsContainer),
+        tint = KkalScanColors.Carbs,
+        contentDescription = "Перекус",
+    )
+}
+
 @Composable
-fun KkalActivityIconBadge(
-    kind: KkalActivityIconKind,
+private fun KkalThemedIconBadge(
+    style: ThemedIconStyle,
     modifier: Modifier = Modifier,
 ) {
-    val style = activityIconStyle(kind)
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(14.dp))
@@ -88,6 +136,22 @@ fun KkalActivityIconBadge(
             modifier = Modifier.size(26.dp),
         )
     }
+}
+
+@Composable
+fun KkalActivityIconBadge(
+    kind: KkalActivityIconKind,
+    modifier: Modifier = Modifier,
+) {
+    KkalThemedIconBadge(activityIconStyle(kind), modifier)
+}
+
+@Composable
+fun KkalMealIconBadge(
+    kind: KkalMealIconKind,
+    modifier: Modifier = Modifier,
+) {
+    KkalThemedIconBadge(mealIconStyle(kind), modifier)
 }
 
 @Composable

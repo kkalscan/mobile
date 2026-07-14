@@ -46,7 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import ru.kkalscan.app.components.FoodPhotoThumbnail
+import ru.kkalscan.app.components.KkalMealIconKind
 import ru.kkalscan.app.components.KkalPrimaryButton
+import ru.kkalscan.app.components.toMealIconKind
 import ru.kkalscan.app.components.MacroChipsRow
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
@@ -145,6 +147,7 @@ fun AddToDiaryDialog(
                     EditableDishCard(
                         dish = dish,
                         photoBytes = state.photoBytes,
+                        mealIcon = state.selectedMealType.toMealIconKind(),
                         aiGrams = aiGrams,
                         canRemove = result.dishes.size > 1,
                         enabled = !state.isSaving,
@@ -218,6 +221,7 @@ private const val SUCCESS_DISMISS_MS = 950L
 private fun EditableDishCard(
     dish: Dish,
     photoBytes: ByteArray?,
+    mealIcon: KkalMealIconKind,
     aiGrams: Int,
     canRemove: Boolean,
     enabled: Boolean,
@@ -236,9 +240,9 @@ private fun EditableDishCard(
             Row(verticalAlignment = Alignment.Top) {
                 FoodPhotoThumbnail(
                     photoBytes = photoBytes,
-                    fallbackLabel = dish.name.firstOrNull()?.uppercaseChar()?.toString() ?: "K",
                     modifier = Modifier.size(KkalScanDimens.thumbSize),
                     contentDescription = dish.name,
+                    mealIcon = mealIcon,
                 )
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
