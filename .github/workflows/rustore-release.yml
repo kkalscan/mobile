@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       version_name:
-        description: "Version name (e.g. 0.2.0). Empty = from tag or run number"
+        description: "Version name (e.g. 1.0.14). Empty = tag / gradle.properties VERSION_NAME"
         required: false
         type: string
       whats_new:
@@ -16,7 +16,7 @@ on:
         required: false
         type: string
       version_code:
-        description: "Android versionCode. Empty = derived from version name"
+        description: "Android versionCode. Empty = gradle.properties VERSION_CODE or derived from name"
         required: false
         type: string
 
@@ -37,16 +37,26 @@ jobs:
           set -euo pipefail
           INPUT_NAME="${{ github.event.inputs.version_name }}"
           INPUT_CODE="${{ github.event.inputs.version_code }}"
+          PROP_NAME="$(grep -E '^VERSION_NAME=' gradle.properties | cut -d= -f2- | tr -d '[:space:]')"
+          PROP_CODE="$(grep -E '^VERSION_CODE=' gradle.properties | cut -d= -f2- | tr -d '[:space:]')"
+          # Prefer: workflow input → git tag/release → gradle.properties
           if [ -n "$INPUT_NAME" ]; then
             NAME="$INPUT_NAME"
+            NAME_SOURCE=input
           elif [ "${{ github.ref_type }}" = "tag" ]; then
             NAME="${GITHUB_REF#refs/tags/}"
             NAME="${NAME#v}"
+            NAME_SOURCE=tag
           elif [ -n "${{ github.event.release.tag_name }}" ]; then
             NAME="${{ github.event.release.tag_name }}"
             NAME="${NAME#v}"
+            NAME_SOURCE=release
+          elif [ -n "$PROP_NAME" ]; then
+            NAME="$PROP_NAME"
+            NAME_SOURCE=properties
           else
-            NAME="0.1.${{ github.run_number }}"
+            echo "VERSION_NAME missing: pass workflow input or set gradle.properties"
+            exit 1
           fi
           if [ -n "$INPUT_CODE" ]; then
             if ! [[ "$INPUT_CODE" =~ ^[0-9]+$ ]]; then
@@ -54,14 +64,17 @@ jobs:
               exit 1
             fi
             CODE="$INPUT_CODE"
+          elif [ "$NAME_SOURCE" = "properties" ] && [[ "$PROP_CODE" =~ ^[0-9]+$ ]]; then
+            CODE="$PROP_CODE"
           elif [[ "$NAME" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
             CODE=$((10#${BASH_REMATCH[1]} * 10000 + 10#${BASH_REMATCH[2]} * 100 + 10#${BASH_REMATCH[3]}))
           else
-            CODE=$((100000 + ${{ github.run_number }}))
+            echo "VERSION_CODE missing: pass workflow input or set gradle.properties"
+            exit 1
           fi
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "code=$CODE" >> "$GITHUB_OUTPUT"
-          echo "Version: $NAME ($CODE)"
+          echo "Version: $NAME ($CODE) [source=$NAME_SOURCE]"
 
       - name: Resolve release notes
         id: notes

@@ -1,9 +1,14 @@
 ---
 name: release
-description: Release kkalscan/mobile to RuStore. Use when the user says "release", "выпусти релиз", "publish to RuStore", or asks to verify automatic RuStore publication.
+description: >-
+  Legacy RuStore release notes for kkalscan/mobile. Prefer skill release-apk
+  (version in gradle.properties + CI Run gate). Use only when verifying an
+  already-running RuStore publication without a version bump.
 ---
 
 # Release
+
+Prefer **release-apk** for new publishes. This skill remains for verifying an in-flight RuStore release.
 
 Release `kkalscan/mobile` through GitHub Actions and verify the new version in RuStore.
 
