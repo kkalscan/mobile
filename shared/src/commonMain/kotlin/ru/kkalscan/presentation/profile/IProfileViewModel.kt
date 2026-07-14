@@ -11,6 +11,8 @@ data class ProfileUiState(
     val scansLeft: Int? = null,
     val energyProfile: EnergyProfile = EnergyProfile(),
     val profileSaved: Boolean = false,
+    /** UI should clear focus from weight/height/age fields, then call [IProfileViewModel.consumeClearEnergyFieldFocus]. */
+    val clearEnergyFieldFocus: Boolean = false,
     val errorMessage: String? = null,
     val bugReportSubmitting: Boolean = false,
     val bugReportSuccess: BugReportResult? = null,
@@ -24,5 +26,6 @@ interface IProfileViewModel {
     suspend fun submitBugReport(email: String, description: String, screenshots: List<ByteArray>)
     fun saveEnergyProfile(profile: EnergyProfile): Boolean
     fun clearProfileSaved()
+    fun consumeClearEnergyFieldFocus()
     fun clearBugReportFeedback()
 }

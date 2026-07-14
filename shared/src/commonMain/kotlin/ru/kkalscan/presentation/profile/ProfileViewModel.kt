@@ -121,6 +121,7 @@ class ProfileViewModel(
             it.copy(
                 energyProfile = normalized,
                 profileSaved = true,
+                clearEnergyFieldFocus = true,
             )
         }
         return true
@@ -128,6 +129,10 @@ class ProfileViewModel(
 
     override fun clearProfileSaved() {
         _state.update { it.copy(profileSaved = false) }
+    }
+
+    override fun consumeClearEnergyFieldFocus() {
+        _state.update { it.copy(clearEnergyFieldFocus = false) }
     }
 
     override fun clearBugReportFeedback() {

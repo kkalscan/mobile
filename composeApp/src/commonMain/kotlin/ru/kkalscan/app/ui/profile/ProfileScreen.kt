@@ -134,11 +134,13 @@ fun ProfileScreen(
                     profile = state.energyProfile,
                     dailyBmrKcal = state.dailyBmrKcal(),
                     saved = state.profileSaved,
+                    clearFocus = state.clearEnergyFieldFocus,
                     onSave = {
                         viewModel.saveEnergyProfile(it)
                         onProfileSaved()
                     },
                     onClearSaved = { viewModel.clearProfileSaved() },
+                    onFocusCleared = { viewModel.consumeClearEnergyFieldFocus() },
                 )
                 Spacer(Modifier.height(12.dp))
                 if (status?.isPro != true) {
