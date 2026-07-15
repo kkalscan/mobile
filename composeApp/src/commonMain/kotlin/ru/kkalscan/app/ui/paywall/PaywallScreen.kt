@@ -38,7 +38,6 @@ import ru.kkalscan.presentation.profile.IProfileViewModel
 fun PaywallScreen(
     viewModel: IProfileViewModel,
     scansLeft: Int?,
-    onWatchAd: () -> Unit,
     onBuyPro: (tariff: String) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -59,7 +58,7 @@ fun PaywallScreen(
         Spacer(Modifier.height(24.dp))
         KkalPageHeader(title = "Сканы закончились")
         Text(
-            "Посмотрите короткую рекламу или оформите Pro",
+            "Оформите Pro, чтобы сканировать без дневного лимита",
             style = MaterialTheme.typography.bodyLarge,
             color = KkalScanColors.OnSurfaceVariant,
         )
@@ -69,25 +68,12 @@ fun PaywallScreen(
         }
         Spacer(Modifier.height(20.dp))
         KkalTipCard(
-            number = "+2",
-            title = "Бесплатно за рекламу",
-            body = "Короткий ролик — и снова можно сканировать тарелки сегодня",
-        )
-        Spacer(Modifier.height(12.dp))
-        KkalTipCard(
             number = "",
             badgeIcon = Icons.Outlined.Star,
             title = "Без лимитов каждый день",
             body = "Pro снимает ограничение на сканы и сохраняет историю в облаке",
         )
         Spacer(Modifier.height(24.dp))
-        KkalPrimaryButton(
-            text = "Смотреть рекламу (+2)",
-            onClick = onWatchAd,
-            containerColor = KkalScanColors.Tertiary,
-            contentColor = KkalScanColors.OnBackground,
-        )
-        Spacer(Modifier.height(16.dp))
         PromoCodeSection(
             promoInput = promoInput,
             onPromoInputChange = {

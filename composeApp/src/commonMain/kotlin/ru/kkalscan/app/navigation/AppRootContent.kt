@@ -17,7 +17,6 @@ import ru.kkalscan.analytics.AnalyticsEvents
 import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.analytics.ScanAnalytics
 import ru.kkalscan.app.analytics.analyticsReason
-import ru.kkalscan.app.analytics.orEmptyAnalyticsValue
 import ru.kkalscan.app.platform.rememberProPaymentOpener
 import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.app.components.AppTab
@@ -401,28 +400,6 @@ fun AppRootContent(
                 PaywallScreen(
                     viewModel = profileViewModel,
                     scansLeft = scanState.scansLeft,
-                    onWatchAd = {
-                        KkalAnalytics.reportAction(AnalyticsEvents.AD_BONUS_CLICK)
-                        scope.launch {
-                            scanViewModel.grantAdBonus()
-                            val stateAfterBonus = scanViewModel.state.value
-                            if (stateAfterBonus.limitHit || stateAfterBonus.errorMessage != null) {
-                                KkalAnalytics.reportAction(
-                                    AnalyticsEvents.AD_BONUS_FAILED,
-                                    mapOf("reason" to stateAfterBonus.errorMessage.analyticsReason()),
-                                )
-                                return@launch
-                            }
-                            KkalAnalytics.reportAction(
-                                AnalyticsEvents.AD_WATCH_COMPLETE,
-                                mapOf("scans_left" to stateAfterBonus.scansLeft.orEmptyAnalyticsValue()),
-                            )
-                            profileViewModel.refresh()
-                            if (!stateAfterBonus.limitHit) {
-                                pickPhoto()
-                            }
-                        }
-                    },
                     onBuyPro = startProPayment,
                     onBack = {
                         KkalAnalytics.reportAction(AnalyticsEvents.PAYWALL_BACK)
