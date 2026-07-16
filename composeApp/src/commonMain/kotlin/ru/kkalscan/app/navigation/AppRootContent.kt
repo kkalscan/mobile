@@ -78,6 +78,7 @@ fun AppRootContent(
     scope: CoroutineScope,
     apiConfig: IApiConfig,
     deviceId: String,
+    hasLoggedAnything: () -> Boolean = { true },
 ) {
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
@@ -342,6 +343,10 @@ fun AppRootContent(
                         }
                     },
                     actionLoading = scanState.isLoading,
+                    hasLoggedAnything = hasLoggedAnything,
+                    onFabAttentionShown = {
+                        KkalAnalytics.reportAction(AnalyticsEvents.FAB_ATTENTION_SHOWN)
+                    },
             )
         },
     ) {

@@ -90,6 +90,7 @@ fun App(componentContext: ComponentContext = remember {
                 scope = scope,
                 apiConfig = deps.apiConfig,
                 deviceId = deviceId,
+                hasLoggedAnything = { deps.hasLoggedAnythingStorage.hasLoggedAnything() },
             )
         }
     }

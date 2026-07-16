@@ -48,10 +48,12 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -64,12 +66,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.datetime.Clock
 import ru.kkalscan.app.platform.isStoreScreenshotMode
 import ru.kkalscan.app.platform.MaestroFabController
 import ru.kkalscan.app.platform.updateMaestroFabState
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
 import ru.kkalscan.domain.model.DiaryEntry
+import ru.kkalscan.onboarding.FabAttentionScheduler
 
 @Composable
 fun KkalScreenScaffold(
@@ -163,6 +168,8 @@ fun KkalBottomBar(
     onAddWorkoutClick: () -> Unit,
     onScanClick: () -> Unit,
     actionLoading: Boolean = false,
+    hasLoggedAnything: () -> Boolean = { true },
+    onFabAttentionShown: () -> Unit = {},
 ) {
     Box(Modifier.fillMaxWidth()) {
         Surface(
@@ -204,9 +211,39 @@ fun KkalBottomBar(
         }
         if (selectedTab == AppTab.Today) {
             var isFabExpanded by rememberSaveable { mutableStateOf(false) }
+            var attentionPlaying by remember { mutableStateOf(false) }
+            var lastAttentionShownMs by remember { mutableStateOf<Long?>(null) }
+            val attentionScheduler = remember { FabAttentionScheduler() }
+            val pulseScale = rememberFabAttentionPulse(attentionPlaying)
 
             LaunchedEffect(isFabExpanded) {
                 updateMaestroFabState(isFabExpanded)
+            }
+
+            LaunchedEffect(isFabExpanded, actionLoading) {
+                while (true) {
+                    val logged = hasLoggedAnything()
+                    if (logged) {
+                        attentionPlaying = false
+                    } else {
+                        val now = Clock.System.now().toEpochMilliseconds()
+                        val shouldShow = attentionScheduler.shouldShow(
+                            nowMs = now,
+                            hasLoggedAnything = false,
+                            fabExpanded = isFabExpanded,
+                            loading = actionLoading,
+                            lastShownMs = lastAttentionShownMs,
+                        )
+                        if (shouldShow) {
+                            attentionPlaying = true
+                            lastAttentionShownMs = now
+                            onFabAttentionShown()
+                            delay(1_200)
+                            attentionPlaying = false
+                        }
+                    }
+                    delay(1_000)
+                }
             }
 
             DisposableEffect(actionLoading) {
@@ -267,43 +304,54 @@ fun KkalBottomBar(
                 }
             }
 
-            Surface(
-                onClick = {
-                    if (!actionLoading) {
-                        isFabExpanded = !isFabExpanded
-                    }
-                },
+            Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .padding(end = KkalScanDimens.fabEndPadding)
                     .offset(y = -KkalScanDimens.fabFloatOffset)
-                    .size(KkalScanDimens.fabSize)
-                    .testTag("diary-main-fab")
-                    .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
-                shape = CircleShape,
-                color = KkalScanColors.Primary,
+                    .size(KkalScanDimens.fabSize),
+                contentAlignment = Alignment.Center,
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    if (actionLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(28.dp),
-                            color = KkalScanColors.OnPrimary,
-                            strokeWidth = 3.dp,
-                        )
-                    } else if (isFabExpanded) {
-                        Icon(
-                            imageVector = Icons.Outlined.Close,
-                            contentDescription = "Закрыть",
-                            tint = KkalScanColors.OnPrimary,
-                            modifier = Modifier.size(28.dp),
-                        )
-                    } else {
-                        Icon(
-                            imageVector = Icons.Outlined.Add,
-                            contentDescription = "Добавить",
-                            tint = KkalScanColors.OnPrimary,
-                            modifier = Modifier.size(28.dp),
-                        )
+                FabAttentionOverlay(active = attentionPlaying)
+                Surface(
+                    onClick = {
+                        if (!actionLoading) {
+                            isFabExpanded = !isFabExpanded
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            scaleX = pulseScale
+                            scaleY = pulseScale
+                        }
+                        .testTag("diary-main-fab")
+                        .shadow(12.dp, CircleShape, ambientColor = KkalScanColors.Primary.copy(0.35f)),
+                    shape = CircleShape,
+                    color = KkalScanColors.Primary,
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        if (actionLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                color = KkalScanColors.OnPrimary,
+                                strokeWidth = 3.dp,
+                            )
+                        } else if (isFabExpanded) {
+                            Icon(
+                                imageVector = Icons.Outlined.Close,
+                                contentDescription = "Закрыть",
+                                tint = KkalScanColors.OnPrimary,
+                                modifier = Modifier.size(28.dp),
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Add,
+                                contentDescription = "Добавить",
+                                tint = KkalScanColors.OnPrimary,
+                                modifier = Modifier.size(28.dp),
+                            )
+                        }
                     }
                 }
             }
