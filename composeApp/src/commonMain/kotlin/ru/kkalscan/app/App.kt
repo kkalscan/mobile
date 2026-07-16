@@ -38,17 +38,29 @@ fun App(componentContext: ComponentContext = remember {
 
     val foodSearchViewModel = remember(deps, scope) { deps.foodSearchViewModel(scope) }
     val featureSearchViewModel = remember(deps, scope) {
-        deps.featureSearchViewModel(scope) { query, resultsCount ->
-            KkalAnalytics.reportAction(
-                AnalyticsEvents.FEATURE_SEARCH_QUERY,
-                mapOf(
-                    "query" to query.take(200),
-                    "query_length" to query.length.toString(),
-                    "results" to resultsCount.toString(),
-                    "empty_query" to query.isBlank().toString(),
-                ),
-            )
-        }
+        deps.featureSearchViewModel(
+            scope = scope,
+            onSearchCompleted = { query, resultsCount ->
+                KkalAnalytics.reportAction(
+                    AnalyticsEvents.FEATURE_SEARCH_QUERY,
+                    mapOf(
+                        "query" to query.take(200),
+                        "query_length" to query.length.toString(),
+                        "results" to resultsCount.toString(),
+                        "empty_query" to query.isBlank().toString(),
+                    ),
+                )
+            },
+            onFoodIntentAnalytics = { queryLength, isFood ->
+                KkalAnalytics.reportAction(
+                    AnalyticsEvents.FEATURE_SEARCH_FOOD_INTENT,
+                    mapOf(
+                        "query_length" to queryLength.toString(),
+                        "is_food" to isFood.toString(),
+                    ),
+                )
+            },
+        )
     }
 
     LaunchedEffect(deps) {

@@ -41,6 +41,7 @@ object AnalyticsEvents {
 
     const val FEATURE_SEARCH_OPEN = "feature_search_open"
     const val FEATURE_SEARCH_QUERY = "feature_search_query"
+    const val FEATURE_SEARCH_FOOD_INTENT = "feature_search_food_intent"
     const val FOOD_SEARCH_ADD = "food_search_add"
     const val DEEPLINK_OPEN = "deeplink_open"
 
@@ -49,6 +50,8 @@ object AnalyticsEvents {
 
     /** Dev / Maestro only — not required in production funnels. */
     const val DEV_STUB_SCAN = "dev_stub_scan"
+
+    const val FAB_ATTENTION_SHOWN = "fab_attention_shown"
 
     /** All events emitted by the app (excluding AppMetrica built-in install). */
     val allImplemented: Set<String> = setOf(
@@ -83,11 +86,13 @@ object AnalyticsEvents {
         DIETITIAN_INSIGHT_CLICK,
         FEATURE_SEARCH_OPEN,
         FEATURE_SEARCH_QUERY,
+        FEATURE_SEARCH_FOOD_INTENT,
         FOOD_SEARCH_ADD,
         DEEPLINK_OPEN,
         DAY_1_RETURN,
         DAY_7_RETURN,
         DEV_STUB_SCAN,
+        FAB_ATTENTION_SHOWN,
     )
 
     /** Minimum set for RuStore ad / monetization readiness (test-plan §7). */

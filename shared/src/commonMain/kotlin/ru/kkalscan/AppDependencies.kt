@@ -83,8 +83,14 @@ class AppDependencies(
     fun featureSearchViewModel(
         scope: kotlinx.coroutines.CoroutineScope,
         onSearchCompleted: ru.kkalscan.presentation.features.FeatureSearchCompletedListener = { _, _ -> },
+        onFoodIntentAnalytics: ru.kkalscan.presentation.features.FeatureSearchFoodIntentAnalytics = { _, _ -> },
     ): IFeatureSearchViewModel =
-        FeatureSearchViewModel(featureSearchRepository, scope, onSearchCompleted)
+        FeatureSearchViewModel(
+            featureSearchRepository,
+            scope,
+            onSearchCompleted,
+            onFoodIntentAnalytics,
+        )
 
     fun journalViewModel(
         scope: kotlinx.coroutines.CoroutineScope,

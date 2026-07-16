@@ -88,6 +88,7 @@ Read this funnel as:
 | `dietitian_insight_click` | User requests AI dietitian insight | none |
 | `feature_search_open` | Feature search opened | none |
 | `feature_search_query` | Feature search query executed | `query`, `query_length`, `results`, `empty_query` |
+| `feature_search_food_intent` | Feature search classified as food (or not) after no feature match | `query_length`, `is_food` (no raw query) |
 | `food_search_add` | Food added from catalog search | none |
 | `deeplink_open` | Deeplink navigation | `link` |
 | `subscription_start` | Pro subscription activated | none |
