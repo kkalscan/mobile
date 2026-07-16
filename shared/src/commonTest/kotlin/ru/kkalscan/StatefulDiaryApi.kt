@@ -2,7 +2,6 @@ package ru.kkalscan
 
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.domain.features.FeatureSearchCatalog
-import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.activity.ActivityEmulatorTimeProration
@@ -14,7 +13,6 @@ import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
 import ru.kkalscan.domain.model.DiaryEntry
 import ru.kkalscan.domain.model.Dish
-import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.MealType
 import ru.kkalscan.domain.model.ProSubscriptionStart
 import ru.kkalscan.domain.model.PromoApplyResult
@@ -292,17 +290,6 @@ class StatefulDiaryApi(
     }
 
     private val promoByDevice = ConcurrentHashMap<String, PromoApplyResult>()
-
-    override suspend fun searchFood(
-        deviceId: String,
-        query: String,
-        limit: Int,
-        source: String,
-    ): FoodSearchResult {
-        val trimmed = query.trim()
-        val items = LocalFoodCatalog.search(trimmed, limit)
-        return FoodSearchResult(query = trimmed, items = items, total = items.size)
-    }
 
     override suspend fun searchFeatures(
         deviceId: String,

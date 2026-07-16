@@ -6,7 +6,6 @@ sealed class DeepLinkAction {
     data class JournalSection(val section: String) : DeepLinkAction()
     data object Profile : DeepLinkAction()
     data object Scan : DeepLinkAction()
-    data object FoodSearch : DeepLinkAction()
     data object DescribeFood : DeepLinkAction()
     data object Paywall : DeepLinkAction()
 }
@@ -22,8 +21,8 @@ fun resolveDeepLink(raw: String): DeepLinkAction? {
         }
         "profile" -> DeepLinkAction.Profile
         "scan" -> DeepLinkAction.Scan
-        "food-search", "food_search" -> DeepLinkAction.FoodSearch
-        "describe-food", "describe_food" -> DeepLinkAction.DescribeFood
+        // Legacy catalog search → text describe (no product catalog).
+        "food-search", "food_search", "describe-food", "describe_food" -> DeepLinkAction.DescribeFood
         "paywall", "pro" -> DeepLinkAction.Paywall
         else -> null
     }

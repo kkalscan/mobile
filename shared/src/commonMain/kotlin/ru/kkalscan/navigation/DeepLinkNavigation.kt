@@ -17,7 +17,6 @@ data class DeepLinkNavigationEffect(
     val screen: DeepLinkScreen,
     val tab: DeepLinkTab? = null,
     val journalScrollAnchor: String? = null,
-    val openFoodSearch: Boolean = false,
     val openDescribeFood: Boolean = false,
     val triggerScan: Boolean = false,
 )
@@ -44,11 +43,6 @@ fun DeepLinkAction.toNavigationEffect(): DeepLinkNavigationEffect = when (this) 
         screen = DeepLinkScreen.Diary,
         tab = DeepLinkTab.Today,
         triggerScan = true,
-    )
-    DeepLinkAction.FoodSearch -> DeepLinkNavigationEffect(
-        screen = DeepLinkScreen.Diary,
-        tab = DeepLinkTab.Today,
-        openFoodSearch = true,
     )
     DeepLinkAction.DescribeFood -> DeepLinkNavigationEffect(
         screen = DeepLinkScreen.Diary,

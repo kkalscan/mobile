@@ -90,7 +90,6 @@ Read this funnel as:
 | `feature_search_query` | Feature search query executed | `query`, `query_length`, `results`, `empty_query` |
 | `feature_search_food_intent` | Feature search classified as food (or not) after no feature match | `query_length`, `is_food` (no raw query) |
 | `fab_attention_shown` | Diary FAB sparkle/pulse attention animation played | none |
-| `food_search_add` | Food added from catalog search | none |
 | `deeplink_open` | Deeplink navigation | `link` |
 | `subscription_start` | Pro subscription activated | none |
 | `day_1_return` | User returns on day 1 after install | none |

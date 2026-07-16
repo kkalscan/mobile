@@ -27,7 +27,6 @@ import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
-import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
@@ -164,21 +163,6 @@ class KkalScanApi(
 
     override suspend fun startProSubscription(deviceId: String, tariff: String): ProSubscriptionStart =
         postJson("/payments/pro/start", ProSubscriptionStartRequest(deviceId, tariff))
-
-    override suspend fun searchFood(
-        deviceId: String,
-        query: String,
-        limit: Int,
-        source: String,
-    ): FoodSearchResult {
-        val path = buildString {
-            append("/food/search?q=")
-            append(query.encodeURLParameter())
-            append("&limit=$limit&source=")
-            append(source.encodeURLParameter())
-        }
-        return apiGet(path, deviceId)
-    }
 
     override suspend fun searchFeatures(
         deviceId: String,

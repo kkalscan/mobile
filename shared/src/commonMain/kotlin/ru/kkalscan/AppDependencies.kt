@@ -11,11 +11,9 @@ import ru.kkalscan.data.local.createProfileLocalStore
 import ru.kkalscan.data.repository.BugReportRepository
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.repository.FeatureSearchRepository
-import ru.kkalscan.data.repository.FoodSearchRepository
 import ru.kkalscan.data.repository.IBugReportRepository
 import ru.kkalscan.data.repository.IDiaryRepository
 import ru.kkalscan.data.repository.IFeatureSearchRepository
-import ru.kkalscan.data.repository.IFoodSearchRepository
 import ru.kkalscan.data.repository.IInsightRepository
 import ru.kkalscan.data.repository.InsightRepository
 import ru.kkalscan.data.repository.IProfileRepository
@@ -38,8 +36,6 @@ import ru.kkalscan.presentation.diary.DiaryViewModel
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.features.FeatureSearchViewModel
 import ru.kkalscan.presentation.features.IFeatureSearchViewModel
-import ru.kkalscan.presentation.food.FoodSearchViewModel
-import ru.kkalscan.presentation.food.IFoodSearchViewModel
 import ru.kkalscan.presentation.journal.IJournalViewModel
 import ru.kkalscan.presentation.journal.JournalViewModel
 import ru.kkalscan.presentation.profile.IProfileViewModel
@@ -58,7 +54,6 @@ class AppDependencies(
     val profileRepository: IProfileRepository = ProfileRepository(api, deviceIdStorage, profileLocalStore, diaryRepository),
     val subscriptionRepository: ISubscriptionRepository = SubscriptionRepository(api, deviceIdStorage, profileLocalStore),
     val insightRepository: IInsightRepository = InsightRepository(deviceIdStorage),
-    val foodSearchRepository: IFoodSearchRepository = FoodSearchRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
     val energyProfileStorage: IEnergyProfileStorage = createEnergyProfileStorage(),
@@ -83,9 +78,6 @@ class AppDependencies(
             scope = scope,
             firstLogTracker = firstLogTracker,
         )
-
-    fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
-        FoodSearchViewModel(foodSearchRepository, diaryRepository, scope, firstLogTracker)
 
     fun featureSearchViewModel(
         scope: kotlinx.coroutines.CoroutineScope,

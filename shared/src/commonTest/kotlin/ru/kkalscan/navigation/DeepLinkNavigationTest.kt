@@ -16,7 +16,6 @@ class DeepLinkNavigationTest {
         assertEquals(DeepLinkScreen.Diary, effect.screen)
         assertEquals(DeepLinkTab.Today, effect.tab)
         assertNull(effect.journalScrollAnchor)
-        assertFalse(effect.openFoodSearch)
         assertFalse(effect.openDescribeFood)
         assertFalse(effect.triggerScan)
     }
@@ -72,12 +71,11 @@ class DeepLinkNavigationTest {
     }
 
     @Test
-    fun foodSearch_deeplink_opensFoodSearchSheet() {
+    fun foodSearch_deeplink_opensDescribeSheet() {
         val effect = resolveDeepLinkNavigation("kkalscan://food-search")
         assertNotNull(effect)
         assertEquals(DeepLinkScreen.Diary, effect.screen)
-        assertTrue(effect.openFoodSearch)
-        assertFalse(effect.openDescribeFood)
+        assertTrue(effect.openDescribeFood)
     }
 
     @Test
@@ -87,7 +85,6 @@ class DeepLinkNavigationTest {
         assertEquals(DeepLinkScreen.Diary, effect.screen)
         assertEquals(DeepLinkTab.Today, effect.tab)
         assertTrue(effect.openDescribeFood)
-        assertFalse(effect.openFoodSearch)
     }
 
     @Test

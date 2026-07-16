@@ -47,7 +47,6 @@ import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.app.ui.describe.DescribeFoodSheet
 import ru.kkalscan.app.ui.diary.DiaryScreen
 import ru.kkalscan.app.ui.features.FeatureSearchBar
-import ru.kkalscan.app.ui.food.FoodSearchSheet
 import ru.kkalscan.app.ui.journal.JournalScreen
 import ru.kkalscan.app.ui.paywall.PaywallScreen
 import ru.kkalscan.app.ui.profile.ProfileScreen
@@ -56,7 +55,6 @@ import ru.kkalscan.app.ui.scan.ScanScreen
 import ru.kkalscan.app.ui.workout.QuickAddWorkoutDialog
 import ru.kkalscan.navigation.resolveDeepLinkNavigation
 import ru.kkalscan.presentation.features.IFeatureSearchViewModel
-import ru.kkalscan.presentation.food.IFoodSearchViewModel
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.journal.IJournalViewModel
 import ru.kkalscan.presentation.journal.InsightRequestResult
@@ -73,7 +71,6 @@ fun AppRootContent(
     journalViewModel: IJournalViewModel,
     scanViewModel: IScanViewModel,
     profileViewModel: IProfileViewModel,
-    foodSearchViewModel: IFoodSearchViewModel,
     featureSearchViewModel: IFeatureSearchViewModel,
     scope: CoroutineScope,
     apiConfig: IApiConfig,
@@ -82,7 +79,6 @@ fun AppRootContent(
 ) {
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
-    var showFoodSearch by rememberSaveable { mutableStateOf(false) }
     var showDescribeFood by rememberSaveable { mutableStateOf(false) }
     var showAddWorkoutDialog by rememberSaveable { mutableStateOf(false) }
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
@@ -226,7 +222,6 @@ fun AppRootContent(
             effect.toAppTab()?.let { selectedTab = it }
             screen = effect.toAppScreen()
             journalScrollAnchor = effect.journalScrollAnchor
-            if (effect.openFoodSearch) showFoodSearch = true
             if (effect.openDescribeFood) openDescribeFood()
             if (effect.triggerScan && !scanState.isLoading) pickPhoto()
         }
@@ -280,9 +275,6 @@ fun AppRootContent(
         onFoodSearchDemo = {
             KkalAnalytics.reportAction(AnalyticsEvents.FEATURE_SEARCH_OPEN)
             featureSearchViewModel.onQueryChange("профиль")
-        },
-        onFoodSearchAddFirst = {
-            foodSearchViewModel.launchAddFirstResult()
         },
         onDeepLinkProfile = { openDeepLink("kkalscan://profile") },
         onDeepLinkJournal = { openDeepLink("kkalscan://journal") },
@@ -484,24 +476,6 @@ fun AppRootContent(
                 onRefreshAfterAdd = {
                     scope.launch {
                         refreshAfterDiaryAdd(diaryViewModel, journalViewModel, profileViewModel)
-                    }
-                },
-            )
-        }
-
-        if (showFoodSearch) {
-            MaestroScreenHook("food-search-sheet")
-            FoodSearchSheet(
-                viewModel = foodSearchViewModel,
-                onDismiss = {
-                    showFoodSearch = false
-                    foodSearchViewModel.clear()
-                },
-                onAdded = {
-                    KkalAnalytics.reportAction(AnalyticsEvents.FOOD_SEARCH_ADD)
-                    scope.launch {
-                        diaryViewModel.refresh()
-                        journalViewModel.refresh()
                     }
                 },
             )

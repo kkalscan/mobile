@@ -20,8 +20,9 @@ class DeepLinkActionTest {
     }
 
     @Test
-    fun resolveDeepLink_foodSearchUnderscore() {
-        assertIs<DeepLinkAction.FoodSearch>(resolveDeepLink("kkalscan://food_search"))
+    fun resolveDeepLink_legacyFoodSearch_opensDescribeFood() {
+        assertIs<DeepLinkAction.DescribeFood>(resolveDeepLink("kkalscan://food_search"))
+        assertIs<DeepLinkAction.DescribeFood>(resolveDeepLink("kkalscan://food-search"))
     }
 
     @Test

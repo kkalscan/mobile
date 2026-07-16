@@ -4,7 +4,6 @@ import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
 import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
-import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
@@ -52,12 +51,6 @@ interface IKkalScanApi {
         description: String,
         screenshots: List<ByteArray>,
     ): BugReportResult
-    suspend fun searchFood(
-        deviceId: String,
-        query: String,
-        limit: Int = 20,
-        source: String = "diary",
-    ): FoodSearchResult
     suspend fun searchFeatures(
         deviceId: String,
         query: String,

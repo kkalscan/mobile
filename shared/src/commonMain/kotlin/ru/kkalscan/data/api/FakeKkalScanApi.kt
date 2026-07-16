@@ -2,13 +2,11 @@ package ru.kkalscan.data.api
 
 import ru.kkalscan.data.repository.currentDateIso
 import ru.kkalscan.domain.features.FeatureSearchCatalog
-import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.activity.ActivityEmulatorTimeProration
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
-import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
 import ru.kkalscan.domain.model.CreateWorkoutResponse
 import ru.kkalscan.domain.model.DiaryDay
@@ -320,23 +318,6 @@ class FakeKkalScanApi(
             discountPercent = discount,
             promoCode = promoCode?.takeIf { discount > 0 },
         )
-    }
-
-    private val searchLogs = mutableListOf<Triple<String, String, Int>>()
-
-    override suspend fun searchFood(
-        deviceId: String,
-        query: String,
-        limit: Int,
-        source: String,
-    ): FoodSearchResult {
-        val trimmed = query.trim()
-        val normalized = LocalFoodCatalog.normalize(trimmed)
-        val items = LocalFoodCatalog.search(trimmed, limit)
-        if (normalized.isNotBlank()) {
-            searchLogs.add(Triple(deviceId, normalized, items.size))
-        }
-        return FoodSearchResult(query = trimmed, items = items, total = items.size)
     }
 
     override suspend fun searchFeatures(

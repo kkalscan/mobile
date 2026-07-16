@@ -119,13 +119,6 @@ data class BugReportResult(
 )
 
 @Serializable
-data class FoodSearchResult(
-    val query: String,
-    val items: List<Dish>,
-    val total: Int,
-)
-
-@Serializable
 data class ProSubscriptionStart(
     @SerialName("is_pro") val isPro: Boolean,
     @SerialName("pro_until") val proUntil: String? = null,

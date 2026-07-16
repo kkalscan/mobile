@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import kotlinx.coroutines.test.runTest
 import ru.kkalscan.TestApiFixtures
-import ru.kkalscan.domain.food.LocalFoodCatalog
 import ru.kkalscan.data.repository.DiaryRepository
 import ru.kkalscan.data.storage.InMemoryDeviceIdStorage
 import ru.kkalscan.stats.StatsAggregator
@@ -52,16 +51,6 @@ class FakeKkalScanApiTest {
         stats.daysWithData shouldBe 5
         stats.avgFiber shouldNotBe 0.0
         stats.days.count { it.fiber > 0 } shouldBe 5
-    }
-
-    @Test
-    fun searchFood_findsCatalogItems() = runTest {
-        val api = FakeKkalScanApi(todayProvider = { today })
-        val result = api.searchFood(deviceId, "творог", limit = 10, source = "diary")
-
-        result.items.any { it.name.contains("Творог", ignoreCase = true) } shouldBe true
-        api.searchFood(deviceId, "missing-product-xyz", limit = 10, source = "diary").items shouldHaveSize 0
-        LocalFoodCatalog.search("творог", 10).isNotEmpty() shouldBe true
     }
 
     @Test

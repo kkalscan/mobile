@@ -17,7 +17,6 @@ actual fun MaestroDevBridge(
     onOpenDescribeFood: () -> Unit,
     onDescribeFoodDemo: () -> Unit,
     onFoodSearchDemo: () -> Unit,
-    onFoodSearchAddFirst: () -> Unit,
     onDeepLinkProfile: () -> Unit,
     onDeepLinkJournal: () -> Unit,
     onDeepLinkDiary: () -> Unit,
@@ -34,7 +33,6 @@ actual fun MaestroDevBridge(
         onOpenDescribeFood,
         onDescribeFoodDemo,
         onFoodSearchDemo,
-        onFoodSearchAddFirst,
         onDeepLinkProfile,
         onDeepLinkJournal,
         onDeepLinkDiary,
@@ -50,7 +48,6 @@ actual fun MaestroDevBridge(
         val describeFoodBtn = document.getElementById("maestro-open-describe-food")
         val describeFoodDemoBtn = document.getElementById("maestro-describe-food-demo")
         val foodSearchDemoBtn = document.getElementById("maestro-food-search-demo")
-        val foodSearchAddBtn = document.getElementById("maestro-food-search-add")
         val deeplinkProfileBtn = document.getElementById("maestro-deeplink-profile")
         val deeplinkJournalBtn = document.getElementById("maestro-deeplink-journal")
         val deeplinkDiaryBtn = document.getElementById("maestro-deeplink-diary")
@@ -65,7 +62,6 @@ actual fun MaestroDevBridge(
         val describeFoodHandler: (Event) -> Unit = { onOpenDescribeFood() }
         val describeFoodDemoHandler: (Event) -> Unit = { onDescribeFoodDemo() }
         val foodSearchDemoHandler: (Event) -> Unit = { onFoodSearchDemo() }
-        val foodSearchAddHandler: (Event) -> Unit = { onFoodSearchAddFirst() }
         val deeplinkProfileHandler: (Event) -> Unit = { onDeepLinkProfile() }
         val deeplinkJournalHandler: (Event) -> Unit = { onDeepLinkJournal() }
         val deeplinkDiaryHandler: (Event) -> Unit = { onDeepLinkDiary() }
@@ -80,7 +76,6 @@ actual fun MaestroDevBridge(
         describeFoodBtn?.addEventListener("click", describeFoodHandler)
         describeFoodDemoBtn?.addEventListener("click", describeFoodDemoHandler)
         foodSearchDemoBtn?.addEventListener("click", foodSearchDemoHandler)
-        foodSearchAddBtn?.addEventListener("click", foodSearchAddHandler)
         deeplinkProfileBtn?.addEventListener("click", deeplinkProfileHandler)
         deeplinkJournalBtn?.addEventListener("click", deeplinkJournalHandler)
         deeplinkDiaryBtn?.addEventListener("click", deeplinkDiaryHandler)
@@ -96,7 +91,6 @@ actual fun MaestroDevBridge(
             describeFoodBtn?.removeEventListener("click", describeFoodHandler)
             describeFoodDemoBtn?.removeEventListener("click", describeFoodDemoHandler)
             foodSearchDemoBtn?.removeEventListener("click", foodSearchDemoHandler)
-            foodSearchAddBtn?.removeEventListener("click", foodSearchAddHandler)
             deeplinkProfileBtn?.removeEventListener("click", deeplinkProfileHandler)
             deeplinkJournalBtn?.removeEventListener("click", deeplinkJournalHandler)
             deeplinkDiaryBtn?.removeEventListener("click", deeplinkDiaryHandler)
