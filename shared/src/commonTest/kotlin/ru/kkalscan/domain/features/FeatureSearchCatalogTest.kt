@@ -30,4 +30,10 @@ class FeatureSearchCatalogTest {
         assertTrue(results.items.size >= 3)
         assertTrue(results.popularFallback)
     }
+
+    @Test
+    fun borscht_doesNotMatchFoodSearchFeature() {
+        val result = FeatureSearchCatalog.query("борщ", limit = 10)
+        assertTrue(result.popularFallback || result.items.none { it.id == "food_search" })
+    }
 }
