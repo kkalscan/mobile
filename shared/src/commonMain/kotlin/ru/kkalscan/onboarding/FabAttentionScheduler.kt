@@ -1,7 +1,7 @@
 package ru.kkalscan.onboarding
 
 class FabAttentionScheduler(
-    private val intervalMs: Long = 60_000,
+    private val intervalMs: Long = 10_000,
 ) {
     fun shouldShow(
         nowMs: Long,

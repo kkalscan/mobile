@@ -8,11 +8,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Star
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,37 +34,36 @@ fun FabAttentionOverlay(
 
     val twinkle = rememberInfiniteTransition(label = "fab-attention-twinkle")
     val twinkleAlpha by twinkle.animateFloat(
-        initialValue = 0.35f,
+        initialValue = 0.45f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(450, easing = FastOutSlowInEasing),
+            animation = tween(320, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse,
         ),
         label = "fab-attention-alpha",
     )
 
     Box(
-        modifier = modifier
-            .fillMaxSize()
-            .testTag("fab-attention-overlay"),
+        modifier = modifier.testTag("fab-attention-overlay"),
         contentAlignment = Alignment.Center,
     ) {
         val stars = listOf(
-            Triple((-28).dp, (-22).dp, 14.dp),
-            Triple(24.dp, (-26).dp, 12.dp),
-            Triple((-22).dp, 20.dp, 11.dp),
-            Triple(26.dp, 18.dp, 13.dp),
-            Triple(0.dp, (-34).dp, 10.dp),
+            Triple((-36).dp, (-30).dp, 18.dp),
+            Triple(32.dp, (-34).dp, 16.dp),
+            Triple((-30).dp, 28.dp, 15.dp),
+            Triple(34.dp, 26.dp, 17.dp),
+            Triple(0.dp, (-42).dp, 14.dp),
+            Triple((-40).dp, 0.dp, 13.dp),
         )
         stars.forEachIndexed { index, (x, y, size) ->
             Icon(
-                imageVector = Icons.Outlined.Star,
+                imageVector = Icons.Filled.Star,
                 contentDescription = null,
-                tint = KkalScanColors.Tertiary,
+                tint = KkalScanColors.Primary,
                 modifier = Modifier
                     .offset(x = x, y = y)
                     .size(size)
-                    .alpha(twinkleAlpha * (0.7f + (index % 3) * 0.1f)),
+                    .alpha(twinkleAlpha * (0.75f + (index % 3) * 0.08f)),
             )
         }
     }
@@ -80,11 +78,10 @@ fun rememberFabAttentionPulse(active: Boolean): Float {
             return@LaunchedEffect
         }
         while (true) {
-            scale.animateTo(1.08f, tween(350, easing = FastOutSlowInEasing))
-            scale.animateTo(1f, tween(350, easing = FastOutSlowInEasing))
-            delay(100)
+            scale.animateTo(1.14f, tween(280, easing = FastOutSlowInEasing))
+            scale.animateTo(1f, tween(280, easing = FastOutSlowInEasing))
+            delay(60)
         }
     }
     return scale.value
 }
-

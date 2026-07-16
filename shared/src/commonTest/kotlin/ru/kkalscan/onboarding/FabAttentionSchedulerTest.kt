@@ -5,7 +5,7 @@ import kotlin.test.Test
 
 class FabAttentionSchedulerTest {
 
-    private val scheduler = FabAttentionScheduler(intervalMs = 60_000)
+    private val scheduler = FabAttentionScheduler(intervalMs = 10_000)
 
     @Test
     fun firstShow_whenNeverLogged() {
@@ -50,14 +50,14 @@ class FabAttentionSchedulerTest {
     @Test
     fun respectInterval() {
         scheduler.shouldShow(
-            nowMs = 50_000,
+            nowMs = 9_000,
             hasLoggedAnything = false,
             fabExpanded = false,
             loading = false,
             lastShownMs = 0,
         ) shouldBe false
         scheduler.shouldShow(
-            nowMs = 60_000,
+            nowMs = 10_000,
             hasLoggedAnything = false,
             fabExpanded = false,
             loading = false,

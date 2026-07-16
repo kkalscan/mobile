@@ -238,11 +238,11 @@ fun KkalBottomBar(
                             attentionPlaying = true
                             lastAttentionShownMs = now
                             onFabAttentionShown()
-                            delay(1_200)
+                            delay(2_000)
                             attentionPlaying = false
                         }
                     }
-                    delay(1_000)
+                    delay(500)
                 }
             }
 
@@ -312,7 +312,10 @@ fun KkalBottomBar(
                     .size(KkalScanDimens.fabSize),
                 contentAlignment = Alignment.Center,
             ) {
-                FabAttentionOverlay(active = attentionPlaying)
+                FabAttentionOverlay(
+                    active = attentionPlaying,
+                    modifier = Modifier.size(KkalScanDimens.fabSize + 48.dp),
+                )
                 Surface(
                     onClick = {
                         if (!actionLoading) {
