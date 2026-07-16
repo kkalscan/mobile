@@ -12,11 +12,14 @@ import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.util.kkalLog
 import ru.kkalscan.domain.model.DishPortion
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.onboarding.FirstLogTracker
+import ru.kkalscan.onboarding.InMemoryHasLoggedAnythingStorage
 
 class ScanViewModel(
     private val scanRepository: IScanRepository,
     private val diaryRepository: IDiaryRepository,
     private val scope: CoroutineScope,
+    private val firstLogTracker: FirstLogTracker = FirstLogTracker(InMemoryHasLoggedAnythingStorage()),
 ) : IScanViewModel {
 
     private val _state = MutableStateFlow(ScanUiState())
@@ -146,6 +149,7 @@ class ScanViewModel(
         return runCatching { diaryRepository.addFromScan(scanId, mealType, result.dishes) }
             .onSuccess { day ->
                 kkalLog("Diary", "added entries=${day.entries.size} totalKcal=${day.totalKcal}")
+                firstLogTracker.onFoodOrWorkoutLogged()
                 _state.update { it.copy(saveSuccess = true) }
             }
             .map { }

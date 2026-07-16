@@ -13,6 +13,8 @@ import ru.kkalscan.data.repository.IFoodSearchRepository
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.Dish
 import ru.kkalscan.domain.model.MealType
+import ru.kkalscan.onboarding.FirstLogTracker
+import ru.kkalscan.onboarding.InMemoryHasLoggedAnythingStorage
 import ru.kkalscan.presentation.scan.defaultMealType
 import ru.kkalscan.util.kkalLog
 
@@ -40,6 +42,7 @@ class FoodSearchViewModel(
     private val foodSearchRepository: IFoodSearchRepository,
     private val diaryRepository: IDiaryRepository,
     private val scope: CoroutineScope,
+    private val firstLogTracker: FirstLogTracker = FirstLogTracker(InMemoryHasLoggedAnythingStorage()),
 ) : IFoodSearchViewModel {
 
     private val _state = MutableStateFlow(FoodSearchUiState())
@@ -80,6 +83,7 @@ class FoodSearchViewModel(
         runCatching {
             _state.update { it.copy(isAdding = true, errorMessage = null) }
             diaryRepository.addFromDishes(listOf(dish), _state.value.selectedMealType)
+            firstLogTracker.onFoodOrWorkoutLogged()
             _state.update { it.copy(isAdding = false, addSuccess = true) }
         }.onFailure { e ->
             kkalLog("FoodSearch", "add fail ${e.message}")

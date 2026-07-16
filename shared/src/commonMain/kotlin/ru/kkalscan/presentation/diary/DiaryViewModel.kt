@@ -29,6 +29,8 @@ import ru.kkalscan.domain.activity.wireName
 import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.DiaryDay
+import ru.kkalscan.onboarding.FirstLogTracker
+import ru.kkalscan.onboarding.InMemoryHasLoggedAnythingStorage
 import ru.kkalscan.util.kkalLog
 class DiaryViewModel(
     private val diaryRepository: IDiaryRepository,
@@ -39,6 +41,7 @@ class DiaryViewModel(
     private val energyProfileStorage: IEnergyProfileStorage,
     private val scope: CoroutineScope,
     private val refreshOnInit: Boolean = true,
+    private val firstLogTracker: FirstLogTracker = FirstLogTracker(InMemoryHasLoggedAnythingStorage()),
 ) : IDiaryViewModel {
     private val _state = MutableStateFlow(DiaryUiState(isLoading = true))
     override val state: StateFlow<DiaryUiState> = _state.asStateFlow()
@@ -180,6 +183,7 @@ class DiaryViewModel(
         runCatching { diaryRepository.addWorkout(name, kcal) }
             .onSuccess { day ->
                 ++dataGeneration
+                firstLogTracker.onFoodOrWorkoutLogged()
                 kkalLog(LOG_TAG, "workout saved kcal=$kcal, syncing activity")
                 applyDayWithActivitySync(day)
             }
@@ -200,6 +204,7 @@ class DiaryViewModel(
             .onFailure { e -> _state.update { it.copy(workoutParse = it.workoutParse.copy(isLoading = false, errorMessage = e.userMessage())) } }
         if (saved.isFailure) return false
         ++dataGeneration
+        firstLogTracker.onFoodOrWorkoutLogged()
         _state.update { it.copy(workoutParse = WorkoutParseUiState()) }
         val day = saved.getOrThrow()
         kkalLog(LOG_TAG, "workout confirmed ${preview.title} ${preview.burnedKcal} kcal, syncing activity")

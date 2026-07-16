@@ -31,6 +31,9 @@ import ru.kkalscan.data.steps.createStepBaselineStorage
 import ru.kkalscan.data.steps.StepCounterStore
 import ru.kkalscan.data.storage.IDeviceIdStorage
 import ru.kkalscan.data.storage.createDeviceIdStorage
+import ru.kkalscan.onboarding.FirstLogTracker
+import ru.kkalscan.onboarding.HasLoggedAnythingStorage
+import ru.kkalscan.onboarding.createHasLoggedAnythingStorage
 import ru.kkalscan.presentation.diary.DiaryViewModel
 import ru.kkalscan.presentation.diary.IDiaryViewModel
 import ru.kkalscan.presentation.features.FeatureSearchViewModel
@@ -59,6 +62,7 @@ class AppDependencies(
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
     val energyProfileStorage: IEnergyProfileStorage = createEnergyProfileStorage(),
+    val hasLoggedAnythingStorage: HasLoggedAnythingStorage = createHasLoggedAnythingStorage(),
     private val localStepCounter: ru.kkalscan.data.steps.ILocalStepCounter = createLocalStepCounter(),
     private val stepCounterStore: StepCounterStore = StepCounterStore(
         localStepCounter,
@@ -66,6 +70,8 @@ class AppDependencies(
         todayProvider = { diaryRepository.currentDate() },
     ),
 ) {
+    private val firstLogTracker = FirstLogTracker(hasLoggedAnythingStorage)
+
     fun diaryViewModel(scope: kotlinx.coroutines.CoroutineScope): IDiaryViewModel =
         DiaryViewModel(
             diaryRepository = diaryRepository,
@@ -75,10 +81,11 @@ class AppDependencies(
             localStepCounter = localStepCounter,
             energyProfileStorage = energyProfileStorage,
             scope = scope,
+            firstLogTracker = firstLogTracker,
         )
 
     fun foodSearchViewModel(scope: kotlinx.coroutines.CoroutineScope): IFoodSearchViewModel =
-        FoodSearchViewModel(foodSearchRepository, diaryRepository, scope)
+        FoodSearchViewModel(foodSearchRepository, diaryRepository, scope, firstLogTracker)
 
     fun featureSearchViewModel(
         scope: kotlinx.coroutines.CoroutineScope,
@@ -99,7 +106,7 @@ class AppDependencies(
         JournalViewModel(diaryRepository, insightRepository, scope, todayPatchProvider)
 
     fun scanViewModel(scope: kotlinx.coroutines.CoroutineScope): IScanViewModel =
-        ScanViewModel(scanRepository, diaryRepository, scope)
+        ScanViewModel(scanRepository, diaryRepository, scope, firstLogTracker)
 
     fun profileViewModel(scope: kotlinx.coroutines.CoroutineScope): IProfileViewModel =
         ProfileViewModel(profileRepository, bugReportRepository, energyProfileStorage, scope)
