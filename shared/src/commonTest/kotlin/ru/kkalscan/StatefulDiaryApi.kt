@@ -3,6 +3,7 @@ package ru.kkalscan
 import ru.kkalscan.data.api.IKkalScanApi
 import ru.kkalscan.domain.features.FeatureSearchCatalog
 import ru.kkalscan.domain.food.LocalFoodCatalog
+import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.activity.ActivityEmulatorTimeProration
 import ru.kkalscan.domain.activity.StepCalorieEstimator
@@ -317,6 +318,19 @@ class StatefulDiaryApi(
             total = outcome.items.size,
             popularFallback = outcome.popularFallback,
         )
+    }
+
+    override suspend fun classifyFeatureSearchIntent(
+        deviceId: String,
+        query: String,
+    ): FeatureSearchIntentResult {
+        val trimmed = query.trim()
+        val normalized = trimmed.lowercase()
+        val featureWords = listOf("профиль", "дневник", "скан", "бжу", "клетчатка", "подписка", "pro")
+        val isFood = trimmed.length >= 3 &&
+            featureWords.none { normalized.contains(it) } &&
+            normalized.any { it in 'а'..'я' || it == 'ё' }
+        return FeatureSearchIntentResult(query = trimmed, isFoodIntent = isFood)
     }
 
     override suspend fun submitBugReport(

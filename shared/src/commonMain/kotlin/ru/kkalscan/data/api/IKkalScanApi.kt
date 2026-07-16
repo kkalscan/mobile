@@ -2,6 +2,7 @@ package ru.kkalscan.data.api
 
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
@@ -63,4 +64,9 @@ interface IKkalScanApi {
         limit: Int = 20,
         locale: String = "ru",
     ): FeatureSearchResult
+
+    suspend fun classifyFeatureSearchIntent(
+        deviceId: String,
+        query: String,
+    ): FeatureSearchIntentResult
 }

@@ -20,3 +20,10 @@ data class FeatureSearchResult(
     @SerialName("popular_fallback")
     val popularFallback: Boolean = false,
 )
+
+@Serializable
+data class FeatureSearchIntentResult(
+    val query: String,
+    @SerialName("is_food_intent")
+    val isFoodIntent: Boolean,
+)

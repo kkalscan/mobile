@@ -25,6 +25,7 @@ import ru.kkalscan.domain.error.KkalScanException
 import ru.kkalscan.domain.model.ActivityEmulator
 import ru.kkalscan.domain.model.ApiErrorBody
 import ru.kkalscan.domain.model.BugReportResult
+import ru.kkalscan.domain.model.FeatureSearchIntentResult
 import ru.kkalscan.domain.model.FeatureSearchResult
 import ru.kkalscan.domain.model.FoodSearchResult
 import ru.kkalscan.domain.model.CreateDiaryEntryResponse
@@ -194,6 +195,15 @@ class KkalScanApi(
         return apiGet(path, deviceId)
     }
 
+    override suspend fun classifyFeatureSearchIntent(
+        deviceId: String,
+        query: String,
+    ): FeatureSearchIntentResult =
+        postJson(
+            "/feature-search/intent?device_id=${deviceId.encodeURLParameter()}",
+            FeatureSearchIntentRequest(query = query),
+        )
+
     override suspend fun submitBugReport(
         deviceId: String,
         email: String,
@@ -315,6 +325,11 @@ class KkalScanApi(
         val device_id: String,
         val name: String,
         val kcal: Int,
+    )
+
+    @Serializable
+    private data class FeatureSearchIntentRequest(
+        val query: String,
     )
 
     @Serializable
