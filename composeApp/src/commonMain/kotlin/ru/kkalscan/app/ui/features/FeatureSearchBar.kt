@@ -38,10 +38,16 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -49,6 +55,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.app.theme.KkalScanDimens
@@ -65,9 +72,25 @@ fun FeatureSearchBar(
     val state by viewModel.state.collectAsState()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
+    // After submit/clear, block focus so IME / dialog restore cannot put caret back.
+    var acceptFocus by remember { mutableStateOf(true) }
     val dismissKeyboard: () -> Unit = {
+        acceptFocus = false
         focusManager.clearFocus(force = true)
         keyboardController?.hide()
+    }
+    LaunchedEffect(acceptFocus) {
+        if (!acceptFocus) {
+            delay(800)
+            acceptFocus = true
+        }
+    }
+    // ViewModel clears query on food-intent — also drop search focus.
+    LaunchedEffect(state.query) {
+        if (state.query.isEmpty()) {
+            focusManager.clearFocus(force = true)
+            keyboardController?.hide()
+        }
     }
     val showResults = state.query.isNotBlank() &&
         (state.isSearching || state.results.isNotEmpty() || state.errorMessage != null)
@@ -82,7 +105,14 @@ fun FeatureSearchBar(
             onValueChange = viewModel::onQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("feature-search-input"),
+                .testTag("feature-search-input")
+                .focusProperties { canFocus = acceptFocus }
+                .onFocusChanged { focusState ->
+                    if (focusState.isFocused && !acceptFocus) {
+                        focusManager.clearFocus(force = true)
+                        keyboardController?.hide()
+                    }
+                },
             placeholder = {
                 Text(
                     text = "Поиск: дневник, профиль, скан…",

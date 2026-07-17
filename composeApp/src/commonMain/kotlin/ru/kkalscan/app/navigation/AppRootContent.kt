@@ -93,6 +93,17 @@ fun AppRootContent(
         showDescribeFood = true
     }
 
+    // Dialog focus restore puts caret back into search — clear again after sheet is gone.
+    LaunchedEffect(showDescribeFood) {
+        if (!showDescribeFood) {
+            dismissKeyboard()
+            delay(50)
+            dismissKeyboard()
+            delay(200)
+            dismissKeyboard()
+        }
+    }
+
     LaunchedEffect(featureSearchViewModel) {
         featureSearchViewModel.foodIntentEvents.collect { query ->
             selectedTab = AppTab.Today
