@@ -85,6 +85,12 @@ fun FeatureSearchBar(
             acceptFocus = true
         }
     }
+    // First focusable on screen is the search field — don't steal focus on open.
+    LaunchedEffect(Unit) {
+        acceptFocus = false
+        focusManager.clearFocus(force = true)
+        keyboardController?.hide()
+    }
     // ViewModel clears query on food-intent — also drop search focus.
     LaunchedEffect(state.query) {
         if (state.query.isEmpty()) {
