@@ -97,7 +97,7 @@ class FeatureSearchViewModelTest {
         vm.onSubmit()
         advanceUntilIdle()
 
-        foodEvent.await()
+        foodEvent.await() shouldBe "борщ"
         analyticsIsFood shouldBe true
         vm.state.value.query shouldBe ""
     }

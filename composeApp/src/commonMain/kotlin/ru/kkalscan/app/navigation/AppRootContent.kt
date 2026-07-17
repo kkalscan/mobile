@@ -1,12 +1,5 @@
 package ru.kkalscan.app.navigation
 
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -15,9 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.unit.dp
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -40,7 +30,6 @@ import ru.kkalscan.app.platform.MaestroScreenHook
 import ru.kkalscan.app.platform.devStubScanPhotoBytes
 import ru.kkalscan.app.platform.rememberActivityRecognitionPermissionRequest
 import ru.kkalscan.app.platform.rememberPhotoPicker
-import ru.kkalscan.app.theme.KkalScanColors
 import ru.kkalscan.domain.activity.StepSensorOnboardingController
 import ru.kkalscan.domain.activity.createStepSensorOnboardingStorage
 import ru.kkalscan.domain.model.DishPortion
@@ -61,9 +50,6 @@ import ru.kkalscan.presentation.journal.InsightRequestResult
 import ru.kkalscan.presentation.profile.IProfileViewModel
 import ru.kkalscan.presentation.scan.IScanViewModel
 
-private const val FOOD_INTENT_HINT =
-    "Опишите блюдо текстом или сфотографируйте — кнопка +"
-
 @Composable
 fun AppRootContent(
     componentContext: ComponentContext,
@@ -80,9 +66,9 @@ fun AppRootContent(
     var screen by rememberSaveable { mutableStateOf(AppScreen.Diary) }
     var selectedTab by rememberSaveable { mutableStateOf(AppTab.Today) }
     var showDescribeFood by rememberSaveable { mutableStateOf(false) }
+    var describeFoodPrefill by rememberSaveable { mutableStateOf("") }
     var showAddWorkoutDialog by rememberSaveable { mutableStateOf(false) }
     var journalScrollAnchor by rememberSaveable { mutableStateOf<String?>(null) }
-    var diaryFoodHint by remember { mutableStateOf<String?>(null) }
     val scanState by scanViewModel.state.collectAsState()
     val diaryState by diaryViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
@@ -91,19 +77,19 @@ fun AppRootContent(
         scope.launch { diaryViewModel.refresh() }
     }
 
-    LaunchedEffect(featureSearchViewModel) {
-        featureSearchViewModel.foodIntentEvents.collect {
-            selectedTab = AppTab.Today
-            screen = AppScreen.Diary
-            featureSearchViewModel.clear()
-            diaryFoodHint = FOOD_INTENT_HINT
-        }
+    val openDescribeFood: (String) -> Unit = { prefill ->
+        KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_OPEN)
+        scanViewModel.reset()
+        describeFoodPrefill = prefill
+        showDescribeFood = true
     }
 
-    LaunchedEffect(diaryFoodHint) {
-        if (diaryFoodHint == null) return@LaunchedEffect
-        delay(5_000)
-        diaryFoodHint = null
+    LaunchedEffect(featureSearchViewModel) {
+        featureSearchViewModel.foodIntentEvents.collect { query ->
+            selectedTab = AppTab.Today
+            screen = AppScreen.Diary
+            openDescribeFood(query)
+        }
     }
 
     LaunchedEffect(
@@ -210,19 +196,13 @@ fun AppRootContent(
         }
     }
 
-    val openDescribeFood: () -> Unit = {
-        KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_OPEN)
-        scanViewModel.reset()
-        showDescribeFood = true
-    }
-
     val openDeepLink: (String) -> Unit = { deeplink ->
         KkalAnalytics.reportAction(AnalyticsEvents.DEEPLINK_OPEN, mapOf("link" to deeplink))
         resolveDeepLinkNavigation(deeplink)?.let { effect ->
             effect.toAppTab()?.let { selectedTab = it }
             screen = effect.toAppScreen()
             journalScrollAnchor = effect.journalScrollAnchor
-            if (effect.openDescribeFood) openDescribeFood()
+            if (effect.openDescribeFood) openDescribeFood("")
             if (effect.triggerScan && !scanState.isLoading) pickPhoto()
         }
     }
@@ -267,9 +247,9 @@ fun AppRootContent(
             KkalAnalytics.reportAction(AnalyticsEvents.FEATURE_SEARCH_OPEN)
             featureSearchViewModel.onQueryChange("")
         },
-        onOpenDescribeFood = openDescribeFood,
+        onOpenDescribeFood = { openDescribeFood("") },
         onDescribeFoodDemo = {
-            openDescribeFood()
+            openDescribeFood("тарелка борща")
             runDescribe("тарелка борща")
         },
         onFoodSearchDemo = {
@@ -321,7 +301,7 @@ fun AppRootContent(
                         }
                     },
                     onDescribeClick = {
-                        if (!scanState.isLoading) openDescribeFood()
+                        if (!scanState.isLoading) openDescribeFood("")
                     },
                     onAddWorkoutClick = {
                         if (!scanState.isLoading) {
@@ -345,39 +325,20 @@ fun AppRootContent(
         when (screen) {
             AppScreen.Diary -> {
                 MaestroScreenHook("diary-screen feature-search-bar")
-                Column(Modifier.fillMaxWidth()) {
-                    diaryFoodHint?.let { hint ->
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 8.dp)
-                                .testTag("diary-food-intent-hint"),
-                            shape = RoundedCornerShape(12.dp),
-                            color = KkalScanColors.PrimaryContainer,
-                        ) {
-                            Text(
-                                text = hint,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = KkalScanColors.OnSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-                            )
-                        }
-                    }
-                    DiaryScreen(
-                        viewModel = diaryViewModel,
-                        onScanClick = {
-                            KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
-                            pickPhoto()
-                        },
-                        onRequestActivityRecognition = requestActivityRecognition,
-                        onRefresh = { scope.launch { diaryViewModel.refresh() } },
-                        scanErrorMessage = scanState.errorMessage,
-                        onRetryScan = {
-                            KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)
-                            pickPhoto()
-                        },
-                    )
-                }
+                DiaryScreen(
+                    viewModel = diaryViewModel,
+                    onScanClick = {
+                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
+                        pickPhoto()
+                    },
+                    onRequestActivityRecognition = requestActivityRecognition,
+                    onRefresh = { scope.launch { diaryViewModel.refresh() } },
+                    scanErrorMessage = scanState.errorMessage,
+                    onRetryScan = {
+                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)
+                        pickPhoto()
+                    },
+                )
             }
 
             AppScreen.Journal -> {
@@ -485,13 +446,16 @@ fun AppRootContent(
             MaestroScreenHook("describe-food-sheet")
             DescribeFoodSheet(
                 viewModel = scanViewModel,
+                initialDescription = describeFoodPrefill,
                 onDismiss = {
                     showDescribeFood = false
+                    describeFoodPrefill = ""
                     scanViewModel.reset()
                 },
                 onRecognized = {
                     KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_RECOGNIZED)
                     showDescribeFood = false
+                    describeFoodPrefill = ""
                 },
                 onSubmitDescription = runDescribe,
             )

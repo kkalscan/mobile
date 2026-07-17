@@ -28,7 +28,8 @@ data class FeatureSearchUiState(
 
 interface IFeatureSearchViewModel {
     val state: StateFlow<FeatureSearchUiState>
-    val foodIntentEvents: SharedFlow<Unit>
+    /** Emitted with the user query when search is classified as food description. */
+    val foodIntentEvents: SharedFlow<String>
     fun onQueryChange(query: String)
     fun onSubmit()
     fun clear()
@@ -43,8 +44,8 @@ class FeatureSearchViewModel(
 
     private val _state = MutableStateFlow(FeatureSearchUiState())
     override val state: StateFlow<FeatureSearchUiState> = _state.asStateFlow()
-    private val _foodIntentEvents = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    override val foodIntentEvents: SharedFlow<Unit> = _foodIntentEvents.asSharedFlow()
+    private val _foodIntentEvents = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    override val foodIntentEvents: SharedFlow<String> = _foodIntentEvents.asSharedFlow()
     private var searchJob: Job? = null
 
     override fun onQueryChange(query: String) {
@@ -124,7 +125,7 @@ class FeatureSearchViewModel(
                             if (classified.isFoodIntent) {
                                 _state.value = FeatureSearchUiState()
                                 onSearchCompleted(trimmed, 0)
-                                _foodIntentEvents.tryEmit(Unit)
+                                _foodIntentEvents.tryEmit(trimmed)
                             } else {
                                 _state.update {
                                     it.copy(

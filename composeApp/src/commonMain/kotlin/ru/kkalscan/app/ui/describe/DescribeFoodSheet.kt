@@ -39,9 +39,10 @@ fun DescribeFoodSheet(
     onDismiss: () -> Unit,
     onRecognized: () -> Unit,
     onSubmitDescription: (String) -> Unit,
+    initialDescription: String = "",
 ) {
     val scanState by viewModel.state.collectAsState()
-    var description by remember { mutableStateOf("") }
+    var description by remember(initialDescription) { mutableStateOf(initialDescription) }
 
     LaunchedEffect(scanState.result, scanState.isLoading) {
         if (scanState.result != null && !scanState.isLoading) {
