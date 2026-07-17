@@ -23,10 +23,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import kotlinx.coroutines.delay
 import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.theme.KkalScanColors
@@ -43,10 +48,26 @@ fun DescribeFoodSheet(
 ) {
     val scanState by viewModel.state.collectAsState()
     var description by remember(initialDescription) { mutableStateOf(initialDescription) }
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    // Prefill from search: don't steal focus / open keyboard until user taps the field.
+    var inputFocusEnabled by remember(initialDescription) {
+        mutableStateOf(initialDescription.isBlank())
+    }
 
     LaunchedEffect(scanState.result, scanState.isLoading) {
         if (scanState.result != null && !scanState.isLoading) {
             onRecognized()
+        }
+    }
+
+    LaunchedEffect(initialDescription) {
+        if (initialDescription.isBlank()) {
+            focusRequester.requestFocus()
+        } else {
+            keyboardController?.hide()
+            delay(100)
+            inputFocusEnabled = true
         }
     }
 
@@ -81,7 +102,9 @@ fun DescribeFoodSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(140.dp)
-                        .testTag("describe-food-input"),
+                        .testTag("describe-food-input")
+                        .focusRequester(focusRequester)
+                        .focusProperties { canFocus = inputFocusEnabled },
                     placeholder = { Text("Например: тарелка борща и кусок хлеба, или 200 г курицы с рисом") },
                     enabled = !scanState.isLoading,
                     shape = RoundedCornerShape(16.dp),

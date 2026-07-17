@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.arkivanov.decompose.ComponentContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
@@ -72,12 +74,19 @@ fun AppRootContent(
     val scanState by scanViewModel.state.collectAsState()
     val diaryState by diaryViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val dismissKeyboard: () -> Unit = {
+        focusManager.clearFocus(force = true)
+        keyboardController?.hide()
+    }
     val stepSensorOnboarding = remember { StepSensorOnboardingController(createStepSensorOnboardingStorage()) }
     val requestActivityRecognition = rememberActivityRecognitionPermissionRequest {
         scope.launch { diaryViewModel.refresh() }
     }
 
     val openDescribeFood: (String) -> Unit = { prefill ->
+        dismissKeyboard()
         KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_OPEN)
         scanViewModel.reset()
         describeFoodPrefill = prefill
@@ -448,11 +457,13 @@ fun AppRootContent(
                 viewModel = scanViewModel,
                 initialDescription = describeFoodPrefill,
                 onDismiss = {
+                    dismissKeyboard()
                     showDescribeFood = false
                     describeFoodPrefill = ""
                     scanViewModel.reset()
                 },
                 onRecognized = {
+                    dismissKeyboard()
                     KkalAnalytics.reportAction(AnalyticsEvents.DESCRIBE_FOOD_RECOGNIZED)
                     showDescribeFood = false
                     describeFoodPrefill = ""

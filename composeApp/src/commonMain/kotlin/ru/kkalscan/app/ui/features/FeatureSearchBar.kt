@@ -40,13 +40,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -65,7 +63,12 @@ fun FeatureSearchBar(
     modifier: Modifier = Modifier,
 ) {
     val state by viewModel.state.collectAsState()
-    var focused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val dismissKeyboard: () -> Unit = {
+        focusManager.clearFocus(force = true)
+        keyboardController?.hide()
+    }
     val showResults = state.query.isNotBlank() &&
         (state.isSearching || state.results.isNotEmpty() || state.errorMessage != null)
 
@@ -79,8 +82,7 @@ fun FeatureSearchBar(
             onValueChange = viewModel::onQueryChange,
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("feature-search-input")
-                .onFocusChanged { focused = it.isFocused },
+                .testTag("feature-search-input"),
             placeholder = {
                 Text(
                     text = "Поиск: дневник, профиль, скан…",
@@ -100,7 +102,10 @@ fun FeatureSearchBar(
                         )
                     }
                     state.query.isNotBlank() -> {
-                        IconButton(onClick = { viewModel.onQueryChange("") }) {
+                        IconButton(onClick = {
+                            viewModel.onQueryChange("")
+                            dismissKeyboard()
+                        }) {
                             Icon(Icons.Outlined.Close, contentDescription = "Очистить")
                         }
                     }
@@ -109,7 +114,12 @@ fun FeatureSearchBar(
             singleLine = true,
             shape = RoundedCornerShape(16.dp),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { viewModel.onSubmit() }),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    dismissKeyboard()
+                    viewModel.onSubmit()
+                },
+            ),
         )
 
         if (showResults) {
@@ -118,7 +128,7 @@ fun FeatureSearchBar(
                 state = state,
                 onRetry = { viewModel.onSubmit() },
                 onSelect = { item ->
-                    focused = false
+                    dismissKeyboard()
                     viewModel.onQueryChange("")
                     onOpenDeepLink(item.deeplink)
                 },
