@@ -300,14 +300,25 @@ fun AppRootContent(
     )
 
     val showBottomBar = screen == AppScreen.Diary || screen == AppScreen.Journal || screen == AppScreen.Profile
+    val showFeatureSearch = screen == AppScreen.Journal
+
+    LaunchedEffect(showFeatureSearch) {
+        if (!showFeatureSearch) {
+            featureSearchViewModel.clear()
+        }
+    }
 
     KkalScreenScaffold(
         hasBottomBar = showBottomBar,
-        topBar = {
-            FeatureSearchBar(
-                viewModel = featureSearchViewModel,
-                onOpenDeepLink = openDeepLink,
-            )
+        topBar = if (showFeatureSearch) {
+            {
+                FeatureSearchBar(
+                    viewModel = featureSearchViewModel,
+                    onOpenDeepLink = openDeepLink,
+                )
+            }
+        } else {
+            null
         },
         bottomBar = {
             KkalBottomBar(
@@ -344,7 +355,7 @@ fun AppRootContent(
     ) {
         when (screen) {
             AppScreen.Diary -> {
-                MaestroScreenHook("diary-screen feature-search-bar")
+                MaestroScreenHook("diary-screen")
                 DiaryScreen(
                     viewModel = diaryViewModel,
                     onScanClick = {
@@ -383,7 +394,7 @@ fun AppRootContent(
             }
 
             AppScreen.Profile -> {
-                MaestroScreenHook("profile-screen feature-search-bar")
+                MaestroScreenHook("profile-screen")
                 ProfileScreen(
                     viewModel = profileViewModel,
                     onRefresh = { scope.launch { profileViewModel.refresh() } },
@@ -403,7 +414,7 @@ fun AppRootContent(
             }
 
             AppScreen.Scan -> {
-                MaestroScreenHook("scan-screen feature-search-bar")
+                MaestroScreenHook("scan-screen")
                 ScanScreen(
                     viewModel = scanViewModel,
                     onPickPhoto = {
@@ -423,7 +434,7 @@ fun AppRootContent(
             }
 
             AppScreen.Paywall -> {
-                MaestroScreenHook("paywall-screen feature-search-bar")
+                MaestroScreenHook("paywall-screen")
                 PaywallScreen(
                     viewModel = profileViewModel,
                     scansLeft = scanState.scansLeft,
