@@ -13,10 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import ru.kkalscan.app.components.KkalErrorBanner
 import ru.kkalscan.app.components.KkalPageHeader
 import ru.kkalscan.app.components.KkalPrimaryButton
 import ru.kkalscan.app.components.KkalScanHero
@@ -71,10 +68,6 @@ fun ScanScreen(
             title = "Получите результат",
             body = "Калории, белки, жиры и углеводы появятся за несколько секунд",
         )
-        state.errorMessage?.let { msg ->
-            Spacer(Modifier.height(16.dp))
-            KkalErrorBanner(message = msg, onRetry = onPickPhoto)
-        }
         Spacer(Modifier.height(120.dp))
     }
 }

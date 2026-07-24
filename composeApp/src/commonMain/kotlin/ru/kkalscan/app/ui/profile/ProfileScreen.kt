@@ -57,8 +57,6 @@ fun ProfileScreen(
     onBuyPro: (tariff: String) -> Unit,
     onSubmitBugReport: (email: String, description: String, screenshots: List<ByteArray>) -> Unit,
     onProfileSaved: () -> Unit = {},
-    scanErrorMessage: String? = null,
-    onRetryScan: () -> Unit = {},
 ) {
     val state by viewModel.state.collectAsState()
     var showBugReportDialog by remember { mutableStateOf(false) }
@@ -90,11 +88,6 @@ fun ProfileScreen(
             modifier = Modifier.testTag("profile-title"),
         )
         Spacer(Modifier.height(20.dp))
-
-        scanErrorMessage?.let { message ->
-            KkalErrorBanner(message = message, onRetry = onRetryScan)
-            Spacer(Modifier.height(12.dp))
-        }
 
         when {
             state.isLoading && state.status == null -> {

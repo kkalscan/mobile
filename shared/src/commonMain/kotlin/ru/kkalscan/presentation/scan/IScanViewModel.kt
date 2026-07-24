@@ -34,6 +34,7 @@ interface IScanViewModel {
     fun scaleDishFromBaseline(index: Int, factor: Double)
     fun removeDish(index: Int)
     fun reset()
+    fun clearError()
     fun onProActivated()
     fun launchAddToDiary(onSuccess: () -> Unit = {})
 }

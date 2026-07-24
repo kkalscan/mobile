@@ -42,11 +42,8 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun DiaryScreen(
     viewModel: IDiaryViewModel,
-    onScanClick: () -> Unit,
     onRequestActivityRecognition: () -> Unit,
     onRefresh: () -> Unit,
-    scanErrorMessage: String? = null,
-    onRetryScan: () -> Unit = onScanClick,
 ) {
     val state by viewModel.state.collectAsState()
     val today = state.date?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
@@ -62,10 +59,6 @@ fun DiaryScreen(
         Spacer(Modifier.height(20.dp))
         KkalPageHeader(title = "Сегодня · $dateLabel", modifier = Modifier.testTag("diary-title"))
         Spacer(Modifier.height(20.dp))
-        scanErrorMessage?.let { message ->
-            KkalErrorBanner(message = message, onRetry = onRetryScan)
-            Spacer(Modifier.height(12.dp))
-        }
         when {
             state.isLoading && state.day == null -> {
                 Column(Modifier.fillMaxWidth().height(200.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {

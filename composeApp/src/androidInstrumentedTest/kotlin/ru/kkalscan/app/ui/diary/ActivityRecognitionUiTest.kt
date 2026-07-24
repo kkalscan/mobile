@@ -49,7 +49,6 @@ class ActivityRecognitionUiTest {
             KkalScanTheme {
                 DiaryScreen(
                     viewModel = viewModel,
-                    onScanClick = {},
                     onRequestActivityRecognition = {},
                     onRefresh = {},
                 )
@@ -75,7 +74,6 @@ class ActivityRecognitionUiTest {
             KkalScanTheme {
                 DiaryScreen(
                     viewModel = viewModel,
-                    onScanClick = {},
                     onRequestActivityRecognition = {},
                     onRefresh = {},
                 )

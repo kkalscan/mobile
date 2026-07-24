@@ -125,6 +125,10 @@ class ScanViewModel(
         _state.value = ScanUiState(selectedMealType = _state.value.selectedMealType)
     }
 
+    override fun clearError() {
+        _state.update { it.copy(errorMessage = null) }
+    }
+
     override fun onProActivated() {
         _state.update { it.copy(limitHit = false, errorMessage = null) }
     }

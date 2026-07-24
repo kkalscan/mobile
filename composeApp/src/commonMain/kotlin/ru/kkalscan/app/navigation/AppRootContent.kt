@@ -19,6 +19,7 @@ import ru.kkalscan.analytics.AnalyticsEvents
 import ru.kkalscan.app.analytics.KkalAnalytics
 import ru.kkalscan.app.analytics.ScanAnalytics
 import ru.kkalscan.app.analytics.analyticsReason
+import ru.kkalscan.app.platform.rememberAppToast
 import ru.kkalscan.app.platform.rememberProPaymentOpener
 import ru.kkalscan.data.IApiConfig
 import ru.kkalscan.app.components.AppTab
@@ -74,6 +75,7 @@ fun AppRootContent(
     val scanState by scanViewModel.state.collectAsState()
     val diaryState by diaryViewModel.state.collectAsState()
     val openProPayment = rememberProPaymentOpener()
+    val showToast = rememberAppToast()
     val focusManager = LocalFocusManager.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val dismissKeyboard: () -> Unit = {
@@ -179,6 +181,11 @@ fun AppRootContent(
             val stateAfterScan = scanViewModel.state.value
             if (stateAfterScan.limitHit) {
                 screen = AppScreen.Paywall
+            } else {
+                stateAfterScan.errorMessage?.let { message ->
+                    showToast(message)
+                    scanViewModel.clearError()
+                }
             }
             ScanAnalytics.reportScanOutcome(
                 scansLeft = stateAfterScan.scansLeft,
@@ -358,17 +365,8 @@ fun AppRootContent(
                 MaestroScreenHook("diary-screen")
                 DiaryScreen(
                     viewModel = diaryViewModel,
-                    onScanClick = {
-                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_OPEN)
-                        pickPhoto()
-                    },
                     onRequestActivityRecognition = requestActivityRecognition,
                     onRefresh = { scope.launch { diaryViewModel.refresh() } },
-                    scanErrorMessage = scanState.errorMessage,
-                    onRetryScan = {
-                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)
-                        pickPhoto()
-                    },
                 )
             }
 
@@ -405,11 +403,6 @@ fun AppRootContent(
                         }
                     },
                     onProfileSaved = { scope.launch { diaryViewModel.refresh() } },
-                    scanErrorMessage = scanState.errorMessage,
-                    onRetryScan = {
-                        KkalAnalytics.reportAction(AnalyticsEvents.SCAN_RETRY)
-                        pickPhoto()
-                    },
                 )
             }
 
