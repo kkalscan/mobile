@@ -41,6 +41,7 @@ import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.wireName
+import ru.kkalscan.insights.DietitianInsight
 
 class KkalScanApi(
     private val httpClient: HttpClient,
@@ -188,6 +189,20 @@ class KkalScanApi(
             FeatureSearchIntentRequest(query = query),
         )
 
+    override suspend fun requestDietitianInsight(
+        deviceId: String,
+        weekStart: String,
+        timezoneOffsetMinutes: Int,
+    ): DietitianInsight =
+        postJson(
+            "/insights/dietitian",
+            DietitianInsightRequest(
+                device_id = deviceId,
+                week_start = weekStart,
+                timezone_offset_minutes = timezoneOffsetMinutes,
+            ),
+        )
+
     override suspend fun submitBugReport(
         deviceId: String,
         email: String,
@@ -314,6 +329,13 @@ class KkalScanApi(
     @Serializable
     private data class FeatureSearchIntentRequest(
         val query: String,
+    )
+
+    @Serializable
+    private data class DietitianInsightRequest(
+        val device_id: String,
+        val week_start: String,
+        val timezone_offset_minutes: Int,
     )
 
     @Serializable

@@ -25,6 +25,8 @@ import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.StepCalorieEstimator
 import ru.kkalscan.domain.activity.wireName
+import ru.kkalscan.insights.DietitianInsight
+import ru.kkalscan.insights.InsightSection
 import ru.kkalscan.stats.WeekDates
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -348,6 +350,21 @@ class FakeKkalScanApi(
             normalized.any { it in 'а'..'я' || it == 'ё' }
         return FeatureSearchIntentResult(query = trimmed, isFoodIntent = isFood)
     }
+
+    override suspend fun requestDietitianInsight(
+        deviceId: String,
+        weekStart: String,
+        timezoneOffsetMinutes: Int,
+    ): DietitianInsight =
+        DietitianInsight(
+            weekStart = weekStart,
+            generatedAt = "${todayProvider()}T12:00:00Z",
+            headline = "Неделя выглядит сбалансированно",
+            sections = listOf(
+                InsightSection("Калории", "По данным сервера средние калории в норме."),
+                InsightSection("Что улучшить", "Продолжайте логировать еду каждый день."),
+            ),
+        )
 
     override suspend fun submitBugReport(
         deviceId: String,

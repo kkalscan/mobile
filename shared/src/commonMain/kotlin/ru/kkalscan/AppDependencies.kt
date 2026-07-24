@@ -53,7 +53,7 @@ class AppDependencies(
     val scanRepository: IScanRepository = ScanRepository(api, deviceIdStorage),
     val profileRepository: IProfileRepository = ProfileRepository(api, deviceIdStorage, profileLocalStore, diaryRepository),
     val subscriptionRepository: ISubscriptionRepository = SubscriptionRepository(api, deviceIdStorage, profileLocalStore),
-    val insightRepository: IInsightRepository = InsightRepository(deviceIdStorage),
+    val insightRepository: IInsightRepository = InsightRepository(api, deviceIdStorage),
     val featureSearchRepository: IFeatureSearchRepository = FeatureSearchRepository(api, deviceIdStorage),
     val bugReportRepository: IBugReportRepository = BugReportRepository(api, deviceIdStorage),
     val energyProfileStorage: IEnergyProfileStorage = createEnergyProfileStorage(),

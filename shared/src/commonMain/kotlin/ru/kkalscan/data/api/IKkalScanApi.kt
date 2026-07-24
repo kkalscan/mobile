@@ -17,6 +17,7 @@ import ru.kkalscan.domain.model.SubscriptionStatus
 import ru.kkalscan.domain.model.WorkoutParseResult
 import ru.kkalscan.domain.activity.ActivitySource
 import ru.kkalscan.domain.activity.wireName
+import ru.kkalscan.insights.DietitianInsight
 
 interface IKkalScanApi {
     suspend fun scanPhoto(deviceId: String, photoBytes: ByteArray, timezoneOffsetMinutes: Int): ScanResult
@@ -62,4 +63,10 @@ interface IKkalScanApi {
         deviceId: String,
         query: String,
     ): FeatureSearchIntentResult
+
+    suspend fun requestDietitianInsight(
+        deviceId: String,
+        weekStart: String,
+        timezoneOffsetMinutes: Int,
+    ): DietitianInsight
 }
